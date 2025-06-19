@@ -1,0 +1,1 @@
+export const ACTION_AUTHENTICATED_TOKEN = 'Request for the client to authenticate a token';

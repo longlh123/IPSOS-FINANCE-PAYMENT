@@ -1,0 +1,319 @@
+.btn{
+    padding: 8px 22px !important;
+    color: #fff !important;
+    border: 0 !important;
+    box-shadow: 0px 3px 1px -2px rgba(0,0,0,0.2),0px 2px 2px 0px rgba(0,0,0,0.14),0px 1px 5px 0px rgba(0,0,0,0.12);
+    font-size: 0.9375rem !important;
+}
+
+.bg-primary { background-color: var(--main-color) !important; }
+.bg-reject { background-color: var(--status-cancelled-color) !important; }
+
+h4 span { 
+    font-weight: 600;
+    color: var(--text-forth-color); 
+} 
+
+.message-invalid span {
+    color: rgb(214, 67, 67);
+}
+
+.row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 10px;
+    width: 100%;
+    border-radius: 10px;
+    text-align: justify;
+    background-color: var(--background-color);
+}
+
+.icon-status-project {
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    position: relative;
+    cursor: pointer;
+}
+
+.txt-status-project {
+    padding: 4px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.icon-project img {
+    text-align: center;
+}
+
+.icon-project img {
+    width: 40px;
+    text-align: center;
+}
+
+.planned { background-color: var(--status-planned-color); }
+.in-coming { background-color: var(--status-in-coming-color); }
+.on-going { background-color: var(--status-on-going-color); }
+.completed { background-color: var(--status-completed-color); }
+.on-hold { background-color: var(--status-on-hold-color); }
+.cancelled { background-color: var(--status-cancelled-color); }
+
+.box-status-button{
+    font-size: 13px;
+    padding: 5px 5px;
+    border-radius: 5px;
+    color: #fff;
+    font-weight: 600;
+}
+
+.box-status-button:hover{
+    opacity: 0.5;
+}
+
+.actions-menu-item {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+.actions-menu-item .text {
+    text-align: center;
+    vertical-align: middle;
+    margin-left: 10px;
+}
+
+.subtotal-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: stretch;
+    align-items: center;
+    gap: 10px;
+    font-size: 18px;
+}
+
+.subtotal-container .row {
+    display: flex;
+    flex-direction: row;
+}
+
+.filter-container {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: flex-start;
+    width: 50%;
+}
+
+.filter-container .filter-item {
+    width: 50%;
+}
+
+.chart-container {
+    width: 100%; /* or a specific width like 500px */
+    position: relative; /* Ensure SVG positioning is relative to this container */
+}
+
+.widget-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: stretch;
+    flex-wrap: nowrap;
+    width: 100%;
+    padding: 20px 20px;
+    box-shadow: rgb(145, 158, 171, 0.3) 0px 0px 2px 0px,rgb(145, 158, 171, 0.12) 0px 12px 24px -4px !important;
+    border-radius: 20px !important;
+}
+
+.widget-col-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.widget-row-item {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+}
+
+.legend-container {
+    display: block;
+    width: 300px;
+}
+
+.legend {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+}
+
+.legend-horizontal {
+    list-style: none;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+}
+
+.legend li, 
+.legend-horizontal li {
+    display: flex;
+    flex-direction: row;
+    font-size: 12px;
+    align-items:center;
+}
+
+.legend .legend-square,
+.legend-horizontal .legend-square {
+    display: inline-block;
+    width: 12px;  /* Adjust size as needed */
+    height: 12px; /* Adjust size as needed */
+    margin-right: 5px;  /* Space between the square and the label */
+    vertical-align: middle;  /* Aligns the square with the text */
+}
+
+.tooltip {
+    position: absolute;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    padding: 5px;
+    border-radius: 3px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.table-container {
+    overflow-x: auto !important;
+    box-shadow: none !important;
+    background-color: var(--background-color) !important;
+}
+
+.table-cell {
+    white-space: nowrap !important;
+    height: 50px !important;
+    /* padding: 0 !important; */
+    font-size: 14px !important;
+    color: var(--text-color) !important;
+}
+
+/* VINNET WELCOME CSS */
+.welcome-header {
+    background-image: url(../img/ipsos_banner.jpeg);
+    background-repeat: no-repeat;
+    background-size: cover;
+    height: auto;
+    min-height: 220px;
+}
+
+.welcome-container {
+    display: flex;
+    flex-direction: column;
+    margin-top: 20px;
+    width: 100%;
+}
+
+.welcome-body {
+    display: flex;
+    flex-direction: column;
+    text-align: justify;
+    gap: 3;
+    padding: 30px 30px;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+.welcome-body .item {
+    padding: 10px 10px;
+    width: 100%;
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 2.5rem;
+}
+
+.welcome-body .action {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 10px;
+    width: 100%;
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 2.5rem;
+}
+
+.welcome-footer {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    gap: 10;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--main-color);
+    padding: 20px 20px;
+}
+
+.welcome-footer img {
+    margin-right: 20px;
+}
+
+.provider-warning {
+    color: var(--status-cancelled-color);
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.message-invalid {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+@media screen and (max-width: 1200px) {
+    .welcome-container {
+        margin: 0 auto;
+    }
+
+    .welcome-header {
+        background-size: cover;
+        min-height: 160px;
+    }
+}
+
+@media screen and (max-width: 1024px) {
+    .welcome-container {
+        margin: 0 auto;
+    }
+
+    .welcome-header {
+        background-size: cover;
+        min-height: 160px;
+    }
+}
+
+@media screen and (max-width: 960px) {
+    .welcome-container {
+        margin: 0 auto;
+    }
+
+    .welcome-header {
+        background-size: contain;
+        min-height: 140px;
+    }
+}
+

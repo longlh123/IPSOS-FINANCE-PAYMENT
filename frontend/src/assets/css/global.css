@@ -1,0 +1,90 @@
+@import url("https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap");
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --main-color: #009d9c;
+
+  --text-primary-color: #707070;
+  --text-secondary-color: #2f469c;
+  --text-third-color: #3948a4;
+  --text-forth-color: #009d9c;
+  --text-fifth-color: rgb(214, 67, 67);
+  --text-sixth-color: #000000de;
+
+  
+  --body-color: rgb(238, 242, 246);
+  --background-color: #fff;
+  --main-font: "Roboto","Helvetica","Arial",sans-serif;
+
+  /* Status of project */
+  --status-planned-color: #FFA500;
+  --status-in-coming-color: #FFD700;  
+  --status-on-going-color: #00BFFF;
+  --status-completed-color: #32CD32; 
+  --status-on-hold-color: #FF6347;
+  --status-cancelled-color: #B22222; 
+
+  /*   transition */
+  --transition-02: all 0.2s ease;
+  --transition-03: all 0.3s ease;
+  --transition-04: all 0.4s ease;
+
+  /* avatar color */
+  --avatar-primary-color: #FF6B6B; /* (Soft Red) */
+  --avatar-secondary-color: #4ECDC4; /*  (Mint Green) */
+  --avatar-third-color: #FFD93D; /*  (Sunflower Yellow) */
+  --avatar-forth-color: #1E90FF; /*  (Dodger Blue) */
+  --avatar-fifth-color: #FFB6C1; /*  (Light Pink) */
+  --avatar-sixth-color: #FF6347; /*  (Tomato Orange) */
+  --avatar-seventh-color: #7B68EE; /*  (Medium Slate Blue) */
+  --avatar-eighth-color: #32CD32; /*  (Lime Green) */
+  --avatar-ninth-color: #FF8C00; /*  (Dark Orange) */
+  --avatar-tenth-color: #4682B4; /*  (Steel Blue) */
+}
+
+*{
+  font-style: var(--main-font);
+}
+
+body.dark {
+  --main-color: #009d9c;
+  --text-primary-color: var(--text-primary-color);
+  --text-secondary-color: var(--text-secondary-color);
+  --text-third-color: var(--text-third-color);
+  --body-color: #121212;
+  --text-color: #eaeff4;
+  --background-color: #1a1625;
+}
+
+.wrapper {
+  display: flex;
+  background-color: var(--background-color);
+}
+.content {
+  min-height: 92vh;
+  position: relative;
+  width: calc(100% - 250px);
+  left: 250px;
+  transition: var(--transition-02);
+  margin-top: 60px;
+  background-color: var(--body-color);
+  border-radius: 20px;
+  padding: 30px 30px;
+}
+
+.content-detail {
+  /* width: 1200px; */
+  margin: 10px auto;
+}
+
+@media screen and (max-width: 1024px) {
+  .content-detail {
+    width: 90%;
+    margin: 20px auto 0 auto;
+  }
+}

@@ -1,0 +1,17 @@
+.tabel-wrapper {
+    background-color: var(--background-color);
+    padding: 10px;
+    border-radius: 13px;
+}
+.table-container {
+    overflow-x: auto !important;
+    box-shadow: none !important;
+    background-color: var(--background-color) !important;
+}
+.table-cell {
+    white-space: nowrap !important;
+    height: 50px !important;
+    /* padding: 0 !important; */
+    font-size: 14px !important;
+    color: var(--text-color) !important;
+}

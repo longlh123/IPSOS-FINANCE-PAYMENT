@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  # React Service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app/frontend
+    networks:
+      - app
+    depends_on:
+      - backend
+      - mysql
+
+  # Laravel Service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app/backend
+    networks:
+      - app
+    depends_on:
+      - mysql
+
+  # MySQL Service
+  mysql:
+    image: mysql:8.0.21
+    container_name: mysql-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: finance_payment
+      MYSQL_ROOT_PASSWORD: googolplex10100!
+      MYSQL_USER: root
+      MYSQL_PASSWORD: googolplex10100!
+    volumes:
+      - mysql-data:/var/lib/mysql
+    ports:
+      - "3307:3306"
+    networks:
+      - app
+
+# Volumes
+volumes:
+  mysql-data:
+
+# Networks
+networks:
+  app:
+    driver: bridge

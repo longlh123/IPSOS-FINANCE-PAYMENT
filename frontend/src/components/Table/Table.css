@@ -1,0 +1,105 @@
+.table-container {
+  overflow-x: auto !important;
+  box-shadow: none !important;
+  background-color: var(--background-color) !important;
+}
+.box-table {
+  background-color: var(--background-color);
+  padding: 10px;
+  border-radius: 13px;
+}
+.table-cell {
+  white-space: nowrap !important;
+  height: 50px !important;
+  /* padding: 0 !important; */
+  font-size: 14px !important;
+  color: var(--text-color) !important;
+}
+
+.filter {
+  height: 40px;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  margin: 15px 10px;
+  font-family: var(--main-font);
+}
+
+.filter .btnAdd {
+  /* float: right; */
+  background-color: var(--main-color);
+  color: #fff;
+  text-transform: none;
+  padding: 7px 10px;
+  font-size: 12px;
+  border-radius: 6px;
+}
+
+.filter .btnAdd:hover {
+  background-color: var(--main-color);
+  color: #fff;
+  filter: brightness(110%);
+  transition: var(--transition-02);
+}
+
+.input-search-table .MuiInputBase-root {
+  height: 30px !important;
+}
+.input-search-table span {
+  color: var(--text-color);
+}
+.search-table-input {
+  color: var(--text-color) !important;
+}
+
+.search-table-input
+  .MuiOutlinedInput-root.Mui-focused
+  .MuiOutlinedInput-notchedOutline {
+  border-color: var(--body-color) !important;
+}
+
+.search-table-input .MuiFormLabel-root.Mui-focused {
+  color: var(--body-color) !important;
+  color: var(--text-color) !important;
+}
+/* .MuiTableRow-root.table-row .table-cell {
+  font-size: 14px;
+  padding: 0 auto !important;
+} */
+
+.MuiTableCell-head {
+  /* background-color: var(--main-color); */
+  /* color: #fff !important; */
+  height: 20px !important;
+  padding: 10px 5px 10px 10px !important;
+  font-weight: 450 !important;
+  font-size: 15px !important;
+  color: var(--text-color) !important;
+}
+.MuiTableRow-root {
+  height: 10px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+.MuiTableCell-body {
+  height: 10px !important;
+  padding: 10px 5px 10px 10px !important;
+}
+.MuiTableBody-root .MuiTableRow-root:nth-child(even) {
+  background-color: var(--body-color);
+}
+
+.icon-status {
+  position: relative;
+}
+
+.MuiPopover-paper {
+  box-shadow: none !important;
+}
+
+.box-status-popover {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
