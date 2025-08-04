@@ -76,17 +76,8 @@ Route::get('/techcombank-panel/products', [TechcombankPanelController::class, 'g
 Route::get('/techcombank-panel/venn-products', [TechcombankPanelController::class, 'getVennProducts']);
 Route::get('/techcombank-panel/panellist', [TechcombankPanelController::class, 'getPanellist']);
 
-
-
-
-
-
 Route::get('/techcombank-panel/surveys', [TechcombankSurveysController::class, 'index']);
 
-
-
-
-
-
-
-
+Route::get('/ping', function() {
+    return response()->json(['message' => 'API OK']);
+});

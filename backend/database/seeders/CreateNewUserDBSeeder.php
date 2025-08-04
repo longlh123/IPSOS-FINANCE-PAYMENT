@@ -16,24 +16,24 @@ class CreateNewUserDBSeeder extends Seeder
      */
     public function run(): void
     {
-        // $user = User::factory()->create([
-        //     'name' => 'Long Pham',
-        //     'email' => 'long.pham@ipsos.com',
-        //     'password' => Hash::make('password'),
-        // ]);
+        $user = User::factory()->create([
+            'name' => 'Long Pham',
+            'email' => 'long.pham@ipsos.com',
+            'password' => Hash::make('password'),
+        ]);
 
-        // // Create user details
-        // $user->userDetails()->create([
-        //     'user_id' => $user->id,
-        //     'first_name' => 'Long',
-        //     'last_name' => 'Pham',
-        //     'date_of_birth' => '1990-01-01',
-        //     'address' => '123 Main St',
-        //     'phone_number' => '1234567890',
-        //     'profile_picture' => 'path/to/profile_picture.jpg',
-        //     'role_id' => 1,
-        //     'department_id' => 9,
-        // ]);
+        // Create user details
+        $user->userDetails()->create([
+            'user_id' => $user->id,
+            'first_name' => 'Long',
+            'last_name' => 'Pham',
+            'date_of_birth' => '1990-01-01',
+            'address' => '123 Main St',
+            'phone_number' => '1234567890',
+            'profile_picture' => 'path/to/profile_picture.jpg',
+            'role_id' => 1,
+            'department_id' => 9,
+        ]);
 
         $user = User::factory()->create([
             'name' => 'Thua Nguyen',

@@ -1,4 +1,4 @@
-const host = "http://localhost:8000"
+const host = "https://www.ippay.vn"
 
 export const ApiConfig = {
   project: {

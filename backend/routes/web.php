@@ -25,3 +25,7 @@ Route::middleware('auth')->group(function () {
 });
 
 require __DIR__.'/auth.php';
+
+Route::get('/{any}', function () {
+    return file_get_contents(public_path('react/index.html'));
+})->where('any', '.*');
