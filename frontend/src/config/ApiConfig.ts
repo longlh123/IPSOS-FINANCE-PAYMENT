@@ -1,4 +1,5 @@
 const host = "https://www.ippay.vn"
+//const host = "http://127.0.0.1:8000"
 
 export const ApiConfig = {
   project: {
@@ -19,7 +20,7 @@ export const ApiConfig = {
   },
   vinnet: {
     viewMerchantInfo: `${host}/api/project-management/vinnet/merchant/view`,
-    viewMerchantAccount: `${host}/api/project-management/vinnet/merchantinfo`,
+    // viewMerchantAccount: `${host}/api/project-management/vinnet/merchantinfo`,
     performMultipleTransactions: `${host}/api/project-management/vinnet/transactions`,
     changeMerchantKey: `${host}/api/project-management/vinnet/change-key`,
     verifiedVinnetToken: `${host}/api/project-management/project/verify-vinnet-token`,

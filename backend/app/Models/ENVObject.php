@@ -5,13 +5,40 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Artisan;
 
 class ENVObject
 {
     public $env;
+    public $environment;
+    public $url;
+    public $merchantInfo;
 
     public function __construct(){
         $this->env = $this->readEnvFile();
+
+        $this->environment = $this->env['VINNET_ENV'];
+        
+        if($this->environment === 'production'){
+            $this->url = $this->env['VINNET_URL'];
+
+            $this->merchantInfo = [
+                'VINNET_MERCHANT_CODE' => str_replace('"', '', $this->env['VINNET_MERCHANT_CODE']),
+                'VINNET_MERCHANT_KEY' => str_replace('"', '', $this->env['VINNET_MERCHANT_KEY'])
+            ];
+        } else {
+            $this->url = $this->env['VINNET_URL_STAGING'];
+
+            $this->merchantInfo = [
+                'VINNET_MERCHANT_CODE' => str_replace('"', '', $this->env['VINNET_MERCHANT_CODE_STAGING']),
+                'VINNET_MERCHANT_KEY' => str_replace('"', '', $this->env['VINNET_MERCHANT_KEY_STAGING'])
+            ];
+        }
+    }
+
+    public function setEnvValue(string $key, string $value){
+
+        $this->updateEnv([$key => str_replace('"', '', $value)]);
     }
 
     private function readEnvFile()
