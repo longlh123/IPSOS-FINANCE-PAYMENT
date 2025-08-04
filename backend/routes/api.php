@@ -46,12 +46,14 @@ Route::middleware(['auth:sanctum'])->group(function(){
     Route::get('/project-management/projects/{project_id}/employees/show', [EmployeeController::class, 'show'])->middleware('ensureUserHasRole:admin,Field Manager,Finance');
 
     Route::get('/project-management/vinnet/merchant/view', [VinnetController::class, 'get_merchant_info'])->middleware('ensureUserHasRole:admin,Finance');
-    Route::get('/project-management/vinnet/merchantinfo', [VinnetController::class, 'merchantinfo'])->middleware('ensureUserHasRole:admin');
+    Route::post('/project-management/vinnet/change-key', [VinnetController::class, 'change_key'])->middleware('ensureUserHasRole:admin,Finance');
+    // Route::get('/project-management/vinnet/merchantinfo', [VinnetController::class, 'merchantinfo'])->middleware('ensureUserHasRole:admin');
     Route::get('/project-management/vinnet/transactions/view', [VinnetController::class, 'transactions_view'])->middleware('ensureUserHasRole:admin,Finance');
 });
 
 Route::get('/project-management/project/verify-vinnet-token/{internal_code}/{project_name}/{respondent_id}/{remember_token}', [ProjectController::class, 'verify_vinnet_token']);
-Route::post('/project-management/vinnet/change-key', [VinnetController::class, 'change_key']);
+
+// Route::post('/project-management/vinnet/change-key', [VinnetController::class, 'change_key']);
 Route::post('/project-management/vinnet/transactions', [VinnetController::class, 'perform_multiple_transactions']);
 Route::post('/project-management/vinnet/reject-transaction', [VinnetController::class, 'reject_transaction']); //API update status lý do đáp viên không nhận quà qua tin nhắn
 
@@ -76,13 +78,7 @@ Route::get('/techcombank-panel/products', [TechcombankPanelController::class, 'g
 Route::get('/techcombank-panel/venn-products', [TechcombankPanelController::class, 'getVennProducts']);
 Route::get('/techcombank-panel/panellist', [TechcombankPanelController::class, 'getPanellist']);
 
-
-
-
-
-
 Route::get('/techcombank-panel/surveys', [TechcombankSurveysController::class, 'index']);
-
 
 
 

@@ -58,16 +58,13 @@ class VinnetController extends Controller
     {
         try{
             $envObject = new ENVObject();
-
-            $merchant_info = [
-                'VINNET_MERCHANT_CODE' => str_replace('"', '', $envObject->env['VINNET_MERCHANT_CODE']),
-                'VINNET_MERCHANT_KEY' => str_replace('"', '', $envObject->env['VINNET_MERCHANT_KEY']),
-            ];
+            
+            Log::info('Enviroment: ' . $envObject->environment);
 
             return response()->json([
                 'status_code' => Response::HTTP_OK, //200
                 'message' => 'Successful request.',
-                'data' => $merchant_info
+                'data' => $envObject->merchantInfo
             ], Response::HTTP_OK);
 
         } catch (\Exception $e) {
@@ -101,9 +98,10 @@ class VinnetController extends Controller
             // Log::info('Starting for encrypt data');
 
             // Log::info('Data to encrypt: ' . $data);
-
+            $envObject = new ENVObject();
+            
             // Load the public key from the file
-            $publicKeyPath = storage_path('keys/vinnet_public_key.pem');
+            $publicKeyPath = storage_path('keys/vinnet/' . $envObject->environment . '/vinnet_public_key.pem');
             $publicKey = file_get_contents($publicKeyPath);
 
             // Check if the public key was successfully loaded
@@ -164,8 +162,9 @@ class VinnetController extends Controller
         try{
             // Log the encrypted data
             // Log::info('Encrypted data: ' . $encrypted_data);
+            $envObject = new ENVObject();
 
-            $privateKey = file_get_contents(storage_path('keys/private_key.pem'));
+            $privateKey = file_get_contents(storage_path('keys/vinnet/' . $envObject->environment . '/private_key.pem'));
 
             // Base64 decode the encrypted data
             $decodedEncryptedData = base64_decode($encrypted_data);
@@ -247,9 +246,10 @@ class VinnetController extends Controller
             // Log::info('Starting for generating signature');
 
             // Log::info('Data to generate Signature: ' . $data);
+            $envObject = new ENVObject();
 
             // Load the public key from the file
-            $privateKeyPath = storage_path('keys/private_key.pem');
+            $privateKeyPath = storage_path('keys/vinnet/' . $envObject->environment . '/private_key.pem');
             $privateKey = file_get_contents($privateKeyPath);
 
             // Check if the private key was successfully loaded
@@ -308,8 +308,10 @@ class VinnetController extends Controller
     private function verify_signature($data, $signature)
     {
         try {
+            $envObject = new ENVObject();
+            
             // Load the public key from the file
-            $publicKey = file_get_contents(storage_path('keys/vinnet_public_key.pem'));
+            $publicKey = file_get_contents(storage_path('keys/vinnet/' . $envObject->environment . '/vinnet_public_key.pem'));
 
             // Check if the public key was successfully loaded
             if ($publicKey === false) {
@@ -428,21 +430,6 @@ class VinnetController extends Controller
 
             // Optionally rethrow the exception or handle it
             throw $e;
-        }
-    }
-
-    protected function setEnvValue($key, $value)
-    {
-        $path = base_path('.env');
-        if (file_exists($path)) {
-            file_put_contents(
-                $path,
-                preg_replace(
-                    '/^' . $key . '=.*/m',
-                    $key . '=' . $value,
-                    file_get_contents($path)
-                )
-            );
         }
     }
 
@@ -813,7 +800,7 @@ class VinnetController extends Controller
                 {
                     $this->update_status_vinnet_token($interviewURL, $phone_number, null, $payItemData['reqUuid'], $tokenData['token'], ProjectVinnetToken::STATUS_UNDETERMINED_TRANSACTION_RESULT, $payItemData['message'], null);
 
-                    throw new \Exception('Giao bị quá tải, PVV vui lòng chờ 3-4 phút, sau đó kiểm tra đáp viên xem đã nhận được quà tặng chưa. Nếu chưa, vui lòng liên hệ Admin để kiểm tra.');
+                    throw new \Exception('Giao dịch bị quá tải, PVV vui lòng chờ 3-4 phút, sau đó kiểm tra đáp viên xem đã nhận được quà tặng chưa. Nếu chưa, vui lòng liên hệ Admin để kiểm tra.');
                 } 
                 else 
                 {
@@ -852,17 +839,22 @@ class VinnetController extends Controller
     public function change_key(Request $request)
     {
         try{
+            Log::info('Changing key');
+
             $envObject = new ENVObject();
+            $environment = $envObject->environment;
+            $merchantInfo = $envObject->merchantInfo;
+            $url = $envObject->url;
 
             $uuid = $this->generate_formated_uuid();
             Log::info('UUID: ' . $uuid);
 
-            $reqData = $this->encrypt_data(json_encode(['oldMerchantKey' => str_replace('"', '', $envObject->env['VINNET_MERCHANT_KEY'])]));
+            $reqData = $this->encrypt_data(json_encode(['oldMerchantKey' => str_replace('"', '', $merchantInfo['VINNET_MERCHANT_KEY'])]));
             
-            $signature = $this->generate_signature(str_replace('"', '', $envObject->env['VINNET_MERCHANT_CODE']) . $uuid . $reqData);
+            $signature = $this->generate_signature(str_replace('"', '', $merchantInfo['VINNET_MERCHANT_CODE']) . $uuid . $reqData);
 
             $postData = [
-                'merchantCode' => str_replace('"', '', $envObject->env['VINNET_MERCHANT_CODE']),
+                'merchantCode' => str_replace('"', '', $merchantInfo['VINNET_MERCHANT_CODE']),
                 'reqUuid' => $uuid,
                 'reqData' => $reqData,
                 'sign' => $signature
@@ -870,7 +862,7 @@ class VinnetController extends Controller
 
             Log::info('Data post: ' . json_encode($postData));
             
-            $response = $this->post_vinnet_request(str_replace('"', '', $envObject->env['VINNET_URL']) . '/changekey', null, $postData);
+            $response = $this->post_vinnet_request(str_replace('"', '', $url) . '/changekey', null, $postData);
 
             $decodedResponse = json_decode($response, true);
 
@@ -903,11 +895,18 @@ class VinnetController extends Controller
             Log::info('New merchant key: ' . $decodedData['newMerchantKey']);
             
             // Assuming the decrypted information is an array with the expected keys
-            //$this->setEnvValue('VINNET_MERCHANT_KEY', $decodedData['newMerchantKey']);
-            $envObject->updateEnv([
-                'VINNET_MERCHANT_KEY' =>  $decodedData['newMerchantKey']
-            ]);
-
+            if($environment === 'production'){
+                $envObject->setEnvValue('VINNET_MERCHANT_KEY', $decodedData['newMerchantKey']);
+                // $envObject->updateEnv([
+                //     'VINNET_MERCHANT_KEY' =>  $decodedData['newMerchantKey']
+                // ]);
+            } else {
+                $envObject->setEnvValue('VINNET_MERCHANT_KEY_STAGING', $decodedData['newMerchantKey']);
+                // $envObject->updateEnv([
+                //     'VINNET_MERCHANT_KEY_STAGING' =>  $decodedData['newMerchantKey']
+                // ]);
+            }
+            
             Log::info("The end for change key.");
 
             return response()->json([
@@ -936,26 +935,29 @@ class VinnetController extends Controller
     {
         try{
             $envObject = new ENVObject();
+            $environment = $envObject->environment;
+            $merchantInfo = $envObject->merchantInfo;
+            $url = $envObject->url;
 
             $uuid = $this->generate_formated_uuid();
             Log::info('UUID to authenticate token: ' . $uuid);
 
-            $reqData = $this->encrypt_data(json_encode(['merchantKey' => str_replace('"', '', $envObject->env['VINNET_MERCHANT_KEY'])]));
+            $reqData = $this->encrypt_data(json_encode(['merchantKey' => str_replace('"', '', $merchantInfo['VINNET_MERCHANT_KEY'])]));
 
             //Log::info('Encrypted data: ' . $reqData);
 
-            Log::info('Signature: ' . str_replace('"', '', $envObject->env['VINNET_MERCHANT_CODE']) . $uuid . $reqData);
+            Log::info('Signature: ' . str_replace('"', '', $merchantInfo['VINNET_MERCHANT_CODE']) . $uuid . $reqData);
 
-            $signature = $this->generate_signature(str_replace('"', '', $envObject->env['VINNET_MERCHANT_CODE']) . $uuid . $reqData);
+            $signature = $this->generate_signature(str_replace('"', '', $merchantInfo['VINNET_MERCHANT_CODE']) . $uuid . $reqData);
 
             $postData = [
-                'merchantCode' => str_replace('"', '', $envObject->env['VINNET_MERCHANT_CODE']),
+                'merchantCode' => str_replace('"', '', $merchantInfo['VINNET_MERCHANT_CODE']),
                 'reqUuid' => $uuid,
                 'reqData' => $reqData,
                 'sign' => $signature
             ];
 
-            $response = $this->post_vinnet_request(str_replace('"', '', $envObject->env['VINNET_URL']) . '/authen', null, $postData);
+            $response = $this->post_vinnet_request(str_replace('"', '', $url) . '/authen', null, $postData);
 
             $decodedResponse = json_decode($response, true);
 
@@ -1007,6 +1009,9 @@ class VinnetController extends Controller
         try{
             Log::info("Merchant Information");
             $envObject = new ENVObject();
+            $environment = $envObject->environment;
+            $merchantInfo = $envObject->merchantInfo;
+            $url = $envObject->url;
 
             $tokenData = $this->authenticate_token();
 
@@ -1016,10 +1021,10 @@ class VinnetController extends Controller
 
             $reqData = $this->encrypt_data(json_encode($dataRequest));
 
-            $signature = $this->generate_signature(str_replace('"', '', $envObject->env['VINNET_MERCHANT_CODE']) . $uuid . $reqData);
+            $signature = $this->generate_signature(str_replace('"', '', $merchantInfo['VINNET_MERCHANT_CODE']) . $uuid . $reqData);
 
             $postData = [
-                'merchantCode' => str_replace('"', '', $envObject->env['VINNET_MERCHANT_CODE']),
+                'merchantCode' => str_replace('"', '', $merchantInfo['VINNET_MERCHANT_CODE']),
                 'reqUuid' => $uuid,
                 'reqData' => $reqData,
                 'sign' => $signature
@@ -1027,7 +1032,7 @@ class VinnetController extends Controller
 
             Log::info('Merchant Information [$postData]: ' . json_encode($postData));
 
-            $response = $this->post_vinnet_request(str_replace('"', '', $envObject->env['VINNET_URL']) . '/merchantinfo', $tokenData['token'], $postData);
+            $response = $this->post_vinnet_request(str_replace('"', '', $url) . '/merchantinfo', $tokenData['token'], $postData);
 
             $decodedResponse = json_decode($response, true);
 
@@ -1223,6 +1228,9 @@ class VinnetController extends Controller
     {
         try {
             $envObject = new ENVObject();
+            $environment = $envObject->environment;
+            $merchantInfo = $envObject->merchantInfo;
+            $url = $envObject->url;
 
             // Validate inputs
             if (empty($phone_number) || empty($service_code)|| empty($token)) {
@@ -1245,16 +1253,16 @@ class VinnetController extends Controller
 
             //Log::info('Data signature: ' . env('VINNET_MERCHANT_CODE') . $uuid . $reqData);
 
-            $signature = $this->generate_signature(str_replace('"', '', $envObject->env['VINNET_MERCHANT_CODE']) . $uuid . $reqData);
+            $signature = $this->generate_signature(str_replace('"', '', $merchantInfo['VINNET_MERCHANT_CODE']) . $uuid . $reqData);
 
             $postData = [
-                'merchantCode' => str_replace('"', '', $envObject->env['VINNET_MERCHANT_CODE']),
+                'merchantCode' => str_replace('"', '', $merchantInfo['VINNET_MERCHANT_CODE']),
                 'reqUuid' => $uuid,
                 'reqData' => $reqData,
                 'sign' => $signature
             ];
 
-            $response = $this->post_vinnet_request(str_replace('"', '', $envObject->env['VINNET_URL']) . '/queryservice', $token, $postData);
+            $response = $this->post_vinnet_request(str_replace('"', '',$url) . '/queryservice', $token, $postData);
 
             //Log::info('Service: ' . $response);
 
@@ -1367,7 +1375,10 @@ class VinnetController extends Controller
     {
         try {
             $envObject = new ENVObject();
-
+            $environment = $envObject->environment;
+            $merchantInfo = $envObject->merchantInfo;
+            $url = $envObject->url;
+            
             //$encodedServiceItem = json_decode($service_item, true);
             
             $dataRequest = [
@@ -1389,18 +1400,18 @@ class VinnetController extends Controller
 
             Log::info('Encrypted data: ' . $reqData);
 
-            Log::info('Data signature: ' . str_replace('"', '', $envObject->env['VINNET_MERCHANT_CODE']) . $uuid . $reqData);
+            Log::info('Data signature: ' . str_replace('"', '', $merchantInfo['VINNET_MERCHANT_CODE']) . $uuid . $reqData);
 
-            $signature = $this->generate_signature(str_replace('"', '', $envObject->env['VINNET_MERCHANT_CODE']) . $uuid . $reqData);
+            $signature = $this->generate_signature(str_replace('"', '', $merchantInfo['VINNET_MERCHANT_CODE']) . $uuid . $reqData);
 
             $postData = [
-                'merchantCode' => str_replace('"', '', $envObject->env['VINNET_MERCHANT_CODE']),
+                'merchantCode' => str_replace('"', '', $merchantInfo['VINNET_MERCHANT_CODE']),
                 'reqUuid' => $uuid,
                 'reqData' => $reqData,
                 'sign' => $signature
             ];
 
-            $response = $this->post_vinnet_request(str_replace('"', '', $envObject->env['VINNET_URL']) . '/payservice', $token, $postData);
+            $response = $this->post_vinnet_request(str_replace('"', '', $url) . '/payservice', $token, $postData);
 
             Log::info('Pay service response: ' . $response);
 
