@@ -103,36 +103,6 @@ return new class extends Migration
 
             $table->unique(['project_id', 'employee_id'], 'unique_project_employees');
         });
-
-        Schema::create('project_vinnet_tokens', function(Blueprint $table) {
-            $table->id();
-            $table->foreignId('project_id')->constrained('projects')->onDelete('cascade');
-            $table->string('shell_chainid');
-            $table->string('respondent_id');
-            $table->foreignId('employee_id')->constrained('employees')->onDelete('cascade');
-            $table->foreignId('province_id')->constrained('provinces')->onDelete('cascade');
-            $table->datetime('interview_start');
-            $table->datetime('interview_end'); 
-            $table->string('respondent_phone_number'); //Số điện thoại đáp viên, thu thập trong quá trình phỏng vấn
-            $table->string('phone_number'); //Số điện thoại của đáp viên, được đáp viên xác nhận khi nhận quà
-            $table->string('vinnet_token_requuid');
-            $table->string('vinnet_serviceitems_requuid')->nullable();
-            $table->string('vinnet_payservice_requuid')->nullable();
-            $table->string('vinnet_token'); //->unique(); 
-            $table->integer('vinnet_token_order');
-            $table->string('vinnet_token_status')->nullable(); 
-            $table->string('status')->nullable();
-            $table->double('total_amt')->default(0.0);
-            $table->double('commission')->default(0.0);
-            $table->double('discount')->default(0.0);
-            $table->double('payment_amt')->default(0.0);
-            $table->datetime('vinnet_invoice_date')->nullable();
-            $table->string('reject_message')->nullable();
-            $table->timestamps();
-
-            //Unique constraint for vinnet_token within each combination of internal_code, project_name, respondent_id
-            $table->unique(['project_id', 'respondent_id', 'vinnet_token_order'], 'unique_project_resp_id');
-        });
     }
 
     /**
@@ -147,6 +117,5 @@ return new class extends Migration
         Schema::dropIfExists('project_provinces');
         Schema::dropIfExists('project_permissions');
         Schema::dropIfExists('project_employees');
-        Schema::dropIfExists('project_vinnet_tokens');
     }
 };

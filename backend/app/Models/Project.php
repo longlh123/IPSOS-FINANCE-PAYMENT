@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Builder;
 use Ramsey\Uuid\Uuid;
 
 class Project extends Model
@@ -50,7 +51,7 @@ class Project extends Model
 
     public function projectProvinces()
     {
-        return $this->hasMany(ProjectProvince::class);
+        return $this->hasMany(ProjectProvince::class, 'project_id');
     }
 
     public function projectEmployees()
@@ -65,7 +66,7 @@ class Project extends Model
 
     public function projectRespondents()
     {
-        return $this->hasMany(ProjectRespondent::class);
+        return $this->hasMany(ProjectRespondent::class, 'project_id');
     }
     
     public function projectVinnetTokens()
@@ -73,8 +74,87 @@ class Project extends Model
         return $this->hasMany(ProjectVinnetToken::class);
     }
 
-    public function projectGotIts()
+    public function createProjectRespondents(array $data)
     {
-        return $this->hasMany(ProjectGotIt::class);
+        return $this->projectRespondents()->create($data);
     }
+
+    public static function findByInterviewURL($interviewURL): self
+    {
+        $project = self::with('projectDetails', 'projectRespondents')
+            ->where('internal_code', $interviewURL->internal_code)
+            ->where('project_name', $interviewURL->project_name)
+            ->whereHas('projectDetails', function(Builder $query) use ($interviewURL){
+                $query->where('remember_token', $interviewURL->remember_token);
+            })->first();
+
+        if(!$project){
+            Log::error(self::STATUS_PROJECT_NOT_FOUND);
+            throw new \Exception(self::STATUS_PROJECT_NOT_FOUND);
+        } else {
+            //Log::info('Status of project:' . $project->projectDetails->status);
+
+            if($project->projectDetails->status !== self::STATUS_ON_GOING){
+                Log::error(self::STATUS_PROJECT_SUSPENDED_OR_NOT_FOUND);
+                throw new \Exception(self::STATUS_PROJECT_SUSPENDED_OR_NOT_FOUND);
+            } 
+        }
+
+        return $project;
+    }
+
+    public function getPriceForProvince($interviewURL)
+    {
+        $price_item = $this->projectProvinces->firstWhere('province_id', $interviewURL->province_id);
+
+        if(!$price_item){
+            Log::error(Project::STATUS_PROJECT_NOT_SUITABLE_PRICES);
+            throw new \Exception(Project::STATUS_PROJECT_NOT_SUITABLE_PRICES.' Vui lòng liên hệ Admin để biết thêm thông tin.');
+        }
+
+        $price = 0;
+
+        switch($interviewURL->price_level){
+            case 'main':
+                $price = intval($price_item->price_main);
+                break;
+            case 'main_1':
+                $price = intval($price_item->price_main_1);
+                break;
+            case 'main_2':
+                $price = intval($price_item->price_main_2);
+                break;
+            case 'main_3':
+                $price = intval($price_item->price_main_3);
+                break;
+            case 'main_4':
+                $price = intval($price_item->price_main_4);
+                break;
+            case 'main_5':
+                $price = intval($price_item->price_main_5);
+                break;
+            case 'booster':
+                $price = intval($price_item->price_main);
+                break;
+            case 'booster_1':
+                $price = intval($price_item->price_main_1);
+                break;
+            case 'booster_2':
+                $price = intval($price_item->price_main_2);
+                break;
+            case 'booster_3':
+                $price = intval($price_item->price_main_3);
+                break;
+            case 'booster_4':
+                $price = intval($price_item->price_main_4);
+                break;
+            case 'booster_5':
+                $price = intval($price_item->price_main_5);
+                break;
+        }
+
+        return $price;
+    }
+
+    
 }

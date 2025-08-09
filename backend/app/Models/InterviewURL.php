@@ -16,6 +16,7 @@ class InterviewURL
     public $respondent_phone_number;
     public $province_id;
     public $price_level;
+    public $channel;
     public $remember_token;
 
     public function __construct(array $splittedURL)
@@ -30,7 +31,8 @@ class InterviewURL
         $this->respondent_phone_number = $splittedURL[7] ?? null;
         $this->province_id = $splittedURL[8] ?? null;
         $this->price_level = $splittedURL[9] ?? null;
-        $this->remember_token = implode('', array_slice($splittedURL, 10)) ?? null;
+        $this->channel = $splittedURL[10] ?? null;
+        $this->remember_token = implode('', array_slice($splittedURL, 11)) ?? null;
         
         // Validate the properties
         $this->validateProperties();
@@ -58,6 +60,7 @@ class InterviewURL
             'respondent_phone_number' => $this->respondent_phone_number,
             'province_id' => $this->province_id,
             'price_level' => $this->price_level,
+            'chancel' => $this->channel,
         ];
 
         foreach ($properties as $key => $value) {
@@ -80,6 +83,7 @@ class InterviewURL
             . ', Resp. Phone Number: ' . $this->respondent_phone_number
             . ', Province ID: ' . $this->province_id
             . ', Price Level: ' . $this->price_level
+            . ', Channel: ' . $this->channel
             . ', Token: ' . $this->remember_token);
     }
 
