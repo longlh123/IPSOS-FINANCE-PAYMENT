@@ -101,6 +101,7 @@ class ProjectRespondent extends Model
             throw new \Exception(self::ERROR_DUPLICATE_RESPONDENT);
         }
 
+        //Kiểm tra số điện thoại của đáp viên đã được thực hiện giao dịch trước đó hay chưa?
         $exists = $project->projectRespondents()
                         ->where(function($query) use ($interviewURL) {
                             $query->where('respondent_phone_number', $interviewURL->respondent_phone_number)
@@ -111,7 +112,23 @@ class ProjectRespondent extends Model
         {
             Log::error(self::ERROR_DUPLICATE_RESPONDENT . ' [Respondent Phone number' . $interviewURL->respondent_phone_number . ']');
             throw new \Exception(self::ERROR_DUPLICATE_RESPONDENT);
-        }
+        }               
+    }
+
+    public static function checkGiftPhoneNumber(Project $project, $phone_number)
+    {
+        //Kiểm tra số điện thoại đáp viên nhập đã được nhận quà trước đó chưa?
+        $exists = $project->projectRespondents()
+                        ->where(function($query) use ($phone_number) {
+                            $query->where('respondent_phone_number', $phone_number)
+                                ->orWhere('phone_number', $phone_number);
+                        })->exists();
+        
+        if($exists)
+        {
+            Log::error(self::ERROR_DUPLICATE_RESPONDENT . ' [Phone number: ' . $phone_number . ']');
+            throw new \Exception(self::ERROR_DUPLICATE_RESPONDENT);
+        } 
     }
     
     public function updateStatus($status): bool
