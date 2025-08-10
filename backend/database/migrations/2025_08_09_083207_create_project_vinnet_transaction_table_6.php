@@ -25,6 +25,7 @@ return new class extends Migration
             $table->double('commission')->default(0.0);
             $table->double('discount')->default(0.0);
             $table->double('payment_amt')->default(0.0);
+            $table->enum('recipient_type', ['TS', 'TT', 'NT'])->default('NT');
             $table->datetime('vinnet_invoice_date')->nullable();
             $table->timestamps();
 

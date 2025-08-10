@@ -23,6 +23,7 @@ class ProjectVinnetTransaction extends Model
         'commission',
         'discount',
         'payment_amt',
+        'recipient_type',
         'vinnet_invoice_date'
     ];
 
@@ -91,6 +92,7 @@ class ProjectVinnetTransaction extends Model
             $this->commission = $pay_item['commission'];
             $this->discount = $pay_item['discount'];
             $this->payment_amt = $pay_item['paymentAmt'];
+            $this->recipient_type = $pay_item['recipientType'];
         }
         
         $this->vinnet_token_status = $status;

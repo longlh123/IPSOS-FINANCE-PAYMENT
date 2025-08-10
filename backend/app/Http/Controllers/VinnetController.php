@@ -529,7 +529,8 @@ class VinnetController extends Controller
      */
     public function perform_multiple_transactions(StoreProjectVinnetTokenRequest $request)
     {
-        try{
+        try
+        {
             $validatedRequest = $request->validated();
 
             // Log::info('URL: ' . $validatedRequest['url']);
@@ -547,7 +548,11 @@ class VinnetController extends Controller
 
             $project = Project::findByInterviewURL($interviewURL);
             
+            //Kiểm tra đáp viên đã thực hiện giao dịch nhận quà trước đó hay chưa?
             ProjectRespondent::checkIfRespondentProcessed($project, $interviewURL);
+
+            //Kiểm tra số điện thoại đáp viên nhập đã được nhận quà trước đó hay chưa?
+            ProjectRespondent::checkGiftPhoneNumber($project, $validatedRequest['phone_number']);
 
             Log::info('Store the Project Respondent');
 
