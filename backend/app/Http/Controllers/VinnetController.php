@@ -639,21 +639,37 @@ class VinnetController extends Controller
                     'vinnet_token_status' => ProjectVinnetTransaction::STATUS_PENDING_VERIFICATION
                 ]);
 
-                $payItemData = $this->pay_service($validatedRequest['phone_number'], $validatedRequest['service_code'], $tokenData['token'], $selectedPrice);
+                $selectedServiceItem = null;
+
+                foreach($serviceItemsData['service_items'] as $serviceItem){
+                
+                    if($serviceItem['itemValue'] === $selectedPrice){
+                        $selectedServiceItem = $serviceItem;
+                        break;
+                    }
+                }
+
+                Log::info('Selected Service Item: '  . json_encode($selectedServiceItem));
+
+                $payItemData = $this->pay_service($validatedRequest['phone_number'], $validatedRequest['service_code'], $tokenData['token'], $selectedServiceItem);
 
                 if($payItemData['code'] == 0)
                 {
                     $statusPaymentServiceResult = $vinnetTransaction->updatePaymentServiceStatus($payItemData['reqUuid'], $payItemData['pay_item'], ProjectVinnetTransaction::STATUS_VERIFIED, $payItemData['message']);
+                    
+                    $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED);
                 }
                 else if ($payItemData['code'] == 99)
                 {
                     $statusPaymentServiceResult = $vinnetTransaction->updatePaymentServiceStatus($payItemData['reqUuid'], null, ProjectVinnetTransaction::STATUS_UNDETERMINED_TRANSACTION_RESULT, $payItemData['message']);
+                    $projectRespondent->updateStatus(ProjectVinnetTransaction::STATUS_ERROR);
 
                     throw new \Exception('Giao dịch bị quá tải, PVV vui lòng chờ 3-4 phút, sau đó kiểm tra đáp viên xem đã nhận được quà tặng chưa. Nếu chưa, vui lòng liên hệ Admin để kiểm tra.');
                 } 
                 else 
                 {
                     $statusPaymentServiceResult = $vinnetTransaction->updatePaymentServiceStatus($payItemData['reqUuid'], null, ProjectVinnetTransaction::STATUS_ERROR, $payItemData['message']);
+                    $projectRespondent->updateStatus(ProjectVinnetTransaction::STATUS_ERROR);
 
                     throw new \Exception($payItemData['message']);
                 }
