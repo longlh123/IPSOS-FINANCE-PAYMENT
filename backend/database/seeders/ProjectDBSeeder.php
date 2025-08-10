@@ -63,40 +63,40 @@ class ProjectDBSeeder extends Seeder
         //     ]);
         // }
 
-        // $projectPilot = Project::create([
-        //     'internal_code' => '2024-999',
-        //     'project_name' => 'F2F_TEST_2024',
-        // ]);
+        $projectPilot = Project::create([
+            'internal_code' => '2024-999',
+            'project_name' => 'F2F_TEST_2024',
+        ]);
 
-        // $projectPilot->projectDetails()->create([
-        //     'symphony' => '23089766',
-        //     'status' => Project::STATUS_ON_GOING,
-        //     'platform' => 'ifield',
-        //     'created_user_id' => 1,
-        //     'planned_field_start' => date('Y-m-d', strtotime('2024-08-01')),
-        //     'planned_field_end' => date('Y-m-d', strtotime('2024-12-31')),
-        // ]);
+        $projectPilot->projectDetails()->create([
+            'symphony' => '23089766',
+            'status' => Project::STATUS_ON_GOING,
+            'platform' => 'ifield',
+            'created_user_id' => 1,
+            'planned_field_start' => date('Y-m-d', strtotime('2025-08-01')),
+            'planned_field_end' => date('Y-m-d', strtotime('2025-12-31')),
+        ]);
 
-        // $projectPilot->projectPermissions()->create([
-        //     'user_id' => 1
-        // ]);
+        $projectPilot->projectPermissions()->create([
+            'user_id' => 1
+        ]);
 
-        // $provinces = [
-        //     [
-        //         'province_id' => 1,
-        //         'sample_size_main' => 100,
-        //         'price_main' => 10000
-        //     ],
-        //     [
-        //         'province_id' => 2,
-        //         'sample_size_main' => 100,
-        //         'price_main' => 10000
-        //     ],
-        // ];
+        $provinces = [
+            [
+                'province_id' => 1,
+                'sample_size_main' => 100,
+                'price_main' => 10000
+            ],
+            [
+                'province_id' => 2,
+                'sample_size_main' => 100,
+                'price_main' => 10000
+            ],
+        ];
 
-        // foreach($provinces as $province){
-        //     $projectPilot->projectProvinces()->create($province);
-        // };
+        foreach($provinces as $province){
+            $projectPilot->projectProvinces()->create($province);
+        };
 
         // $projectPilot = Project::create([
         //     'internal_code' => '2023-400',

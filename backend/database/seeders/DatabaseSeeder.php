@@ -21,10 +21,11 @@ class DatabaseSeeder extends Seeder
     {
 
         $this->call([
-            AdministrativeDivisions::class,
-            DepartmentDBSeeder::class,
-            CreateNewUserDBSeeder::class,
-            CreateNewProjectDBSeeder::class
+            // AdministrativeDivisions::class,
+            // DepartmentDBSeeder::class,
+            // CreateNewUserDBSeeder::class,
+            // CreateNewProjectDBSeeder::class
+            ProjectDBSeeder::class
         ]);
     }
 }
