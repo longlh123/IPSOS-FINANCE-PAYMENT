@@ -14,6 +14,10 @@ class ENVObject
     public $url;
     public $merchantInfo;
 
+    public $gotitEnvironment;
+    public $gotitUrl;
+    public $gotitInfo;
+
     public function __construct(){
         $this->env = $this->readEnvFile();
 
@@ -32,6 +36,24 @@ class ENVObject
             $this->merchantInfo = [
                 'VINNET_MERCHANT_CODE' => str_replace('"', '', $this->env['VINNET_MERCHANT_CODE_STAGING']),
                 'VINNET_MERCHANT_KEY' => str_replace('"', '', $this->env['VINNET_MERCHANT_KEY_STAGING'])
+            ];
+        }
+
+        $this->gotitEnvironment = $this->env['GOTIT_ENV'];
+
+        if($this->gotitEnvironment === 'production'){
+            $this->gotitUrl = $this->env['GOTIT_URL'];
+
+            $this->gotitInfo = [
+                'API_KEY' => str_replace('"', '', $this->env['GOTIT_API_KEY']),
+                'TRANSACTIONREFID_PREFIX' => str_replace('"', '', $this->env['GOTIT_TRANSACTIONREFID_PREFIX'])
+            ];
+        } else {
+            $this->gotitUrl = $this->env['GOTIT_URL_STAGING'];
+
+            $this->gotitInfo = [
+                'API_KEY' => str_replace('"', '', $this->env['GOTIT_API_KEY_STAGING']),
+                'TRANSACTIONREFID_PREFIX' => str_replace('"', '', $this->env['GOTIT_TRANSACTIONREFID_PREFIX_STAGING'])
             ];
         }
     }

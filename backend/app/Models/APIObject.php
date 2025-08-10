@@ -6,24 +6,128 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Database\Eloquent\Model;
 use Ramsey\Uuid\Uuid;
+use App\Models\ENVObject;
+use App\Models\ProjectGotIt;
 
 class APIObject
 {
-    private $url;
+    private $envObject;
     private $header;
+    private $transactionRefId;
+    private $signatureData;
+    private $signature;
     
-    public function __construct($url, $header){
-        $this->url = $url;
-        $this->header = $header;
+    public function __construct(){
+        $this->envObject = new ENVObject();
+        
+        $this->header = [
+            'X-GI-Authorization: ' . $this->envObject->gotitInfo['API_KEY'],
+            'Content-Type: application/json'
+        ];
+
+        Log::info('Gotit Enviroment: ' . $this->envObject->gotitEnvironment);
     }
 
-    public function get_request()
+    public function setTransactionRefId(){
+
+        // Log::info('Starting for generating signature');
+        $uuid = $this->generate_formated_uuid();
+
+        $this->transactionRefId = $this->envObject->gotitInfo['TRANSACTIONREFID_PREFIX'] ."_". $uuid;
+
+        Log::info('Transaction RefId: ' . $this->transactionRefId);
+    }
+
+    public function setSignatureData($kytu){
+
+        $this->signatureData = $this->envObject->gotitInfo['API_KEY'] . $kytu . $this->transactionRefId;
+
+        Log::info('Signature: ' . $this->signatureData);
+    }
+
+    public function getTransactionRefId(){
+
+        return $this->transactionRefId;
+    }
+
+    public function get_categories(){
+
+        $url = $this->envObject->gotitUrl . '/categories';
+
+        $responseData = $this->get_request($url);
+
+        return $responseData;
+    }
+
+    public function get_vouchers($voucher_link_type, $postData)
+    {
+        $url = $this->envObject->gotitUrl . '/vouchers/' . $voucher_link_type;
+
+        Log::info('URL: ' . $url);
+
+        $responseData = $this->post_request($url, $postData, true);
+        
+        if($responseData['statusCode'] !== 200){
+
+            throw new \Exception('Lỗi từ phía IPSOS. Chưa xác định được thông tin lỗi');
+        }
+
+        if(!empty($responseData['error']) || !empty($responseData['message']))
+        {
+            switch(intval($responseData['error']))
+            {
+                case 3:
+                    $status = ProjectGotIt::STATUS_NO_PERMISSION; 
+                    break;
+                case 2014:
+                    $status = ProjectGotIt::STATUS_PRODUCT_NOT_ALLOWED;
+                    break;
+                case 2015:
+                    $status = ProjectGotIt::STATUS_MIN_VOUCHER_E_VALUE; 
+                    break;
+                case 2008:
+                    $status = ProjectGotIt::STATUS_TRANSACTION_ALREADY_EXISTS; 
+                    break;
+                case 3003:
+                    $status = ProjectGotIt::STATUS_SIGNATURE_INCORRECT; 
+                    break;
+                default:
+                    $status = 'Lỗi chưa xác định.';
+                    break;
+            }
+
+            throw new \Exception($status);
+        }
+
+        $responseVouchersData = $responseData['data'];
+
+        foreach($responseVouchersData['vouchers'] as $index => &$voucher){
+
+            $decryptedVoucher = $this->decrypt_data($voucher['voucher_link']);
+            $voucher['voucher_link'] = $decryptedVoucher;
+        }
+
+        return $responseVouchersData;
+    }
+
+    public function send_sms($postData)
+    {
+        $url = $this->envObject->gotitUrl . '/vouchers/send/sms';
+
+        $responseData = $this->post_request($url, $postData);
+
+        Log::info('SMS Response: ' . json_encode($responseData));
+        
+        return $responseData;
+    }   
+
+    private function get_request($url)
     {
         try {
             // Initialize cURL session
-            $ch = curl_init($this->url);
+            $ch = curl_init($url);
             
-            Log::info("URL: " . $this->url);
+            Log::info("URL: " . $url);
 
             // Set cURL options
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -67,12 +171,14 @@ class APIObject
         }
     }
 
-    public function post_request($postData)
+    private function post_request($url, $postData)
     {
         try 
         {
             // Initialize cURL session
-            $ch = curl_init($this->url);
+            Log::info('URL: ' . $url);
+
+            $ch = curl_init($url);
             
             // Convert post data to JSON format
             if(empty($postData)){
@@ -90,9 +196,13 @@ class APIObject
 
             Log::info('Headers: ' . implode(',', $header));
             
-            curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonData);
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_HEADER => true, // <-- Bắt buộc để nhận header
+                CURLOPT_HTTPHEADER => $header,
+                CURLOPT_POST => true,
+                CURLOPT_POSTFIELDS => $jsonData,
+            ]);
 
             // Execute cURL session and get the response
             $response = curl_exec($ch);
@@ -105,33 +215,48 @@ class APIObject
             
             // Get HTTP status code
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            
-            // Close cURL session
-            curl_close($ch);
+            $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
 
-            // Handle response
-            if ($httpCode == 200) 
-            {
-                if($this->json_validator($response)){
-                    $responseData = json_decode($response, true);
-                } else {
-                    $responseData = $response;
+            // Tách phần header và body
+            $headerText = substr($response, 0, $headerSize);
+            $bodyData = substr($response, $headerSize);
+
+            Log::info("Header: " . $headerText);
+            Log::info("Body: " . $bodyData);
+
+            // Parse header thành mảng
+            $headers = [];
+            foreach (explode("\r\n", trim($headerText)) as $line) {
+                if (strpos($line, ':') !== false) {
+                    list($key, $value) = explode(': ', $line, 2);
+                    $headers[$key] = $value;
                 }
-
-                return $responseData;
-                
-                // $verify_signature = $this->verify_signature($responseData['reqUuid'] . $responseData['resCode'] . $responseData['resMesg'] . $responseData['resData'], $responseData['sign']);
-
-                // if($verify_signature){
-                //     Log::info('Response data: ' . json_encode($responseData));
-                //     return json_encode($responseData);
-                // } else {
-                //     Log::info('Request failed with invalid signature');
-                //     throw new Exception('Request failed with invalid signature');
-                // }
-            } else {
-                throw new \Exception('Request failed with HTTP code ' . $httpCode);
             }
+
+            // ✅ Lấy signature nếu có
+            $gtsignature = $headers['gt-signature'] ?? null;
+            
+            if($this->verify_signature($bodyData, $gtsignature)){
+                // Close cURL session
+                curl_close($ch);
+
+                // Handle response
+                if ($httpCode == 200) 
+                {
+                    if($this->json_validator($bodyData)){
+                        $responseData = json_decode($bodyData, true);
+                    } else {
+                        $responseData = $bodyData;
+                    }
+                    
+                    return $responseData;
+                } else {
+                    throw new \Exception('Request failed with HTTP code ' . $httpCode);
+                }
+            } else {
+                throw new \Exception('Signature incorrect.');
+            }
+            
         } catch (Exception $e) {
             // Log the exception message
             Log::error('POST request failed: ' . $e->getMessage());
@@ -149,23 +274,23 @@ class APIObject
         return false; 
     } 
 
-    public function generate_formated_uuid()
+    private function generate_formated_uuid()
     {
         // Generate a UUID using Laravel's Str::uuid() method
         $uuid = Uuid::uuid4()->toString();
         return $uuid;
     }
 
-    public function generate_signature($data)
+    public function generate_signature($kytu)
     {
-        try 
-        {
-            // Log::info('Starting for generating signature');
+        try {
+            $this->setTransactionRefId();
+            $this->setSignatureData($kytu);
 
-            // Log::info('Data to generate Signature: ' . $data);
-
+            Log::info('Data to generate Signature: ' . $this->signatureData);
+            
             // Load the public key from the file
-            $privateKeyPath = storage_path('keys/gotit/private_key.pem');
+            $privateKeyPath = storage_path('keys/gotit/' . $this->envObject->environment . '/private_key_pkcs1.pem');
             $privateKey = file_get_contents($privateKeyPath);
 
             // Check if the private key was successfully loaded
@@ -184,7 +309,7 @@ class APIObject
 
             // Create a signature
             $signature = '';
-            $success = openssl_sign($data, $signature, $privateKeyId, OPENSSL_ALGO_SHA256);
+            $success = openssl_sign($this->signatureData, $signature, $privateKeyId, OPENSSL_ALGO_SHA256);
 
             // Free the private key resource
             openssl_free_key($privateKeyId);
@@ -194,19 +319,158 @@ class APIObject
                 throw new Exception('Failed to sign data');
             }
 
-            Log::error('Signature: '. $signature);
-
             // Encode the signature to base64
             $encodedSignature = base64_encode($signature);
             
             Log::info('Encoded signature: '. $encodedSignature);
 
-            //Log::info('The end for generating signature');
-
             return $encodedSignature;
         } catch (Exception $e) {
             // Log the exception message
             Log::error('Signature generation failed: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
+     * Verify the given signature with the data using the public key.
+     *
+     * @param string $data
+     * @param string $signature
+     * 
+     * @return bool
+     */
+    private function verify_signature($responseData, $signature)
+    {
+        try {
+            // Load the public key from the file
+            $publicKey = file_get_contents(storage_path('keys/gotit/' . $this->envObject->environment . '/public_key_gotit.pem'));
+
+            // Check if the public key was successfully loaded
+            if ($publicKey === false) {
+                throw new Exception('Failed to load public key');
+            }
+
+            // Get a public key resource
+            $pubKeyId = openssl_get_publickey($publicKey);
+
+            // Check if the key resource is valid
+            if (!$pubKeyId) {
+                throw new Exception('Public key is not valid');
+            }
+
+            // Decode the hex signature to binary
+            $decoded_signature = base64_decode($signature);
+
+            // Check if the signature was successfully decoded
+            if ($decoded_signature === false) {
+                throw new Exception('Failed to decode signature');
+            }
+            
+            // Log the data and signature for debugging purposes
+            Log::info('Data to verify: ' . $responseData);
+            Log::info('Signature to verify (base64): ' . $signature);
+            Log::info('Decoded signature (re-encoded for check): ' . base64_encode($decoded_signature));
+
+            Log::info('Signature binary length: ' . strlen($decoded_signature));
+            
+            // Verify the signature using SHA256 with RSA
+            $verify = openssl_verify($responseData, $decoded_signature, $pubKeyId, OPENSSL_ALGO_SHA256);
+            
+            Log::info('verify = ' . $verify);
+
+            // Free the key resource
+            openssl_free_key($pubKeyId);
+
+            // Check if the verification process encountered an error
+            if ($verify !== 1) {
+                throw new \Exception('An error occurred during signature verification: ' . openssl_error_string());
+            }
+            
+            // Return the verification result
+            Log::info('verify = 1');
+
+            return $verify === 1;
+        } catch(Exception $e) {
+            // Log the exception message
+            Log::error('Signature verification failed: ' . $e->getMessage());
+
+            // Rethrow the exception to be handled by the calling code
+            throw $e;
+        }
+    }
+
+    /**
+     * Encrypt data
+     * 
+     * @param $encrypted_data
+     * 
+     * @return string
+     * 
+     */
+    private function decrypt_data($encrypted_data)
+    {  
+        try{
+            // Log the encrypted data
+            // Log::info('Encrypted data: ' . $encrypted_data);
+            $privateKey = file_get_contents(storage_path('keys/gotit/' . $this->envObject->gotitEnvironment . '/private_key_pkcs1.pem'));
+
+            // Base64 decode the encrypted data
+            $decodedEncryptedData = base64_decode($encrypted_data);
+            
+            if ($decodedEncryptedData === false) {
+                Log::error('Base64 decoding failed');
+                throw new Exception('Base64 decoding failed');
+            }
+
+            // Log::info('Base64 decoding data: ' . $decodedEncryptedData);
+
+            // Decrypt the data
+            $decryptedData = '';
+            
+            $decryptionSuccess = openssl_private_decrypt($decodedEncryptedData, $decryptedData, $privateKey);
+            
+            if (!$decryptionSuccess) {
+                Log::error('Decryption failed');
+                throw new Exception('Decryption failed');
+            }
+
+            // Log::info('Data decryption successfully: ' . $decryptedData);
+
+            // Validate UTF-8 encoding
+            if (!mb_check_encoding($decryptedData, 'UTF-8')) {
+                // Clean invalid characters
+                $decryptedData = mb_convert_encoding($decryptedData, 'UTF-8', 'UTF-8');
+            }
+
+            // Clean the decrypted data (remove control characters)
+            $cleanData = preg_replace('/[[:cntrl:]]/', '', $decryptedData);
+
+            // Try removing additional characters (adjust based on your needs)
+            $cleanData = trim($cleanData);
+            
+            // Log::info('Clean data: ' . $cleanData);
+            
+            // Decode the clean data as JSON
+            $decodedData = json_decode($cleanData, true);
+
+            // Log the JSON decoded data
+            //Log::info('JSON validator: ' . json_encode($decodedData));
+            
+            // Check if 'newMerchantKey' is present
+            $decodedData = $cleanData;
+            
+            if ($decodedData === null && json_last_error() !== JSON_ERROR_NONE) {
+                Log::error('Malformed JSON data: ' . json_last_error_msg());
+                throw new Exception('Malformed JSON data: ' . json_last_error_msg());
+            }
+            
+            Log::info('Result data decryption: ' . $decodedData);
+            
+            return $decodedData;
+        } catch (Exception $e){
+            // Log the exception message
+            Log::error('Data decryption failed: ' . $e->getMessage());
 
             // Rethrow the exception to be handled by the calling code
             throw $e;

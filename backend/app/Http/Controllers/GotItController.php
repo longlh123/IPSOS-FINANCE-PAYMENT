@@ -10,24 +10,19 @@ use App\Http\Requests\StoreProjectGotItRequest;
 use App\Models\APIObject;
 use App\Models\InterviewURL;
 use App\Models\Project;
-use App\Models\ProjectGotIt;
+use App\Models\ProjectRespondent;
+use App\Models\ProjectGotItVoucherTransaction;
+use App\Models\ProjectGotItSMSTransaction;
 use App\Models\ENVObject;
 
 class GotItController extends Controller
 {
-    public function get_category(Request $request)
+    public function get_categories(Request $request)
     {
         try{
-            $envObject = new ENVObject();
+            $apiObject = new APIObject();
 
-            $header = [
-                'X-GI-Authorization: ' . $envObject->env['GOTIT_API_KEY'],
-                'Content-Type: application/json'
-            ];
-
-            $apiObject = new APIObject('https://api-biz-stg.gotit.vn/api/v3.0/categories', $header);
-
-            $responseData = $apiObject->get_request();
+            $responseData = $apiObject->get_categories();
 
             return response()->json($responseData);
 
@@ -37,63 +32,6 @@ class GotItController extends Controller
                 'status_code' => Response::HTTP_BAD_REQUEST, //400
                 'message' => $e->getMessage(),
             ], Response::HTTP_BAD_REQUEST);
-        }
-    }
-
-    public function check_transaction($interviewURL)
-    {
-        try
-        {
-            Log::info('Step 1: Check the project information:');
-
-            $projectQuery = Project::with('projectDetails', 'projectGotIts')
-                ->where('internal_code', $interviewURL->internal_code)
-                ->where('project_name', $interviewURL->project_name)
-                ->whereHas('projectDetails', function(Builder $query) use ($interviewURL){
-                    $query->where('remember_token', $interviewURL->remember_token);
-                });
-            
-            $project = $projectQuery->first();
-            
-            if(!$project){
-                Log::error(Project::STATUS_PROJECT_NOT_FOUND);
-                throw new \Exception(Project::STATUS_PROJECT_NOT_FOUND);
-            } else {
-                //Log::info('Status of project:' . $project->projectDetails->status);
-
-                if($project->projectDetails->status !== Project::STATUS_ON_GOING){
-                    Log::error(Project::STATUS_PROJECT_SUSPENDED_OR_NOT_FOUND);
-                    throw new \Exception(Project::STATUS_PROJECT_SUSPENDED_OR_NOT_FOUND);
-                } 
-            }
-
-            Log::info('Step 2: Check the respondent information:');
-
-            $respondentProcessed = $project->projectGotIts()->where('respondent_id', $interviewURL->respondent_id)->exists();
-            
-            if($respondentProcessed){
-                Log::error(ProjectGotIt::STATUS_TRANSACTION_ALREADY_EXISTS.' [Respondent ID]');
-                throw new \Exception(ProjectGotIt::STATUS_TRANSACTION_ALREADY_EXISTS);
-            }
-
-            Log::info('Step 3: Check respondent phone number information:');
-
-            $respPhoneNumberProcessed = $project->projectGotIts()
-                ->where(function($query) use ($interviewURL) {
-                    $query->where('respondent_phone_number', $interviewURL->respondent_phone_number)
-                          ->orWhere('phone_number', $interviewURL->respondent_phone_number);
-                })->exists();
-            
-            if($respPhoneNumberProcessed){
-                Log::error(ProjectGotIt::STATUS_TRANSACTION_ALREADY_EXISTS.' [Respondent Phone number]');
-                throw new \Exception(ProjectGotIt::STATUS_TRANSACTION_ALREADY_EXISTS);
-            }
-
-            return true;
-        }
-        catch(\Exception $e)
-        {
-            throw $e;
         }
     }
 
@@ -120,51 +58,29 @@ class GotItController extends Controller
 
             $interviewURL = new InterviewURL($splittedURL);
 
-            if($this->check_transaction($interviewURL))
-            {   
-                $projectQuery = Project::with('projectDetails', 'projectProvinces')
-                    ->where('internal_code', $interviewURL->internal_code)
-                    ->where('project_name', $interviewURL->project_name)
-                    ->whereHas('projectDetails', function(Builder $query) use ($interviewURL){
-                        $query->where('remember_token', $interviewURL->remember_token);
-                    });
+            $project = Project::findByInterviewURL($interviewURL);
 
-                $project = $projectQuery->first();
-                
-                //Create the respondent with validated data
-                $projectGotIt = ProjectGotIt::create([
-                    'project_id' => $project->id,
-                    'shell_chainid' => $interviewURL->shell_chainid,
-                    'respondent_id' => $interviewURL->respondent_id,
-                    'employee_id' => $interviewURL->employee->id,
-                    'province_id' => $interviewURL->province_id,
-                    'interview_start' => $interviewURL->interview_start,
-                    'interview_end' => $interviewURL->interview_end,
-                    'respondent_phone_number' => $interviewURL->respondent_phone_number,
-                    'phone_number' => $interviewURL->respondent_phone_number,
-                    'status' => Project::STATUS_REJECT_REASON_PHONE_NUMBER,
-                    'reject_message' => $reject_message,
-                ]);
-    
-                // Check if the record was successfully created
-                if (!$projectGotIt) {
-                    throw new \Exception('Failed to create the transaction record.');
-                }
+            $projectRespondent = $project->createProjectRespondents([
+                'project_id' => $project->id,
+                'shell_chainid' => $interviewURL->shell_chainid,
+                'respondent_id' => $interviewURL->respondent_id,
+                'employee_id' => $interviewURL->employee->id,
+                'province_id' => $interviewURL->province_id,
+                'interview_start' => $interviewURL->interview_start,
+                'interview_end' => $interviewURL->interview_end,
+                'respondent_phone_number' => $interviewURL->respondent_phone_number,
+                'phone_number' => $interviewURL->respondent_phone_number,
+                'price_level' => $interviewURL->price_level,
+                'channel' => $interviewURL->channel,
+                'status' => ProjectRespondent::STATUS_RESPONDENT_REJECTED,
+                'reject_message' => $reject_message
+            ]);
 
-                Log::info('Token stored successfully', ['internal_code' => $interviewURL->internal_code, 'respondent_id' => $interviewURL->respondent_id, 'reject_message' => $reject_message]);
-
-                return response()->json([
-                    'status_code' => Response::HTTP_OK, //200
-                    'message' => ProjectGotIt::ERROR_TRANSACTION_DENIED_FEEDBACK_RECORDED
-                ], Response::HTTP_OK);
+            if (!$projectRespondent) {
+                throw new \Exception(ProjectRespondent::ERROR_CANNOT_STORE_RESPONDENT);
             }
-            else
-            {   
-                return response()->json([
-                    'status_code' => Response::HTTP_BAD_REQUEST, //200
-                    'message' => 'Unsuccessful request.'
-                ], Response::HTTP_BAD_REQUEST);
-            }
+
+            Log::info('Transaction stored successfully', ['internal_code' => $interviewURL->internal_code, 'respondent_id' => $interviewURL->respondent_id, 'reject_message' => $reject_message]);
         }
         catch(\Exception $e)
         {
@@ -186,121 +102,98 @@ class GotItController extends Controller
 
             $splittedURL = explode("/", $decodedURL);
 
-            //Log::info('URL Splitted: ' . json_encode($splittedURL));
-            
             $interviewURL = new InterviewURL($splittedURL);
 
-            if($this->check_transaction($interviewURL))
-            {
-                $projectQuery = Project::with('projectDetails', 'projectGotIts')
-                    ->where('internal_code', $interviewURL->internal_code)
-                    ->where('project_name', $interviewURL->project_name)
-                    ->whereHas('projectDetails', function(Builder $query) use ($interviewURL){
-                        $query->where('remember_token', $interviewURL->remember_token);
-                    });
-                
-                $project = $projectQuery->first();
-                
-                if(!$project){
-                    Log::error(Project::STATUS_PROJECT_NOT_FOUND);
-                    throw new \Exception(Project::STATUS_PROJECT_NOT_FOUND);
-                } else {
-                    //Log::info('Status of project:' . $project->projectDetails->status);
+            Log::info('Project respondent');
 
-                    if($project->projectDetails->status !== Project::STATUS_ON_GOING){
-                        Log::error(Project::STATUS_PROJECT_SUSPENDED_OR_NOT_FOUND);
-                        throw new \Exception(Project::STATUS_PROJECT_SUSPENDED_OR_NOT_FOUND);
-                    } 
-                }
+            $project = Project::findByInterviewURL($interviewURL);
+            
+            ProjectRespondent::checkIfRespondentProcessed($project, $interviewURL);
 
-                Log::info('Step 4: Check phone number information:');
+            Log::info('Store the Project Respondent');
 
-                $phoneNumberProcessed = $project->projectGotIts()
-                    ->where(function($query) use ($validatedRequest) {
-                        $query->where('respondent_phone_number', $validatedRequest['phone_number'])
-                            ->orWhere('phone_number', $validatedRequest['phone_number']);
-                    })->exists();
-                
-                if($phoneNumberProcessed){
-                    Log::error(ProjectGotIt::STATUS_TRANSACTION_ALREADY_EXISTS.' [Phone number]');
-                    throw new \Exception(ProjectGotIt::STATUS_TRANSACTION_ALREADY_EXISTS);
-                }
+            $projectRespondent = $project->createProjectRespondents([
+                'project_id' => $project->id,
+                'shell_chainid' => $interviewURL->shell_chainid,
+                'respondent_id' => $interviewURL->respondent_id,
+                'employee_id' => $interviewURL->employee->id,
+                'province_id' => $interviewURL->province_id,
+                'interview_start' => $interviewURL->interview_start,
+                'interview_end' => $interviewURL->interview_end,
+                'respondent_phone_number' => $interviewURL->respondent_phone_number,
+                'phone_number' => $validatedRequest['phone_number'],
+                'price_level' => $interviewURL->price_level,
+                'channel' => $interviewURL->channel,
+                'status' => ProjectRespondent::STATUS_RESPONDENT_PENDING
+            ]);
 
-                Log::info('Step 5: Find price item');
+            Log::info('Transaction stored successfully', ['internal_code' => $interviewURL->internal_code, 'respondent_id' => $interviewURL->respondent_id]);
 
-                $price_item = $project->projectProvinces->firstWhere('province_id', $interviewURL->province_id);
+            if (!$projectRespondent) {
+                throw new \Exception(ProjectRespondent::ERROR_CANNOT_STORE_RESPONDENT);
+            }
+            
+            Log::info('Project respondent: ' . $projectRespondent);
 
-                if(!$price_item){
-                    Log::error(Project::STATUS_PROJECT_NOT_SUITABLE_PRICES);
-                    throw new \Exception(Project::STATUS_PROJECT_NOT_SUITABLE_PRICES.' Vui lòng liên hệ Admin để biết thêm thông tin.');
-                }
+            Log::info('Find the price item by province');
+            
+            $price = $project->getPriceForProvince($interviewURL);
+ 
+            Log::info('Price: ' . intval($price));
 
-                $price = 0;
-
-                switch($interviewURL->price_level){
-                    case 'main':
-                        $price = intval($price_item->price_main);
-                        break;
-                    case 'main_1':
-                        $price = intval($price_item->price_main_1);
-                        break;
-                    case 'main_2':
-                        $price = intval($price_item->price_main_2);
-                        break;
-                    case 'main_3':
-                        $price = intval($price_item->price_main_3);
-                        break;
-                    case 'main_4':
-                        $price = intval($price_item->price_main_4);
-                        break;
-                    case 'main_5':
-                        $price = intval($price_item->price_main_5);
-                        break;
-                    case 'boosters':
-                        $price = intval($price_item->price_main);
-                        break;
-                    case 'boosters_1':
-                        $price = intval($price_item->price_main_1);
-                        break;
-                    case 'boosters_2':
-                        $price = intval($price_item->price_main_2);
-                        break;
-                    case 'boosters_3':
-                        $price = intval($price_item->price_main_3);
-                        break;
-                    case 'boosters_4':
-                        $price = intval($price_item->price_main_4);
-                        break;
-                    case 'boosters_5':
-                        $price = intval($price_item->price_main_5);
-                        break;
-                }
-
-                Log::info('Price: ' . intval($price));
-
-                if($price >= 50000)
-                {
-                    $responseData = $this->post_voucher('e', $interviewURL, $validatedRequest['phone_number'], $price);
-                } 
-                else 
-                {
-                    $responseData = $this->post_voucher('v', $interviewURL, $validatedRequest['phone_number'], $price);
-                }
-                
-                //return response()->json($responseData);
-
-                return response()->json([
-                    'status_code' => Response::HTTP_OK, //200
-                    'message' => ProjectGotIt::STATUS_SUCCESS,
-                ]);
-            }            
+            if($price >= 50000)
+            { 
+                $voucher_link_type = 'e';
+            }
             else 
             {
-                return response()->json([
-                    'status_code' => Response::HTTP_BAD_REQUEST, //400
-                    'message' => ProjectGotIt::STATUS_ERROR
-                ]);
+                $voucher_link_type = 'v';
             }
+
+            Log::info('Generate a voucher request');
+            $apiObject = new APIObject();
+            
+            $voucherRequest = $this->generate_voucher_request($apiObject, $voucher_link_type, $interviewURL, $validatedRequest['phone_number'], $price);
+            
+            $voucherTransaction = $projectRespondent->createGotitVoucherTransactions([
+                'project_respondent_id' => $projectRespondent->id,
+                'transaction_ref_id' => $voucherRequest['transactionRefId'],
+                'expiry_date' => $voucherRequest['expiryDate'],
+                'order_name' => $voucherRequest['orderName'],
+                'amount' => $voucherRequest['amount'],
+                'voucher_status' => ProjectGotItVoucherTransaction::STATUS_PENDING_VERIFICATION
+            ]);
+
+            $updateRespondentStatus = $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_WAITING_FOR_GIFT);
+            
+            Log::info('Call API');
+
+            $responsedVoucher = $apiObject->get_vouchers($voucher_link_type, $voucherRequest);
+
+            Log::info('Responsed Voucher: ' . json_encode($responsedVoucher));
+
+            $updateVoucherTransactionStatus = $voucherTransaction->updateGotitVoucherTransaction($responsedVoucher['vouchers'][0]);
+
+            Log::info('Generate a SMS request');
+
+            $smsRequest = $this->generate_sms_request($apiObject, $voucherTransaction->voucher_link, $validatedRequest['phone_number']);
+
+            $smsTransaction = $voucherTransaction->createGotitSMSTransaction([
+                'voucher_transaction_id' => $voucherTransaction->id,
+                'transaction_ref_id' => $apiObject->getTransactionRefId(),
+                'sms_status' => ProjectGotItSMSTransaction::STATUS_SMS_PENDING
+            ]);
+
+            $updateRespondentStatus = $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_DISPATCHED);
+            
+            $responseSMSData = $apiObject->send_sms($smsRequest);
+
+
+            return response()->json([
+                'status_code' => Response::HTTP_OK, //200
+                'message' => ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED,
+            ]);
+            
         } catch (\Exception $e) {
             Log::error($e->getMessage());
             
@@ -310,369 +203,99 @@ class GotItController extends Controller
             ]);
         }
     }
-    
-    private function post_voucher($voucher_link_type, $interviewURL, $phone_number, $price)
+
+    private function generate_voucher_request($apiObject, $voucher_link_type, $interviewURL, $phone_number, $price)
     {
-        try
-        {
-            $envObject = new ENVObject();
+        $signature = $apiObject->generate_signature("|");
+        
+        $time=strtotime(date('Y-m-d'));
+        $month = date("F", $time);
+        $year = date("Y", $time);
 
-            $header = [
-                'X-GI-Authorization: ' . $envObject->env['GOTIT_API_KEY'],
-                'Content-Type: application/json'
-            ];
-
-            $apiObject = new APIObject('https://api-biz-stg.gotit.vn/api/v3.0/vouchers/'.$voucher_link_type, $header);
-
-            $uuid = $apiObject->generate_formated_uuid();
-
-            $transactionRefId = $envObject->env['GOTIT_TRANSACTIONREFID_PREFIX'] ."_". $uuid;
-
-            Log::info('Transaction RefId: ' . $transactionRefId);
-
-            //[API Key]|transactionRefId
-            $signatureData = $envObject->env['GOTIT_API_KEY'] . "|" . $transactionRefId;
-
-            $signature = $apiObject->generate_signature($signatureData);
-            
-            $time=strtotime(date('Y-m-d'));
-            $month = date("F", $time);
-            $year = date("Y", $time);
-
-            if ($month < 6){
-                $month = 12;
-            } else {
-                $month = 6;
-                $year += 1;
-            }
-            
-            $expiryDate =  new \DateTime("{$year}-{$month}-01");
-            
-            //"productId"  => "",
-
-            $dataRequest = [
-                "isConvertToCoverLink" => 0,
-                "orderName" => 'IPSOS Promotion - ' . date("M Y"),
-                "expiryDate" => $expiryDate->format('Y-m-d'),
-                "receiver_name" => 'IPSOS Promotion - ' . date("M Y"),
-                "transactionRefId" => $transactionRefId,
-                "use_otp" => 1,
-                "otp_type" => 1,    
-                "phone" => $phone_number,
-            ];
-
-            if($voucher_link_type === 'e')
-            {
-                $dataRequest["amount"] = $price;
-                $dataRequest["signature"] = $signature;
-            } 
-
-            if($voucher_link_type === 'v')
-            {
-                $dataRequest['quantity'] = 1;
-                $dataRequest['productId'] = 1541;
-
-                switch($price)
-                {
-                    case 10000:
-                        $dataRequest['productPriceId'] = 17931;
-                        break;
-                    case 20000:
-                        $dataRequest['productPriceId'] = 3090;
-                        break;
-                    case 30000:
-                        $dataRequest['productPriceId'] = 3555;
-                        break;
-                    case 40000:
-                        $dataRequest['productPriceId'] = 17940;
-                        break;
-                }
-            }
-
-            Log::info('Step 5: Store the information of transaction');
-            
-            $this->store_gotit_transaction($interviewURL, $dataRequest, ProjectGotIt::STATUS_PENDING_VERIFICATION);
-
-            Log::info('Step 6: Call API');
-
-            $responseData = $apiObject->post_request($dataRequest);
-
-            Log::info($responseData);
-            
-            if($responseData['statusCode'] === 200)
-            {
-                if(strlen($responseData['error']) == 0 && strlen($responseData['message']) == 0)
-                {
-                    Log::info('Step 7: Update the information of voucher');
-
-                    if($voucher_link_type == 'v')
-                    {
-                        $resultUpdateVoucherData = $this->update_gotit_voucher_link_v($interviewURL, $phone_number, $responseData['data']);
-                    }   
-                    else 
-                    {
-                        $resultUpdateVoucherData = $this->update_gotit_voucher_link_e($interviewURL, $phone_number, $responseData['data']);
-                    }
-                    
-                    if($resultUpdateVoucherData)
-                    {
-                        try
-                        {
-                            Log::info('Step 8: Send SMS');
-                            $voucher_link = ($voucher_link_type == 'v') ? $responseData['data'][0]['vouchers'][0]['voucherLink'] : $responseData['data'][0]['vouchers'][0]['voucher_link'];
-
-                            $responseSMSData = $this->send_sms($voucher_link, $phone_number);
-                            
-                            if($responseSMSData['statusCode'] === 200)
-                            {
-                                $resultUpdateStatusSMSData = $this->update_status_of_gotit_sms_sending($interviewURL, $dataRequest, ProjectGotIt::STATUS_SEND_SMS_SUCCESS);
-
-                                if($resultUpdateStatusSMSData)
-                                {
-                                    Log::info('Step 9: Update the status of transaction');
-
-                                    $resultUpdateStatusTransactionData = $this->update_status_of_gotit_transaction($interviewURL, $dataRequest, ProjectGotIt::STATUS_SUCCESS);
-
-                                    return true;
-                                }
-                            }
-                            else 
-                            {
-                                $this->update_status_of_gotit_sms_sending($interviewURL, $dataRequest, ProjectGotIt::STATUS_SEND_SMS_FAILED);
-                                throw new \Exception($responseSMSData['message']);
-                            }
-                        }
-                        catch(\Exception $e)
-                        {
-                            $this->update_status_of_gotit_sms_sending($interviewURL, $dataRequest, $e->getMessage());
-                            throw new \Exception($e->getMessage());
-                        }
-                    }
-                } 
-                else 
-                {
-                    $status = '';
-
-                    switch(intval($responseData['error']))
-                    {
-                        case 3:
-                            $status = ProjectGotIt::STATUS_NO_PERMISSION; 
-                            break;
-                        case 2014:
-                            $status = ProjectGotIt::STATUS_PRODUCT_NOT_ALLOWED;
-                            break;
-                        case 2015:
-                            $status = ProjectGotIt::STATUS_MIN_VOUCHER_E_VALUE; 
-                            break;
-                        case 2008:
-                            $status = ProjectGotIt::STATUS_TRANSACTION_ALREADY_EXISTS; 
-                            break;
-                    }
-
-                    $this->update_status_of_gotit_transaction($interviewURL, $dataRequest, $status);
-                    throw new \Exception($status);
-                }
-            } 
-            else 
-            {
-                $this->update_status_of_gotit_transaction($interviewURL, $responseData, 'Lỗi từ phía IPSOS. Chưa xác định được thông tin lỗi');
-                throw new \Exception('Lỗi từ phía IPSOS. Chưa xác định được thông tin lỗi');
-            }
-        } catch (\Exception $e) {
-            Log::error($e->getMessage());
-            throw new \Exception($e->getMessage());
+        if ($month < 6){
+            $month = 12;
+        } else {
+            $month = 6;
+            $year += 1;
         }
-    }
+        
+        $expiryDate =  new \DateTime("{$year}-{$month}-01");
+        $orderName = 'IPSOS Promotion - ' . date("M Y");
 
-    private function send_sms($voucher_link, $phone_number)
-    {
-        try
+        $dataRequest = [
+            "isConvertToCoverLink" => 0,
+            "orderName" => $orderName,
+            "expiryDate" => $expiryDate->format('Y-m-d'),
+            "receiver_name" => $orderName,
+            "transactionRefId" => $apiObject->getTransactionRefId(),
+            "use_otp" => 1,
+            "otp_type" => 1,    
+            "phone" => $phone_number,
+        ];
+
+        if($voucher_link_type === 'e')
         {
-            $envObject = new ENVObject();
+            $dataRequest["amount"] = $price;
+            $dataRequest["signature"] = $signature;
+        } 
 
-            $header = [
-                'X-GI-Authorization: ' . $envObject->env['GOTIT_API_KEY'],
-                'Content-Type: application/json'
-            ];
-
-            $apiObject = new APIObject('https://api-biz-stg.gotit.vn/api/v3.0/vouchers/send/sms', $header);
-
-            $dataRequest = [
-                "voucherLinkCode" => substr($voucher_link, -8),
-                "phoneNo" => $phone_number,
-                "receiverNm" => "Got It",
-                "senderNm" => "Got It"
-            ];
-            
-            $responseData = $apiObject->post_request($dataRequest);
-
-            Log::info(json_encode($responseData));
-
-            return $responseData;
-        }
-        catch(\Exception $e)
+        if($voucher_link_type === 'v')
         {
-            Log::error($e->getMessage());
-            throw new \Exception(ProjectGotIt::STATUS_SEND_SMS_FAILED);
+            $dataRequest['quantity'] = 1;
+            $dataRequest['productId'] = 1541;
+
+            switch($price)
+            {
+                case 10000:
+                    $dataRequest['productPriceId'] = 17931;
+                    break;
+                case 20000:
+                    $dataRequest['productPriceId'] = 3090;
+                    break;
+                case 30000:
+                    $dataRequest['productPriceId'] = 3555;
+                    break;
+                case 40000:
+                    $dataRequest['productPriceId'] = 17940;
+                    break;
+                default:
+                    throw new \Exception('Giá trị $price không hợp lệ cho productPriceId');
+            }
         }
+
+        Log::info('Voucher Request: ' . json_encode($dataRequest));
+
+        return $dataRequest;
     }
     
-    public function store_gotit_transaction($interviewURL, $voucherInfo, $status)
+    private function generate_sms_request($apiObject, $voucher_link, $phone_number)
     {
-        try
-        {
-            $projectQuery = Project::with('projectDetails', 'projectGotIts')
-                ->where('internal_code', $interviewURL->internal_code)
-                ->where('project_name', $interviewURL->project_name)
-                ->whereHas('projectDetails', function(Builder $query) use ($interviewURL){
-                    $query->where('remember_token', $interviewURL->remember_token);
-                });
-            
-            $project = $projectQuery->first();
-            
-            $price = 0;
+        $signature = $apiObject->generate_signature("|||");
 
-            if(isset($voucherInfo['amount']))
-            {
-                $price = $voucherInfo['amount'];
-            }
-            else 
-            {
-                switch($voucherInfo['productPriceId'])
-                {
-                    case 17931:
-                        $price = 10000;
-                        break;
-                    case 3090:
-                        $price = 20000;
-                        break;
-                    case 3555:
-                        $price = 30000;
-                        break;
-                    case 17940:
-                        $price = 40000;
-                        break;
-                }
-            }
+        $dataRequest = [
+            "voucherLinkCode" => substr($voucher_link, -8),
+            "phoneNo" => $phone_number,
+            "receiverNm" => "Got It",
+            "senderNm" => "Got It",
+            "signature" => $signature
+        ];
 
-            //Create the respondent with validated data
-            $projectGotIt = ProjectGotIt::create([
-                'project_id' => $project->id,
-                'shell_chainid' => $interviewURL->shell_chainid,
-                'respondent_id' => $interviewURL->respondent_id,
-                'employee_id' => $interviewURL->employee->id,
-                'province_id' => $interviewURL->province_id,
-                'interview_start' => $interviewURL->interview_start,
-                'interview_end' => $interviewURL->interview_end,
-                'respondent_phone_number' => $interviewURL->respondent_phone_number,
-                'phone_number' => $voucherInfo['phone'],
-                'transaction_ref_id' => $voucherInfo['transactionRefId'],
-                'expiry_date' => $voucherInfo['expiryDate'],
-                'order_name' => $voucherInfo['orderName'],
-                'amount' => $price,
-                'status' => $status
-            ]);
-            
-            // Check if the record was successfully created
-            if (!$projectGotIt) {
-                throw new \Exception('Failed to create the transaction record.');
-            }
+        Log::info('SMS Request: ' . json_encode($dataRequest));
 
-            Log::info('Transaction stored successfully', ['internal_code' => $interviewURL->internal_code, 'respondent_id' => $interviewURL->respondent_id]);
-            return true;
-        } catch (\Exception $e) {
-            // Log the exception message
-            Log::error('The status of transaction updating failed: ' . $e->getMessage());
-            throw new \Exception('The status of transaction updating failed: ' . $e->getMessage());
-        }
+        return $dataRequest;
     }
-    
-    public function update_status_of_gotit_transaction($interviewURL, $voucherInfo, $status)
+
+    private function update_gotit_voucher_link_v($interviewURL, $phone_number, $transactionRefId, $voucherData)
     {
         try
         {
             //Find the record and update the status
-            $query = ProjectGotIt::query();
-            $query->where('shell_chainid', $interviewURL->shell_chainid);
-            $query->where('respondent_id', $interviewURL->respondent_id);
-            $query->where('respondent_phone_number', $interviewURL->respondent_phone_number);
-            $query->where('phone_number', $voucherInfo['phone']);
-            $query->where('transaction_ref_id', $voucherInfo['transactionRefId']);
-            $query->whereHas('project', function(Builder $query) use ($interviewURL){
-                $query->where('internal_code', $interviewURL->internal_code);
-                $query->where('project_name', $interviewURL->project_name);
-            });
-
-            $record = $query->first();
-
-            if(!$record){
-                Log::warning(ProjectGotIt::STATUS_TRANSACTION_NOT_EXISTS.': '.$voucherInfo[0]['transactionRefId']);
-                throw new \Exception(ProjectGotIt::STATUS_TRANSACTION_NOT_EXISTS.': '.$voucherInfo[0]['transactionRefId']);
-            }
-
-            //Update the status
-            $record->status = $status;
-
-            $record->save();
-
-            //Log::info('The status of transaction updating successful.');
-            return true;
-        } catch(\Exception $e){
-            // Log the exception message
-            Log::error('The status of transaction updating failed: ' . $e->getMessage());
-            throw new \Exception('The status of transaction updating failed: ' . $e->getMessage());
-        }
-    }
-
-    public function update_status_of_gotit_sms_sending($interviewURL, $voucherInfo, $status)
-    {
-        try
-        {
-            //Find the record and update the status
-            $query = ProjectGotIt::query();
-            $query->where('shell_chainid', $interviewURL->shell_chainid);
-            $query->where('respondent_id', $interviewURL->respondent_id);
-            $query->where('respondent_phone_number', $interviewURL->respondent_phone_number);
-            $query->where('phone_number', $voucherInfo['phone']);
-            $query->where('transaction_ref_id', $voucherInfo['transactionRefId']);
-            $query->whereHas('project', function(Builder $query) use ($interviewURL){
-                $query->where('internal_code', $interviewURL->internal_code);
-                $query->where('project_name', $interviewURL->project_name);
-            });
-
-            $record = $query->first();
-
-            if(!$record){
-                Log::warning(ProjectGotIt::STATUS_TRANSACTION_NOT_EXISTS.': '.$voucherInfo[0]['transactionRefId']);
-                throw new \Exception(ProjectGotIt::STATUS_TRANSACTION_NOT_EXISTS.': '.$voucherInfo[0]['transactionRefId']);
-            }
-
-            //Update the status
-            $record->sms_status = $status;
-
-            $record->save();
-
-            Log::info('The status of transaction updating successful.');
-            return true;
-
-        } catch(\Exception $e){
-            // Log the exception message
-            Log::error('The status of transaction updating failed: ' . $e->getMessage());
-            throw new \Exception('The status of transaction updating failed: ' . $e->getMessage());
-        }
-    }
-
-    private function update_gotit_voucher_link_e($interviewURL, $phone_number, $transactionData)
-    {
-        try
-        {
-            //Find the record and update the status
-            $query = ProjectGotIt::query();
+            $query = ProjectRespondent::query();
             $query->where('shell_chainid', $interviewURL->shell_chainid);
             $query->where('respondent_id', $interviewURL->respondent_id);
             $query->where('respondent_phone_number', $interviewURL->respondent_phone_number);
             $query->where('phone_number', $phone_number);
-            $query->where('transaction_ref_id', $transactionData[0]['transactionRefId']);
+            $query->where('transaction_ref_id', $transactionRefId);
             $query->whereHas('project', function(Builder $query) use ($interviewURL){
                 $query->where('internal_code', $interviewURL->internal_code);
                 $query->where('project_name', $interviewURL->project_name);
@@ -681,27 +304,30 @@ class GotItController extends Controller
             $record = $query->first();
 
             if(!$record){
-                Log::warning(ProjectGotIt::STATUS_TRANSACTION_NOT_EXISTS.': '.$transactionData[0]['transactionRefId']);
-                throw new \Exception(ProjectGotIt::STATUS_TRANSACTION_NOT_EXISTS.': '.$transactionData[0]['transactionRefId']);
+                Log::warning(ProjectRespondent::STATUS_TRANSACTION_NOT_EXISTS.': '.$transactionRefId);
+                throw new \Exception(ProjectRespondent::STATUS_TRANSACTION_NOT_EXISTS.': '.$transactionRefId);
             }
 
-            $record->voucher_status = ProjectGotIt::STATUS_VOUCHER_SUCCESS;
-            $record->voucher_link = $transactionData[0]['vouchers'][0]['voucher_link'];
-            $record->voucher_link_code = substr($transactionData[0]['vouchers'][0]['voucher_link'], -8);
+            $record->voucher_status = ProjectRespondent::STATUS_VOUCHER_SUCCESS;
+            $record->voucher_link = $voucherData['voucherLink'];
+            $record->voucher_link_code = $voucherData['voucherLinkCode'];
+            $record->voucher_image_link = $voucherData['voucherImageLink'];
 
-            if(strlen($transactionData[0]['vouchers'][0]['voucher_cover_link']) > 0)
+            if(strlen($voucherData['voucherCoverLink']) > 0)
             {
-                $record->voucher_cover_link = $transactionData[0]['vouchers'][0]['voucher_cover_link'];
+                $record->voucher_cover_link = $voucherData['voucherCoverLink'];
             }
             
-            $record->voucher_serial = $transactionData[0]['vouchers'][0]['voucher_serial']; 
-            $record->voucher_value = $transactionData[0]['vouchers'][0]['value'];
-            $record->voucher_expired_date = $transactionData[0]['vouchers'][0]['expired_date'];
+            $record->voucher_serial = $voucherData['voucherSerial']; 
+            $record->voucher_expired_date = $voucherData['expiryDate'];
+
+            $record->voucher_product_id = $voucherData['product']['productId'];
+            $record->voucher_price_id = $voucherData['product']['price']['priceId'];
+            $record->voucher_value = $voucherData['product']['price']['priceValue'];
 
             $record->save();
-            
+
             Log::info('The information of voucher updating successful.');
-            return true;
         }
         catch(\Exception $e)
         {
@@ -710,56 +336,75 @@ class GotItController extends Controller
         }
     }
 
-    private function update_gotit_voucher_link_v($interviewURL, $phone_number, $transactionData)
-    {
-        try
-        {
-            //Find the record and update the status
-            $query = ProjectGotIt::query();
-            $query->where('shell_chainid', $interviewURL->shell_chainid);
-            $query->where('respondent_id', $interviewURL->respondent_id);
-            $query->where('respondent_phone_number', $interviewURL->respondent_phone_number);
-            $query->where('phone_number', $phone_number);
-            $query->where('transaction_ref_id', $transactionData[0]['vouchers'][0]['transactionRefId']);
-            $query->whereHas('project', function(Builder $query) use ($interviewURL){
-                $query->where('internal_code', $interviewURL->internal_code);
-                $query->where('project_name', $interviewURL->project_name);
-            });
+    // public static function storeGotitVoucherransaction($interviewURL, $voucherInfo, $status)
+    // {
+    //     try
+    //     {
+    //         Log::info('Store gotit transaction: ' . json_encode($voucherInfo));
 
-            $record = $query->first();
-
-            if(!$record){
-                Log::warning(ProjectGotIt::STATUS_TRANSACTION_NOT_EXISTS.': '.$transactionData[0]['vouchers'][0]['transactionRefId']);
-                throw new \Exception(ProjectGotIt::STATUS_TRANSACTION_NOT_EXISTS.': '.$transactionData[0]['vouchers'][0]['transactionRefId']);
-            }
-
-            $record->voucher_status = ProjectGotIt::STATUS_VOUCHER_SUCCESS;
-            $record->voucher_link = $transactionData[0]['vouchers'][0]['voucherLink'];
-            $record->voucher_link_code = $transactionData[0]['vouchers'][0]['voucherLinkCode'];
-            $record->voucher_image_link = $transactionData[0]['vouchers'][0]['voucherImageLink'];
-
-            if(strlen($transactionData[0]['vouchers'][0]['voucherCoverLink']) > 0)
-            {
-                $record->voucher_cover_link = $transactionData[0]['vouchers'][0]['voucherCoverLink'];
-            }
+    //         $projectQuery = Project::with('projectDetails', 'projectRespondents')
+    //             ->where('internal_code', $interviewURL->internal_code)
+    //             ->where('project_name', $interviewURL->project_name)
+    //             ->whereHas('projectDetails', function(Builder $query) use ($interviewURL){
+    //                 $query->where('remember_token', $interviewURL->remember_token);
+    //             });
             
-            $record->voucher_serial = $transactionData[0]['vouchers'][0]['voucherSerial']; 
-            $record->voucher_expired_date = $transactionData[0]['vouchers'][0]['expiryDate'];
+    //         $project = $projectQuery->first();
+            
+    //         $price = 0;
 
-            $record->voucher_product_id = $transactionData[0]['vouchers'][0]['product']['productId'];
-            $record->voucher_price_id = $transactionData[0]['vouchers'][0]['product']['price']['priceId'];
-            $record->voucher_value = $transactionData[0]['vouchers'][0]['product']['price']['priceValue'];
+    //         if(isset($voucherInfo['amount']))
+    //         {
+    //             $price = $voucherInfo['amount'];
+    //         }
+    //         else 
+    //         {
+    //             switch($voucherInfo['productPriceId'])
+    //             {
+    //                 case 17931:
+    //                     $price = 10000;
+    //                     break;
+    //                 case 3090:
+    //                     $price = 20000;
+    //                     break;
+    //                 case 3555:
+    //                     $price = 30000;
+    //                     break;
+    //                 case 17940:
+    //                     $price = 40000;
+    //                     break;
+    //             }
+    //         }
 
-            $record->save();
+    //         //Create the respondent with validated data
+    //         $projectRespondent = ProjectRespondent::create([
+    //             'project_id' => $project->id,
+    //             'shell_chainid' => $interviewURL->shell_chainid,
+    //             'respondent_id' => $interviewURL->respondent_id,
+    //             'employee_id' => $interviewURL->employee->id,
+    //             'province_id' => $interviewURL->province_id,
+    //             'interview_start' => $interviewURL->interview_start,
+    //             'interview_end' => $interviewURL->interview_end,
+    //             'respondent_phone_number' => $interviewURL->respondent_phone_number,
+    //             'phone_number' => $voucherInfo['phone'],
+    //             'transaction_ref_id' => $voucherInfo['transactionRefId'],
+    //             'expiry_date' => $voucherInfo['expiryDate'],
+    //             'order_name' => $voucherInfo['orderName'],
+    //             'amount' => $price,
+    //             'status' => $status
+    //         ]);
+            
+    //         // Check if the record was successfully created
+    //         if (!$projectRespondent) {
+    //             throw new \Exception('Failed to create the transaction record.');
+    //         }
 
-            Log::info('The information of voucher updating successful.');
-
-            return true;
-        }
-        catch(\Exception $e)
-        {
-            Log::error('The information of voucher updating failed: ' . $e->getMessage());
-            throw new \Exception('The information of voucher updating failed: ' . $e->getMessage());
-        }
-    }
+    //         Log::info('Transaction stored successfully', ['internal_code' => $interviewURL->internal_code, 'respondent_id' => $interviewURL->respondent_id]);
+    //         return true;
+    //     } catch (\Exception $e) {
+    //         // Log the exception message
+    //         Log::error('The status of transaction updating failed: ' . $e->getMessage());
+    //         throw new \Exception('The status of transaction updating failed: ' . $e->getMessage());
+    //     }
+    // }
 }

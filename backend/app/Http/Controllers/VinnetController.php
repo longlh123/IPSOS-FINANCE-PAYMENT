@@ -14,7 +14,8 @@ use Ramsey\Uuid\Uuid;
 use Symfony\Component\HttpFoundation\Response;
 use App\Models\Project;
 use App\Models\Employee;
-use App\Models\ProjectVinnetToken;
+use App\Models\ProjectVinnetTransaction;
+use App\Models\ProjectRespondent;
 use App\Models\InterviewURL;
 use App\Models\VinnetUUID;
 use App\Models\ENVObject;
@@ -27,7 +28,7 @@ class VinnetController extends Controller
     {
         try
         {
-            $query = ProjectVinnetToken::with([ 'project','employee','employee.role','employee.team','province']);
+            $query = ProjectVinnetTransaction::with([ 'project','employee','employee.role','employee.team','province']);
 
             $vinnetData = $query->get();
 
@@ -395,7 +396,7 @@ class VinnetController extends Controller
             // Check if any error occurred
             if (curl_errno($ch)) {
                 Log::error('Request Error: ' . curl_error($ch));
-                throw new Exception(ProjectVinnetToken::ERROR_CODE_CONNECTION_FAILED);
+                throw new Exception(ProjectVinnetTransaction::ERROR_CODE_CONNECTION_FAILED);
             }
             
             // Get HTTP status code
@@ -460,61 +461,6 @@ class VinnetController extends Controller
         return $subset;
     }
     
-    public function check_transaction($interviewURL)
-    {
-        try
-        {
-            Log::info('Step 1: Check the project information:');
-
-            $projectQuery = Project::with('projectDetails', 'projectVinnetTokens')
-                ->where('internal_code', $interviewURL->internal_code)
-                ->where('project_name', $interviewURL->project_name)
-                ->whereHas('projectDetails', function(Builder $query) use ($interviewURL){
-                    $query->where('remember_token', $interviewURL->remember_token);
-                });
-            
-            $project = $projectQuery->first();
-            
-            if(!$project){
-                Log::error(Project::STATUS_PROJECT_NOT_FOUND);
-                throw new \Exception(Project::STATUS_PROJECT_NOT_FOUND);
-            } else {
-                if($project->projectDetails->status !== Project::STATUS_ON_GOING){
-                    Log::error(Project::STATUS_PROJECT_SUSPENDED_OR_NOT_FOUND);
-                    throw new \Exception(Project::STATUS_PROJECT_SUSPENDED_OR_NOT_FOUND);
-                } 
-            }
-
-            Log::info('Step 2: Check the respondent information:');
-
-            $respondentProcessed = $project->projectVinnetTokens()->where('respondent_id', $interviewURL->respondent_id)->exists();
-            
-            if($respondentProcessed){
-                Log::error(ProjectVinnetToken::STATUS_TRANSACTION_ALREADY_EXISTS);
-                throw new \Exception(ProjectVinnetToken::STATUS_TRANSACTION_ALREADY_EXISTS);
-            }
-
-            Log::info('Step 3: Check respondent phone number information:');
-
-            $respPhoneNumberProcessed = $project->projectVinnetTokens()
-                ->where(function($query) use ($interviewURL) {
-                    $query->where('respondent_phone_number', $interviewURL->respondent_phone_number)
-                        ->orWhere('phone_number', $interviewURL->respondent_phone_number);
-                })->exists();
-            
-            if($respPhoneNumberProcessed){
-                Log::error(ProjectVinnetToken::STATUS_TRANSACTION_ALREADY_EXISTS);
-                throw new \Exception(ProjectVinnetToken::STATUS_TRANSACTION_ALREADY_EXISTS);
-            }
-
-            return true;
-        }
-        catch(\Exception $e)
-        {
-            throw $e;
-        }
-    }
-
     public function reject_transaction(Request $request)
     {
         try
@@ -538,54 +484,29 @@ class VinnetController extends Controller
 
             $interviewURL = new InterviewURL($splittedURL);
 
-            if($this->check_transaction($interviewURL))
-            {   
-                $projectQuery = Project::with('projectDetails', 'projectProvinces')
-                    ->where('internal_code', $interviewURL->internal_code)
-                    ->where('project_name', $interviewURL->project_name)
-                    ->whereHas('projectDetails', function(Builder $query) use ($interviewURL){
-                        $query->where('remember_token', $interviewURL->remember_token);
-                    });
+            $project = Project::findByInterviewURL($interviewURL);
 
-                $project = $projectQuery->first();
-                
-                //Create the respondent with validated data
-                $projectVinnetToken = ProjectVinnetToken::create([
-                    'project_id' => $project->id,
-                    'shell_chainid' => $interviewURL->shell_chainid,
-                    'respondent_id' => $interviewURL->respondent_id,
-                    'employee_id' => $interviewURL->employee->id,
-                    'province_id' => $interviewURL->province_id,
-                    'interview_start' => $interviewURL->interview_start,
-                    'interview_end' => $interviewURL->interview_end,
-                    'respondent_phone_number' => $interviewURL->respondent_phone_number,
-                    'phone_number' => $interviewURL->respondent_phone_number,
-                    'vinnet_token_requuid' => 'None',
-                    'vinnet_token' => 'None',
-                    'vinnet_token_order' => 1,
-                    'vinnet_token_status' => Project::STATUS_REJECT_REASON_PHONE_NUMBER,
-                    'reject_message' => $reject_message,
-                ]);
+            $projectRespondent = $project->createProjectRespondents([
+                'project_id' => $project->id,
+                'shell_chainid' => $interviewURL->shell_chainid,
+                'respondent_id' => $interviewURL->respondent_id,
+                'employee_id' => $interviewURL->employee->id,
+                'province_id' => $interviewURL->province_id,
+                'interview_start' => $interviewURL->interview_start,
+                'interview_end' => $interviewURL->interview_end,
+                'respondent_phone_number' => $interviewURL->respondent_phone_number,
+                'phone_number' => $interviewURL->respondent_phone_number,
+                'price_level' => $interviewURL->price_level,
+                'channel' => $interviewURL->channel,
+                'status' => ProjectRespondent::STATUS_RESPONDENT_REJECTED,
+                'reject_message' => $reject_message
+            ]);
 
-                // Check if the record was successfully created
-                if (!$projectVinnetToken) {
-                    throw new \Exception('Failed to create the ProjectVinnetToken record');
-                }
-
-                Log::info('Token stored successfully', ['internal_code' => $interviewURL->internal_code, 'respondent_id' => $interviewURL->respondent_id]);
-
-                return response()->json([
-                    'status_code' => Response::HTTP_OK, //200
-                    'message' => ProjectVinnetToken::ERROR_TRANSACTION_DENIED_FEEDBACK_RECORDED
-                ], Response::HTTP_OK);
+            if (!$projectRespondent) {
+                throw new \Exception(ProjectRespondent::ERROR_CANNOT_STORE_RESPONDENT);
             }
-            else
-            {   
-                return response()->json([
-                    'status_code' => Response::HTTP_BAD_REQUEST, //200
-                    'message' => 'Unsuccessful request.'
-                ], Response::HTTP_BAD_REQUEST);
-            }
+
+            Log::info('Transaction stored successfully', ['internal_code' => $interviewURL->internal_code, 'respondent_id' => $interviewURL->respondent_id, 'reject_message' => $reject_message]);
         }
         catch(\Exception $e)
         {
@@ -622,139 +543,128 @@ class VinnetController extends Controller
             
             $interviewURL = new InterviewURL($splittedURL);
 
-            if($this->check_transaction($interviewURL))
+            Log::info('Project respondent');
+
+            $project = Project::findByInterviewURL($interviewURL);
+            
+            ProjectRespondent::checkIfRespondentProcessed($project, $interviewURL);
+
+            Log::info('Store the Project Respondent');
+
+            $projectRespondent = $project->createProjectRespondents([
+                'project_id' => $project->id,
+                'shell_chainid' => $interviewURL->shell_chainid,
+                'respondent_id' => $interviewURL->respondent_id,
+                'employee_id' => $interviewURL->employee->id,
+                'province_id' => $interviewURL->province_id,
+                'interview_start' => $interviewURL->interview_start,
+                'interview_end' => $interviewURL->interview_end,
+                'respondent_phone_number' => $interviewURL->respondent_phone_number,
+                'phone_number' => $validatedRequest['phone_number'],
+                'price_level' => $interviewURL->price_level,
+                'channel' => $interviewURL->channel,
+                'status' => ProjectRespondent::STATUS_RESPONDENT_PENDING
+            ]);
+
+            Log::info('Transaction stored successfully', ['internal_code' => $interviewURL->internal_code, 'respondent_id' => $interviewURL->respondent_id]);
+
+            if (!$projectRespondent) {
+                throw new \Exception(ProjectRespondent::ERROR_CANNOT_STORE_RESPONDENT);
+            }
+            
+            Log::info('Project respondent: ' . $projectRespondent);
+
+            Log::info('Find the price item by province');
+            
+            $price = $project->getPriceForProvince($interviewURL);
+ 
+            Log::info('Price: ' . intval($price));
+
+            Log::info('Step 6: Authentication Token to make API calls and retrieve information about suitable carrier pricing tiers.');
+
+            $tokenData = $this->authenticate_token();
+
+            if($tokenData['code'] != 0)
             {
-                $projectQuery = Project::with('projectDetails', 'projectProvinces')
-                    ->where('internal_code', $interviewURL->internal_code)
-                    ->where('project_name', $interviewURL->project_name)
-                    ->whereHas('projectDetails', function(Builder $query) use ($interviewURL){
-                        $query->where('remember_token', $interviewURL->remember_token);
-                    });
+                $projectRespondent->updateStatus(ProjectVinnetTransaction::STATUS_NOT_RECEIVED);
 
-                $project = $projectQuery->first();
+                Log::info('Authenticate Token: ' . ProjectVinnetTransaction::STATUS_NOT_RECEIVED . ' => ' . $tokenData['message']);
+                throw new \Exception(ProjectVinnetTransaction::STATUS_NOT_RECEIVED);
+            }
 
-                if(!$project){
-                    Log::error(Project::STATUS_PROJECT_NOT_FOUND);
-                    throw new \Exception(Project::STATUS_PROJECT_NOT_FOUND);
-                } else {
-                    if($project->projectDetails->status !== Project::STATUS_ON_GOING){
-                        Log::error(Project::STATUS_PROJECT_SUSPENDED_OR_NOT_FOUND);
-                        throw new \Exception(Project::STATUS_PROJECT_SUSPENDED_OR_NOT_FOUND);
-                    } 
-                }
+            $serviceItemsData = $this->query_service($validatedRequest['phone_number'], $validatedRequest['service_code'], $tokenData['token'], null);
+            
+            Log::info('Code: ' . $serviceItemsData['code']);
 
-                Log::info('Step 4: Check phone number using send a present:');
+            if($serviceItemsData['code'] != 0)
+            {
+                // Log the exception message
+                $projectRespondent->updateStatus(ProjectVinnetTransaction::STATUS_ERROR);
 
-                $phoneNumberProcessed = $project->projectVinnetTokens()
-                    ->where(function($query) use ($validatedRequest) {
-                        $query->where('respondent_phone_number', $validatedRequest['phone_number'])
-                            ->orWhere('phone_number', $validatedRequest['phone_number']);
-                    })->exists();
+                Log::info('Query Services: ' . ProjectVinnetTransaction::STATUS_ERROR . ' => ' . $serviceItemsData['message']);
+                throw new \Exception($serviceItemsData['message']);
+            }
+
+            $prices = array();
+
+            foreach($serviceItemsData['service_items'] as $serviceItem){
                 
-                if($phoneNumberProcessed){
-                    Log::error(ProjectVinnetToken::STATUS_TRANSACTION_ALREADY_EXISTS);
-                    throw new \Exception(ProjectVinnetToken::STATUS_TRANSACTION_ALREADY_EXISTS);
+                if($serviceItem['itemValue'] !== 0){
+                    array_push($prices, $serviceItem['itemValue']);
                 }
-                
-                Log::info('Step 5: Find price item');
-                
-                $price_item = $project->projectProvinces->firstWhere('province_id', $interviewURL->province_id);
+            }
 
-                if(!$price_item){
-                    Log::error(Project::STATUS_PROJECT_NOT_SUITABLE_PRICES);
-                    throw new \Exception(Project::STATUS_PROJECT_NOT_SUITABLE_PRICES);
-                }
+            $selectedPrices = array();
 
-                $price = 0;
+            if(in_array($price, $prices)){
+                array_push($selectedPrices, $price);
+            } else {
+                $selectedPrices = $this->findSubsets($prices, $price);
+            }
+            
+            Log::info('Selected Prices: ' . implode(", ", $selectedPrices));
+            
+            $vinnet_token_order = 1;
 
-                switch($interviewURL->price_level){
-                    case 'main':
-                        $price = intval($price_item->price_main);
-                        break;
-                    case 'main_1':
-                        $price = intval($price_item->price_main_1);
-                        break;
-                    case 'main_2':
-                        $price = intval($price_item->price_main_2);
-                        break;
-                    case 'main_3':
-                        $price = intval($price_item->price_main_3);
-                        break;
-                    case 'main_4':
-                        $price = intval($price_item->price_main_4);
-                        break;
-                    case 'main_5':
-                        $price = intval($price_item->price_main_5);
-                        break;
-                    case 'boosters':
-                        $price = intval($price_item->price_boosters);
-                        break;
-                    case 'boosters_1':
-                        $price = intval($price_item->price_boosters_1);
-                        break;
-                    case 'boosters_2':
-                        $price = intval($price_item->price_boosters_2);
-                        break;
-                    case 'boosters_3':
-                        $price = intval($price_item->price_boosters_3);
-                        break;
-                    case 'boosters_4':
-                        $price = intval($price_item->price_boosters_4);
-                        break;
-                    case 'boosters_5':
-                        $price = intval($price_item->price_boosters_5);
-                        break;
-                }
-                
-                Log::info('Price: ' . $price);
+            foreach($selectedPrices as $selectedPrice)
+            {
+                Log::info('Transaction ' . $vinnet_token_order . ': ' . $selectedPrice);
 
-                Log::info('Step 6: Authentication Token to make API calls and retrieve information about suitable carrier pricing tiers.');
+                $vinnetTransaction = $projectRespondent->createVinnetTransactions([
+                    'project_respondent_id' => $projectRespondent->id,
+                    'vinnet_serviceitems_requuid' => $serviceItemsData['reqUuid'],
+                    'vinnet_token_requuid' => $tokenData['reqUuid'],
+                    'vinnet_token' => $tokenData['token'],
+                    'vinnet_token_order' => $vinnet_token_order,
+                    'vinnet_token_status' => ProjectVinnetTransaction::STATUS_PENDING_VERIFICATION
+                ]);
 
-                $tokenData = $this->authenticate_token();
+                $payItemData = $this->pay_service($validatedRequest['phone_number'], $validatedRequest['service_code'], $tokenData['token'], $selectedPrice);
 
-                $serviceItemsData = $this->query_service($validatedRequest['phone_number'], $validatedRequest['service_code'], $tokenData['token'], null);
-
-                $prices = array();
-
-                foreach($serviceItemsData['service_items'] as $serviceItem){
-                    
-                    if($serviceItem['itemValue'] !== 0){
-                        array_push($prices, $serviceItem['itemValue']);
-                    }
-                }
-
-                $selectedPrices = array();
-
-                if(in_array($price, $prices)){
-                    array_push($selectedPrices, $price);
-                } else {
-                    $selectedPrices = $this->findSubsets($prices, $price);
-                }
-                
-                Log::info('Selected Prices: ' . implode(", ", $selectedPrices));
-                
-                $vinnet_token_order = 1;
-
-                foreach($selectedPrices as $selectedPrice)
+                if($payItemData['code'] == 0)
                 {
-                    Log::info('Step 8 - Transaction ' . $vinnet_token_order . ': ' . $selectedPrice);
+                    $statusPaymentServiceResult = $vinnetTransaction->updatePaymentServiceStatus($payItemData['reqUuid'], $payItemData['pay_item'], ProjectVinnetTransaction::STATUS_VERIFIED, $payItemData['message']);
+                }
+                else if ($payItemData['code'] == 99)
+                {
+                    $statusPaymentServiceResult = $vinnetTransaction->updatePaymentServiceStatus($payItemData['reqUuid'], null, ProjectVinnetTransaction::STATUS_UNDETERMINED_TRANSACTION_RESULT, $payItemData['message']);
 
-                    $this->perform_transaction($interviewURL, $validatedRequest['phone_number'], $validatedRequest['service_code'], $vinnet_token_order, $selectedPrice);
-                    $vinnet_token_order++;
+                    throw new \Exception('Giao dịch bị quá tải, PVV vui lòng chờ 3-4 phút, sau đó kiểm tra đáp viên xem đã nhận được quà tặng chưa. Nếu chưa, vui lòng liên hệ Admin để kiểm tra.');
+                } 
+                else 
+                {
+                    $statusPaymentServiceResult = $vinnetTransaction->updatePaymentServiceStatus($payItemData['reqUuid'], null, ProjectVinnetTransaction::STATUS_ERROR, $payItemData['message']);
+
+                    throw new \Exception($payItemData['message']);
                 }
 
-                return response()->json([
-                    'status_code' => Response::HTTP_OK, //200
-                    'message' => ProjectVinnetToken::SUCCESS_TRANSACTION_CONTACT_ADMIN_IF_NO_GIFT
-                ], Response::HTTP_OK);
+                $vinnet_token_order++;
             }
-            else 
-            {
-                return response()->json([
-                    'status_code' => Response::HTTP_BAD_REQUEST, //200
-                    'message' => 'Unsuccessful request.'
-                ], Response::HTTP_BAD_REQUEST);
-            }
+
+            return response()->json([
+                'status_code' => Response::HTTP_OK, //200
+                'message' => ProjectVinnetTransaction::SUCCESS_TRANSACTION_CONTACT_ADMIN_IF_NO_GIFT
+            ], Response::HTTP_OK);
 
         } catch(Exception $e) {
             Log::error($e->getMessage());
@@ -762,68 +672,6 @@ class VinnetController extends Controller
                 'status_code' => Response::HTTP_BAD_REQUEST, //400
                 'message' => $e->getMessage(),
             ], Response::HTTP_BAD_REQUEST);
-        }
-    }
-
-    public function perform_transaction($interviewURL, $phone_number, $service_code, $vinnet_token_order, $price)
-    {
-        try{
-            Log::info('Step 8.1 - ' . $vinnet_token_order . ': Authentication Token:');
-
-            $tokenData = $this->authenticate_token();
-
-            Log::info('Step 8.2 - ' . $vinnet_token_order . ': Store the token:');
-
-            $this->store_vinnet_token($interviewURL, $phone_number, $tokenData['reqUuid'], $tokenData['token'], $tokenData['message'], $vinnet_token_order);
-            
-            Log::info('Step 8.3 - ' . $vinnet_token_order . ': Request Service Item:');
-
-            $serviceItemsData = $this->query_service($phone_number, $service_code, $tokenData['token'], $price);
-
-            if($serviceItemsData['code'] == 0)
-            {
-                Log::info('Step 8.4 - ' . $vinnet_token_order . ': Update the status of token: ' . ProjectVinnetToken::STATUS_PENDING_VERIFICATION);
-
-                $updated_result = $this->update_status_vinnet_token($interviewURL, $phone_number, $serviceItemsData['reqUuid'], null, $tokenData['token'], ProjectVinnetToken::STATUS_PENDING_VERIFICATION, $serviceItemsData['message'], null);
-
-                Log::info('Step 8.5 - ' . $vinnet_token_order . ': Request Pay Service');
-
-                $payItemData = $this->pay_service($phone_number, $service_code, $tokenData['token'], $serviceItemsData['service_items'][0]);
-                
-                if($payItemData['code'] == 0)
-                {
-                    Log::info('Step 8.6 - ' . $vinnet_token_order . ': Update the status of token: ' . ProjectVinnetToken::STATUS_VERIFIED);
-
-                    $updated_result = $this->update_status_vinnet_token($interviewURL, $phone_number, null, $payItemData['reqUuid'] , $tokenData['token'], ProjectVinnetToken::STATUS_VERIFIED, $payItemData['message'], $payItemData['pay_item']);
-                }
-                else if ($payItemData['code'] == 99)
-                {
-                    $this->update_status_vinnet_token($interviewURL, $phone_number, null, $payItemData['reqUuid'], $tokenData['token'], ProjectVinnetToken::STATUS_UNDETERMINED_TRANSACTION_RESULT, $payItemData['message'], null);
-
-                    throw new \Exception('Giao dịch bị quá tải, PVV vui lòng chờ 3-4 phút, sau đó kiểm tra đáp viên xem đã nhận được quà tặng chưa. Nếu chưa, vui lòng liên hệ Admin để kiểm tra.');
-                } 
-                else 
-                {
-                    $this->update_status_vinnet_token($interviewURL, $phone_number, null, $payItemData['reqUuid'], $tokenData['token'], ProjectVinnetToken::STATUS_ERROR, $payItemData['message'], null);
-
-                    throw new \Exception($payItemData['message']);
-                }
-            } 
-            else 
-            {
-                // Log the exception message
-                $this->update_status_vinnet_token($interviewURL, $phone_number, $serviceItemsData['reqUuid'], null, $tokenData['token'], ProjectVinnetToken::STATUS_ERROR, $serviceItemsData['message'], null);
-
-                throw new \Exception($serviceItemsData['message']);
-            }
-
-            return true;
-        } catch(Exception $e) {
-            
-            Log::error($e->getMessage());
-
-            // Optionally rethrow the exception or handle it
-            throw $e;
         }
     }
 
@@ -984,7 +832,7 @@ class VinnetController extends Controller
                     throw new \Exception('Decoded services data is not an array');
                 }
 
-                //Log::info('Token: ' . $decodedData['token']);
+                Log::info('Token: ' . $decodedData['token']);
                 
                 return [
                     'reqUuid' => $uuid,
@@ -1075,139 +923,6 @@ class VinnetController extends Controller
             //Log the exception message
             Log::error('Merchant Information failed: ' . $e->getMessage());
 
-            throw $e;
-        }
-    }
-
-    /**
-     * 
-     * Store the token 
-     * 
-     * @param internal_code
-     * @param project_name
-     * @param respondent_id
-     * @param phone_number
-     * @param token
-     * 
-     * @return boolean
-     * 
-     */
-    public function store_vinnet_token($interviewURL, $phone_number, $reqUuid, $token, $vinnet_token_status, $vinnet_token_order)
-    {
-        try
-        {
-            $projectQuery = Project::with('projectDetails', 'projectVinnetTokens')
-                ->where('internal_code', $interviewURL->internal_code)
-                ->where('project_name', $interviewURL->project_name)
-                ->whereHas('projectDetails', function(Builder $query) use ($interviewURL){
-                    $query->where('remember_token', $interviewURL->remember_token);
-                });
-            
-            $project = $projectQuery->first();
-            
-            //Create the respondent with validated data
-            $projectVinnetToken = ProjectVinnetToken::create([
-                'project_id' => $project->id,
-                'shell_chainid' => $interviewURL->shell_chainid,
-                'respondent_id' => $interviewURL->respondent_id,
-                'employee_id' => $interviewURL->employee->id,
-                'province_id' => $interviewURL->province_id,
-                'interview_start' => $interviewURL->interview_start,
-                'interview_end' => $interviewURL->interview_end,
-                'respondent_phone_number' => $interviewURL->respondent_phone_number,
-                'phone_number' => $phone_number,
-                'vinnet_token_requuid' => $reqUuid,
-                'vinnet_token' => $token,
-                'vinnet_token_order' => $vinnet_token_order,
-                'vinnet_token_status' => $vinnet_token_status,
-                'status' => ProjectVinnetToken::STATUS_ISSUED
-            ]);
-
-            // Check if the record was successfully created
-            if (!$projectVinnetToken) {
-                throw new \Exception('Failed to create the ProjectVinnetToken record');
-            }
-
-            Log::info('Token stored successfully', ['internal_code' => $interviewURL->internal_code, 'respondent_id' => $interviewURL->respondent_id]);
-
-            return true;
-        } catch (\Exception $e) {
-            // Log the exception message
-            Log::error('Token storage failed: ' . $e->getMessage());
-
-            // Optionally rethrow the exception or handle it
-            throw $e;
-        }
-    }
-
-    /**
-     * 
-     * Update the status of token
-     * 
-     * @param internal_code
-     * @param project_name
-     * @param respondent_id
-     * @param phone_number
-     * @param token
-     * @param new_status
-     * @param pay_item
-     * 
-     * @return boolean
-     * 
-     */
-    public function update_status_vinnet_token($interviewURL, $phone_number, $service_items_reqUuid, $pay_service_reqUuid, $token, $new_status, $vinnet_token_status, $pay_item)
-    {
-        try{
-            Log::info('Updte status vinnet token');
-
-            //Find the record and update the status
-            $query = ProjectVinnetToken::query();
-            $query->where('respondent_id', $interviewURL->respondent_id);
-            $query->where('respondent_phone_number', $interviewURL->respondent_phone_number);
-            $query->where('phone_number', $phone_number);
-            $query->where('vinnet_token', $token);
-            $query->whereHas('project', function(Builder $query) use ($interviewURL){
-                $query->where('internal_code', $interviewURL->internal_code);
-                $query->where('project_name', $interviewURL->project_name);
-            });
-
-            $record = $query->first();
-
-            if(!$record){
-                Log::warning("No record found to update for respondent_id:" . $interviewURL->respondent_id);
-                throw new \Exception('No record found to update');
-            }
-
-            Log::info('Updte status vinnet token [$record]: '.json_encode($record));
-
-            //Update the status
-            $record->status = $new_status;
-            $record->vinnet_token_status = $vinnet_token_status;
-
-            if($pay_item){
-                $record->total_amt = $pay_item['totalAmt'];
-                $record->commission = $pay_item['commission'];
-                $record->discount = $pay_item['discount'];
-                $record->payment_amt = $pay_item['paymentAmt'];
-            }
-
-            if($service_items_reqUuid){
-                $record->vinnet_serviceitems_requuid = $service_items_reqUuid;
-            }
-            
-            if($pay_service_reqUuid){
-                $record->vinnet_payservice_requuid = $pay_service_reqUuid;
-            }
-
-            $record->save();
-
-            // Return a success response
-            return true;
-        } catch(\Exception $e){
-            // Log the exception message
-            Log::error('The status of token updating failed: ' . $e->getMessage());
-
-            // Optionally rethrow the exception or handle it
             throw $e;
         }
     }
