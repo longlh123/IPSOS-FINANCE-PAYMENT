@@ -29,7 +29,7 @@ class ProjectVinnetTransaction extends Model
     // const ERROR_CODE_CONNECTION_FAILED = 'Không thể kết nối đến hệ thống. Vui lòng kiểm tra kết nối mạng thiết bị của bạn.';
     // const ERROR_TRANSACTION_DENIED_FEEDBACK_RECORDED = 'Bạn đã từ chối dịch vụ chuyển quà qua tin nhắn và chúng tôi đã ghi nhận thông tin đóng góp ý kiến của bạn.';
     
-    // const SUCCESS_TRANSACTION_CONTACT_ADMIN_IF_NO_GIFT = 'Chúng tôi đã gửi thành công. Vui lòng kiểm tra lại tin nhắn của bạn.';
+    const SUCCESS_TRANSACTION_CONTACT_ADMIN_IF_NO_GIFT = 'Chúng tôi đã gửi thành công. Vui lòng kiểm tra lại tin nhắn của bạn.';
 
     // const STATUS_SUCCESS = 'Thành công'; // Success
     // const STATUS_TRANSACTION_ALREADY_EXISTS = 'Mã giao dịch đã tồn tại. Vui lòng liên hệ Admin để biết thêm thông tin.'; // Transaction already exists
