@@ -101,6 +101,17 @@ class ProjectRespondent extends Model
             throw new \Exception(self::ERROR_DUPLICATE_RESPONDENT);
         }
 
+        //Kiểm tra shell_chainid của đáp viên đã được thực hiện giao dịch trước đó hay chưa?chưa
+        $exists = $project->projectRespondents()
+                        ->where('shell_chainid', $interviewURL->shell_chainid)
+                        ->exists();
+            
+        if($exists)
+        {
+            Log::error(self::ERROR_DUPLICATE_RESPONDENT . ' [Shellchain ID: ' . $interviewURL->shell_chainid . ']');
+            throw new \Exception(self::ERROR_DUPLICATE_RESPONDENT);
+        }
+
         //Kiểm tra số điện thoại của đáp viên đã được thực hiện giao dịch trước đó hay chưa?
         $exists = $project->projectRespondents()
                         ->where(function($query) use ($interviewURL) {

@@ -108,7 +108,11 @@ class GotItController extends Controller
 
             $project = Project::findByInterviewURL($interviewURL);
             
+            //Kiểm tra đáp viên đã thực hiện giao dịch nhận quà trước đó hay chưa?
             ProjectRespondent::checkIfRespondentProcessed($project, $interviewURL);
+
+            //Kiểm tra số điện thoại đáp viên nhập đã được nhận quà trước đó hay chưa?
+            ProjectRespondent::checkGiftPhoneNumber($project, $validatedRequest['phone_number']);
 
             Log::info('Store the Project Respondent');
 
@@ -155,14 +159,52 @@ class GotItController extends Controller
             
             $voucherRequest = $this->generate_voucher_request($apiObject, $voucher_link_type, $interviewURL, $validatedRequest['phone_number'], $price);
             
-            $voucherTransaction = $projectRespondent->createGotitVoucherTransactions([
-                'project_respondent_id' => $projectRespondent->id,
-                'transaction_ref_id' => $voucherRequest['transactionRefId'],
-                'expiry_date' => $voucherRequest['expiryDate'],
-                'order_name' => $voucherRequest['orderName'],
-                'amount' => $voucherRequest['amount'],
-                'voucher_status' => ProjectGotItVoucherTransaction::STATUS_PENDING_VERIFICATION
-            ]);
+            Log::info('Voucher link: ' . $voucher_link_type);
+
+            if($voucher_link_type === 'e'){
+                
+                $voucherTransaction = $projectRespondent->createGotitVoucherTransactions([
+                    'project_respondent_id' => $projectRespondent->id,
+                    'transaction_ref_id' => $voucherRequest['transactionRefId'],
+                    'expiry_date' => $voucherRequest['expiryDate'],
+                    'order_name' => $voucherRequest['orderName'],
+                    'amount' => $voucherRequest['amount'],
+                    'voucher_status' => ProjectGotItVoucherTransaction::STATUS_PENDING_VERIFICATION
+                ]);
+            } else {
+                $amount = 0;
+
+                Log::info('Amount: ' . $amount);
+
+                switch($voucherRequest['productPriceId'])
+                {
+                    case 3088:
+                        $amount = 10000;
+                        break;
+                    case 3090:
+                        $amount = 20000;
+                        break;
+                    case 3555:
+                        $amount = 30000;
+                        break;
+                    case 17940:
+                        $amount = 40000;
+                        break;
+                    default:
+                        throw new \Exception('Giá trị $productPriceId chưa được định nghĩa mức giá.');
+                }
+                
+                $voucherTransaction = $projectRespondent->createGotitVoucherTransactions([
+                    'project_respondent_id' => $projectRespondent->id,
+                    'transaction_ref_id' => $voucherRequest['transactionRefId'],
+                    'expiry_date' => $voucherRequest['expiryDate'],
+                    'order_name' => $voucherRequest['orderName'],
+                    'amount' => $amount,
+                    'voucher_product_id' => $voucherRequest['productId'],
+                    'voucher_price_id' => $voucherRequest['productPriceId'],
+                    'voucher_status' => ProjectGotItVoucherTransaction::STATUS_PENDING_VERIFICATION
+                ]);
+            }
 
             $updateRespondentStatus = $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_WAITING_FOR_GIFT);
             
@@ -172,22 +214,25 @@ class GotItController extends Controller
 
             Log::info('Responsed Voucher: ' . json_encode($responsedVoucher));
 
-            $updateVoucherTransactionStatus = $voucherTransaction->updateGotitVoucherTransaction($responsedVoucher['vouchers'][0]);
+            $updateVoucherTransactionStatus = $voucherTransaction->updateGotitVoucherTransaction($responsedVoucher['vouchers'][0], $voucher_link_type);
 
             Log::info('Generate a SMS request');
-
-            $smsRequest = $this->generate_sms_request($apiObject, $voucherTransaction->voucher_link, $validatedRequest['phone_number']);
-
+            
             $smsTransaction = $voucherTransaction->createGotitSMSTransaction([
                 'voucher_transaction_id' => $voucherTransaction->id,
                 'transaction_ref_id' => $apiObject->getTransactionRefId(),
                 'sms_status' => ProjectGotItSMSTransaction::STATUS_SMS_PENDING
             ]);
 
+            $smsRequest = $this->generate_sms_request($apiObject, $voucherTransaction->voucher_link, $validatedRequest['phone_number']);
+
             $updateRespondentStatus = $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_DISPATCHED);
             
             $responseSMSData = $apiObject->send_sms($smsRequest);
 
+            $smsTransactionStatus = $smsTransaction->updateStatus(ProjectGotItSMSTransaction::STATUS_SMS_SUCCESS);
+
+            $updateRespondentStatus = $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED);
 
             return response()->json([
                 'status_code' => Response::HTTP_OK, //200
@@ -206,8 +251,6 @@ class GotItController extends Controller
 
     private function generate_voucher_request($apiObject, $voucher_link_type, $interviewURL, $phone_number, $price)
     {
-        $signature = $apiObject->generate_signature("|");
-        
         $time=strtotime(date('Y-m-d'));
         $month = date("F", $time);
         $year = date("Y", $time);
@@ -221,6 +264,8 @@ class GotItController extends Controller
         
         $expiryDate =  new \DateTime("{$year}-{$month}-01");
         $orderName = 'IPSOS Promotion - ' . date("M Y");
+
+        $signature = $apiObject->generate_signature("VOUCHER " . strtoupper($voucher_link_type), $orderName, $expiryDate->format('Y-m-d'));
 
         $dataRequest = [
             "isConvertToCoverLink" => 0,
@@ -247,7 +292,7 @@ class GotItController extends Controller
             switch($price)
             {
                 case 10000:
-                    $dataRequest['productPriceId'] = 17931;
+                    $dataRequest['productPriceId'] = 3088;
                     break;
                 case 20000:
                     $dataRequest['productPriceId'] = 3090;
@@ -261,6 +306,8 @@ class GotItController extends Controller
                 default:
                     throw new \Exception('Giá trị $price không hợp lệ cho productPriceId');
             }
+
+            $dataRequest["signature"] = $signature;
         }
 
         Log::info('Voucher Request: ' . json_encode($dataRequest));
@@ -270,7 +317,7 @@ class GotItController extends Controller
     
     private function generate_sms_request($apiObject, $voucher_link, $phone_number)
     {
-        $signature = $apiObject->generate_signature("|||");
+        $signature = $apiObject->generate_signature('SMS', null, null);
 
         $dataRequest = [
             "voucherLinkCode" => substr($voucher_link, -8),

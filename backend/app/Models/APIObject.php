@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Database\Eloquent\Model;
 use Ramsey\Uuid\Uuid;
 use App\Models\ENVObject;
-use App\Models\ProjectGotIt;
+use App\Models\ProjectGotItVoucherTransaction;
 
 class APIObject
 {
@@ -38,10 +38,22 @@ class APIObject
         Log::info('Transaction RefId: ' . $this->transactionRefId);
     }
 
-    public function setSignatureData($kytu){
+    public function setSignatureData($signature_type, $order_name, $expiry_date){
 
-        $this->signatureData = $this->envObject->gotitInfo['API_KEY'] . $kytu . $this->transactionRefId;
+        if($signature_type === 'SMS'){
 
+            $this->signatureData = $this->envObject->gotitInfo['API_KEY'] . '|||';
+        } else if($signature_type === 'VOUCHER E') {
+            
+            $this->signatureData = $this->envObject->gotitInfo['API_KEY'] . '|' . $this->transactionRefId;
+        } else if($signature_type === 'VOUCHER V') {
+
+            $this->signatureData = $this->envObject->gotitInfo['API_KEY'] . '|' . $order_name . '|' . $expiry_date . '|' . $this->transactionRefId;
+        } else {    
+
+            throw new Exception('Signature is incorrect.');
+        }
+        
         Log::info('Signature: ' . $this->signatureData);
     }
 
@@ -65,7 +77,7 @@ class APIObject
 
         Log::info('URL: ' . $url);
 
-        $responseData = $this->post_request($url, $postData, true);
+        $responseData = $this->post_request($url, $postData);
         
         if($responseData['statusCode'] !== 200){
 
@@ -76,20 +88,20 @@ class APIObject
         {
             switch(intval($responseData['error']))
             {
-                case 3:
-                    $status = ProjectGotIt::STATUS_NO_PERMISSION; 
+                case 1012:
+                    $status = ProjectGotItVoucherTransaction::STATUS_PRODUCT_NOT_ALLOWED;
                     break;
                 case 2014:
-                    $status = ProjectGotIt::STATUS_PRODUCT_NOT_ALLOWED;
+                    $status = ProjectGotItVoucherTransaction::STATUS_PRODUCT_NOT_ALLOWED;
                     break;
                 case 2015:
-                    $status = ProjectGotIt::STATUS_MIN_VOUCHER_E_VALUE; 
+                    $status = ProjectGotItVoucherTransaction::STATUS_MIN_VOUCHER_E_VALUE; 
                     break;
                 case 2008:
-                    $status = ProjectGotIt::STATUS_TRANSACTION_ALREADY_EXISTS; 
+                    $status = ProjectGotItVoucherTransaction::STATUS_TRANSACTION_ALREADY_EXISTS; 
                     break;
                 case 3003:
-                    $status = ProjectGotIt::STATUS_SIGNATURE_INCORRECT; 
+                    $status = ProjectGotItVoucherTransaction::STATUS_SIGNATURE_INCORRECT; 
                     break;
                 default:
                     $status = 'Lỗi chưa xác định.';
@@ -103,8 +115,20 @@ class APIObject
 
         foreach($responseVouchersData['vouchers'] as $index => &$voucher){
 
-            $decryptedVoucher = $this->decrypt_data($voucher['voucher_link']);
-            $voucher['voucher_link'] = $decryptedVoucher;
+            if($voucher_link_type === 'e')
+            {
+                $decryptedVoucherLink = $this->decrypt_data($voucher['voucher_link']);
+                $voucher['voucher_link'] = $decryptedVoucherLink;
+            }
+
+            if($voucher_link_type === 'v')
+            {
+                $decryptedVoucherLink = $this->decrypt_data($voucher['voucherLink']);
+                $voucher['voucherLink'] = $decryptedVoucherLink;
+
+                $decryptedVoucherLinkCode = $this->decrypt_data($voucher['voucherLinkCode']);
+                $voucher['voucherLinkCode'] = $decryptedVoucherLinkCode;
+            }  
         }
 
         return $responseVouchersData;
@@ -117,8 +141,37 @@ class APIObject
         $responseData = $this->post_request($url, $postData);
 
         Log::info('SMS Response: ' . json_encode($responseData));
+
+        if($responseData['statusCode'] !== 200){
+
+            throw new \Exception('Lỗi từ phía IPSOS. Chưa xác định được thông tin lỗi');
+        }
+
+        if(!empty($responseData['error']) || !empty($responseData['message']))
+        {
+            switch(intval($responseData['error']))
+            {
+                case 2014:
+                    $status = ProjectGotItVoucherTransaction::STATUS_PRODUCT_NOT_ALLOWED;
+                    break;
+                case 2015:
+                    $status = ProjectGotItVoucherTransaction::STATUS_MIN_VOUCHER_E_VALUE; 
+                    break;
+                case 2008:
+                    $status = ProjectGotItVoucherTransaction::STATUS_TRANSACTION_ALREADY_EXISTS; 
+                    break;
+                case 3003:
+                    $status = ProjectGotItVoucherTransaction::STATUS_SIGNATURE_INCORRECT; 
+                    break;
+                default:
+                    $status = 'Lỗi chưa xác định.';
+                    break;
+            }
+
+            throw new \Exception($status);
+        }
         
-        return $responseData;
+        return $responseData['data'];
     }   
 
     private function get_request($url)
@@ -235,8 +288,32 @@ class APIObject
 
             // ✅ Lấy signature nếu có
             $gtsignature = $headers['gt-signature'] ?? null;
-            
-            if($this->verify_signature($bodyData, $gtsignature)){
+
+            if(!empty($gtsignature))
+            {
+                if($this->verify_signature($bodyData, $gtsignature)){
+                    // Close cURL session
+                    curl_close($ch);
+
+                    // Handle response
+                    if ($httpCode == 200) 
+                    {
+                        if($this->json_validator($bodyData)){
+                            $responseData = json_decode($bodyData, true);
+                        } else {
+                            $responseData = $bodyData;
+                        }
+                        
+                        return $responseData;
+                    } else {
+                        throw new \Exception('Request failed with HTTP code ' . $httpCode);
+                    }
+                } else {
+                    throw new \Exception('Signature incorrect.');
+                }
+            } 
+            else 
+            {
                 // Close cURL session
                 curl_close($ch);
 
@@ -253,10 +330,7 @@ class APIObject
                 } else {
                     throw new \Exception('Request failed with HTTP code ' . $httpCode);
                 }
-            } else {
-                throw new \Exception('Signature incorrect.');
             }
-            
         } catch (Exception $e) {
             // Log the exception message
             Log::error('POST request failed: ' . $e->getMessage());
@@ -281,11 +355,11 @@ class APIObject
         return $uuid;
     }
 
-    public function generate_signature($kytu)
+    public function generate_signature($signature_type, $order_name, $expiry_date)
     {
         try {
             $this->setTransactionRefId();
-            $this->setSignatureData($kytu);
+            $this->setSignatureData($signature_type, $order_name, $expiry_date);
 
             Log::info('Data to generate Signature: ' . $this->signatureData);
             
