@@ -11,7 +11,10 @@ class ProjectGotItVoucherTransaction extends Model
 
     const STATUS_PENDING_VERIFICATION = 'Giao dịch đang chờ xác thực.';
     const STATUS_VOUCHER_SUCCESS = 'Voucher được cập nhật thành công.';
-    
+    const STATUS_PRODUCT_NOT_ALLOWED = 'Product ID này không được phép request';
+    const STATUS_MIN_VOUCHER_E_VALUE = 'Price ID này không được phép request';
+    const STATUS_TRANSACTION_ALREADY_EXISTS = 'Voucher Ref Id đã tồn tại/ trùng lặp';
+    const STATUS_SIGNATURE_INCORRECT = 'Chữ ký không hợp lệ';
 
     protected $table = 'project_gotit_voucher_transactions';
 
@@ -49,19 +52,43 @@ class ProjectGotItVoucherTransaction extends Model
         return $this->gotitSmsTransaction()->create($data);
     }
 
-    public function updateGotitVoucherTransaction($voucherData): bool
+    public function updateGotitVoucherTransaction($voucherData, $voucherLinkType): bool
     {
-        $this->voucher_link = $voucherData['voucher_link'];
-
-        if(strlen($voucherData['voucher_cover_link']) > 0)
+        if($voucherLinkType === 'e')
         {
-            $this->voucher_cover_link = $voucherData['voucher_cover_link'];
+            $this->voucher_link = $voucherData['voucher_link'];
+            $this->voucher_link_code = substr($voucher_link, -8);
+
+            if(strlen($voucherData['voucher_cover_link']) > 0)
+            {
+                $this->voucher_cover_link = $voucherData['voucher_cover_link'];
+            }
+
+            $this->voucher_serial = $voucherData['voucher_serial'];
+            $this->voucher_value = $voucherData['value'];
+            $this->voucher_expired_date = $voucherData['expired_date'];
+            $this->voucher_status = self::STATUS_VOUCHER_SUCCESS;
+        }
+        else 
+        {
+            $this->voucher_link = $voucherData['voucherLink'];
+            $this->voucher_link_code = $voucherData['voucherLinkCode'];
+            
+            if(strlen($voucherData['voucherCoverLink']) > 0)
+            {
+                $this->voucher_cover_link = $voucherData['voucherCoverLink'];
+            }
+
+            $this->voucher_serial = $voucherData['voucherSerial'];
+            
+            $this->voucher_value = $voucherData['product']['price']['priceValue'];
+            
+            $this->voucher_expired_date = $voucherData['expiryDate'];
+            $this->voucher_status = self::STATUS_VOUCHER_SUCCESS;
         }
 
-        $this->voucher_serial = $voucherData['voucher_serial'];
-        $this->voucher_value = $voucherData['value'];
-        $this->voucher_expired_date = $voucherData['expired_date'];
-        $this->voucher_status = self::STATUS_VOUCHER_SUCCESS;
+        
+        
         
         $saved = $this->save();
 
