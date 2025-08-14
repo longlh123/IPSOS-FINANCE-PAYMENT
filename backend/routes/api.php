@@ -47,7 +47,7 @@ Route::middleware(['auth:sanctum'])->group(function(){
 
     Route::get('/project-management/vinnet/merchant/view', [VinnetController::class, 'get_merchant_info'])->middleware('ensureUserHasRole:admin,Finance');
     Route::post('/project-management/vinnet/change-key', [VinnetController::class, 'change_key'])->middleware('ensureUserHasRole:admin,Finance');
-    // Route::get('/project-management/vinnet/merchantinfo', [VinnetController::class, 'merchantinfo'])->middleware('ensureUserHasRole:admin');
+    Route::get('/project-management/vinnet/merchantinfo', [VinnetController::class, 'merchantinfo'])->middleware('ensureUserHasRole:admin,Finance');
     Route::get('/project-management/vinnet/transactions/view', [VinnetController::class, 'transactions_view'])->middleware('ensureUserHasRole:admin,Finance');
 });
 

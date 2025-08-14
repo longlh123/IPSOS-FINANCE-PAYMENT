@@ -480,6 +480,5 @@ class ProjectController extends Controller
                 'message' => 'An error occurred while removing province from the project: ' . $e->getMessage()
             ]);
         }
-    }     
-
+    } 
 }

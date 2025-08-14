@@ -873,6 +873,14 @@ class VinnetController extends Controller
         }
     }
 
+    /**
+     * MerchantInfo API: Truy vấn thông tin tài khoản đối tác tại hệ thống Vinnet (deposited / spent / balance).
+     * 
+     * @param $request
+     * 
+     * @return Object
+     * 
+     */
     public function merchantinfo(Request $request)
     {
         try{
