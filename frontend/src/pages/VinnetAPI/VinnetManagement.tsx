@@ -39,7 +39,7 @@ const VinnetManagement = () => {
 
     const fetchMerchantAccount = async () => {
       try {
-        const response = await axios.get(ApiConfig.vinnet.viewMerchantInfo, {
+        const response = await axios.get(ApiConfig.vinnet.viewMerchantAccount, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
