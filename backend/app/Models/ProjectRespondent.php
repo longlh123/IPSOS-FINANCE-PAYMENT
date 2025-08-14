@@ -121,7 +121,7 @@ class ProjectRespondent extends Model
         
         if($exists)
         {
-            Log::error(self::ERROR_DUPLICATE_RESPONDENT . ' [Respondent Phone number' . $interviewURL->respondent_phone_number . ']');
+            Log::error(self::ERROR_DUPLICATE_RESPONDENT . ' [Respondent Phone number: ' . $interviewURL->respondent_phone_number . ']');
             throw new \Exception(self::ERROR_DUPLICATE_RESPONDENT);
         }               
     }

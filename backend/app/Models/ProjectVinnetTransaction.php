@@ -30,8 +30,6 @@ class ProjectVinnetTransaction extends Model
     // const ERROR_CODE_CONNECTION_FAILED = 'Không thể kết nối đến hệ thống. Vui lòng kiểm tra kết nối mạng thiết bị của bạn.';
     // const ERROR_TRANSACTION_DENIED_FEEDBACK_RECORDED = 'Bạn đã từ chối dịch vụ chuyển quà qua tin nhắn và chúng tôi đã ghi nhận thông tin đóng góp ý kiến của bạn.';
     
-    const SUCCESS_TRANSACTION_CONTACT_ADMIN_IF_NO_GIFT = 'Chúng tôi đã gửi thành công. Vui lòng kiểm tra lại tin nhắn của bạn.';
-
     // const STATUS_SUCCESS = 'Thành công'; // Success
     // const STATUS_TRANSACTION_ALREADY_EXISTS = 'Mã giao dịch đã tồn tại. Vui lòng liên hệ Admin để biết thêm thông tin.'; // Transaction already exists
 
@@ -58,8 +56,9 @@ class ProjectVinnetTransaction extends Model
     // const STATUS_INVALID_QUANTITY_PARAMETER = 'Giá trị tham số quantity không hợp lệ với dịch vụ thanh toán'; // Invalid quantity parameter for payment service
     // const STATUS_INSUFFICIENT_CARD_QUANTITY = 'Không đủ số lượng thẻ'; // Insufficient card quantity
     // const STATUS_INVALID_DENOMINATION = 'Mệnh giá không hợp lệ'; // Invalid denomination
-    // const STATUS_TRANSACTION_FAILED = 'Giao dịch thất bại. Tùy trường hợp sẽ có những mô tả chi tiết khác nhau'; // Transaction failed. Detailed descriptions may vary
     
+    
+    const SUCCESS_TRANSACTION_CONTACT_ADMIN_IF_NO_GIFT = 'Chúng tôi đã gửi thành công. Vui lòng kiểm tra lại tin nhắn của bạn.';
     const STATUS_UNDETERMINED_TRANSACTION_RESULT = 'Giao dịch chưa xác định kết quả. Vui lòng liên hệ Admin để kiểm tra. Hoặc gọi api checktransaction để truy vấn kết quả'; // Undetermined transaction result. Please contact Admin for verification or call the checktransaction API to query the result 
     
     const STATUS_NOT_RECEIVED = 'Không nhận được Token từ client';
@@ -76,6 +75,8 @@ class ProjectVinnetTransaction extends Model
     const STATUS_RENEWAL_PENDING = 'Token đang chờ gia hạn';
     const STATUS_RENEWAL_COMPLETED = 'Token đã gia hạn xong'; 
     const STATUS_ERROR = 'Lỗi Token'; 
+
+    const STATUS_TRANSACTION_FAILED = 'Giao dịch được thực hiện không qua quá trình phỏng vấn. Vui lòng liên hệ Admin để kiểm tra.';
 
     public function respondent()
     {
