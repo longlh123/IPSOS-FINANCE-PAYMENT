@@ -63,44 +63,9 @@ class ProjectDBSeeder extends Seeder
         //     ]);
         // }
 
-        $projectPilot = Project::create([
-            'internal_code' => '2024-999',
-            'project_name' => 'F2F_TEST_2024',
-        ]);
-
-        $projectPilot->projectDetails()->create([
-            'symphony' => '23089766',
-            'status' => Project::STATUS_ON_GOING,
-            'platform' => 'ifield',
-            'created_user_id' => 1,
-            'planned_field_start' => date('Y-m-d', strtotime('2025-08-01')),
-            'planned_field_end' => date('Y-m-d', strtotime('2025-12-31')),
-        ]);
-
-        $projectPilot->projectPermissions()->create([
-            'user_id' => 1
-        ]);
-
-        $provinces = [
-            [
-                'province_id' => 1,
-                'sample_size_main' => 100,
-                'price_main' => 10000
-            ],
-            [
-                'province_id' => 2,
-                'sample_size_main' => 100,
-                'price_main' => 10000
-            ],
-        ];
-
-        foreach($provinces as $province){
-            $projectPilot->projectProvinces()->create($province);
-        };
-
         // $projectPilot = Project::create([
-        //     'internal_code' => '2023-400',
-        //     'project_name' => 'SAGANO_SN_072024',
+        //     'internal_code' => '2024-999',
+        //     'project_name' => 'F2F_TEST_2024',
         // ]);
 
         // $projectPilot->projectDetails()->create([
@@ -108,8 +73,8 @@ class ProjectDBSeeder extends Seeder
         //     'status' => Project::STATUS_ON_GOING,
         //     'platform' => 'ifield',
         //     'created_user_id' => 1,
-        //     'planned_field_start' => date('Y-m-d', strtotime('2024-08-01')),
-        //     'planned_field_end' => date('Y-m-d', strtotime('2024-08-05')),
+        //     'planned_field_start' => date('Y-m-d', strtotime('2025-08-01')),
+        //     'planned_field_end' => date('Y-m-d', strtotime('2025-12-31')),
         // ]);
 
         // $projectPilot->projectPermissions()->create([
@@ -120,17 +85,67 @@ class ProjectDBSeeder extends Seeder
         //     [
         //         'province_id' => 1,
         //         'sample_size_main' => 100,
-        //         'price_main' => 30000
+        //         'price_main' => 10000
         //     ],
         //     [
         //         'province_id' => 2,
         //         'sample_size_main' => 100,
-        //         'price_main' => 30000
+        //         'price_main' => 10000
         //     ],
         // ];
 
         // foreach($provinces as $province){
         //     $projectPilot->projectProvinces()->create($province);
         // };
+
+        $projectPilot = Project::create([
+            'internal_code' => '2025-079',
+            'project_name' => 'GALLEON_082025',
+        ]);
+
+        $projectPilot->projectDetails()->create([
+            'symphony' => '25022579',
+            'status' => Project::STATUS_PLANNED,
+            'platform' => 'ifield',
+            'created_user_id' => 1,
+            'planned_field_start' => date('Y-m-d', strtotime('2025-08-14')),
+            'planned_field_end' => date('Y-m-d', strtotime('2025-08-20')),
+        ]);
+
+        $projectPilot->projectPermissions()->create([
+            'user_id' => 1
+        ]);
+
+        $provinces = [
+            [
+                'province_id' => 1,
+                'sample_size_main' => 75,
+                'price_main' => 30000
+            ],
+            [
+                'province_id' => 2,
+                'sample_size_main' => 75,
+                'price_main' => 30000
+            ],
+            [
+                'province_id' => 3,
+                'sample_size_main' => 50,
+                'price_main' => 30000
+            ],
+            [
+                'province_id' => 4,
+                'sample_size_main' => 50,
+                'price_main' => 30000
+            ],
+            [
+                'province_id' => 5,
+                'sample_size_main' => 50,
+                'price_main' => 30000
+            ]
+        ];
+
+        foreach($provinces as $province){
+            $projectPilot->projectProvinces()->create($province);
+        };
     }
 }

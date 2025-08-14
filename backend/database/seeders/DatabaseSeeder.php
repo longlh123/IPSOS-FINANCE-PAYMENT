@@ -24,7 +24,7 @@ class DatabaseSeeder extends Seeder
             // AdministrativeDivisions::class,
             // DepartmentDBSeeder::class,
             // CreateNewUserDBSeeder::class,
-            // CreateNewProjectDBSeeder::class
+            //CreateNewProjectDBSeeder::class
             ProjectDBSeeder::class
         ]);
     }
