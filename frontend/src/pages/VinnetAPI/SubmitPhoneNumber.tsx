@@ -309,7 +309,7 @@ const SubmitPhoneNumber = () => {
                                 >
                                 <span>XÁC NHẬN</span>
                             </LoadingButton>
-                            <LoadingButton
+                            {/* <LoadingButton
                                 type="button"
                                 size="large"
                                 endIcon={<ThumbDownOffAltRoundedIcon />}
@@ -320,7 +320,7 @@ const SubmitPhoneNumber = () => {
                                 className='btn bg-reject'
                                 >
                                 <span>TỪ CHỐI</span>
-                            </LoadingButton>
+                            </LoadingButton> */}
                         </div>   
                     </form>
                 </CardContent>

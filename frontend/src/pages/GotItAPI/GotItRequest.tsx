@@ -315,7 +315,7 @@ const GotItRequest = () => {
                                 >
                                 <span>XÁC NHẬN</span>
                             </LoadingButton>
-                            <LoadingButton
+                            {/* <LoadingButton
                                 type="button"
                                 size="large"
                                 endIcon={<ThumbDownOffAltRoundedIcon />}
@@ -326,7 +326,7 @@ const GotItRequest = () => {
                                 className='btn bg-reject'
                                 >
                                 <span>TỪ CHỐI</span>
-                            </LoadingButton>
+                            </LoadingButton> */}
                         </div>   
                     </form>
                 </CardContent>

@@ -57,7 +57,7 @@ class ProjectGotItVoucherTransaction extends Model
         if($voucherLinkType === 'e')
         {
             $this->voucher_link = $voucherData['voucher_link'];
-            $this->voucher_link_code = substr($voucher_link, -8);
+            $this->voucher_link_code = substr($voucherData['voucher_link'], -8);
 
             if(strlen($voucherData['voucher_cover_link']) > 0)
             {
@@ -86,9 +86,6 @@ class ProjectGotItVoucherTransaction extends Model
             $this->voucher_expired_date = $voucherData['expiryDate'];
             $this->voucher_status = self::STATUS_VOUCHER_SUCCESS;
         }
-
-        
-        
         
         $saved = $this->save();
 
