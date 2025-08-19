@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Ramsey\Uuid\Uuid;
 use App\Models\ENVObject;
 use App\Models\ProjectGotItVoucherTransaction;
+use App\Exceptions\GotItVoucherException;
 
 class APIObject
 {
@@ -88,27 +89,21 @@ class APIObject
         {
             switch(intval($responseData['error']))
             {
+                case 2:
+                    throw new GotItVoucherException(ProjectGotItVoucherTransaction::STATUS_API_INCORRECT, '[GET VOUCHERS]', 400);
                 case 1012:
-                    $status = ProjectGotItVoucherTransaction::STATUS_PRODUCT_NOT_ALLOWED;
-                    break;
+                    throw new GotItVoucherException(ProjectGotItVoucherTransaction::STATUS_PRODUCT_NOT_ALLOWED, '[GET VOUCHERS]', 401);
                 case 2014:
-                    $status = ProjectGotItVoucherTransaction::STATUS_PRODUCT_NOT_ALLOWED;
-                    break;
+                    throw new GotItVoucherException(ProjectGotItVoucherTransaction::STATUS_PRODUCT_NOT_ALLOWED, '[GET VOUCHERS]', 401);
                 case 2015:
-                    $status = ProjectGotItVoucherTransaction::STATUS_MIN_VOUCHER_E_VALUE; 
-                    break;
+                    throw new GotItVoucherException(ProjectGotItVoucherTransaction::STATUS_MIN_VOUCHER_E_VALUE, '[GET VOUCHERS]', 402);
                 case 2008:
-                    $status = ProjectGotItVoucherTransaction::STATUS_TRANSACTION_ALREADY_EXISTS; 
-                    break;
+                    throw new GotItVoucherException(ProjectGotItVoucherTransaction::STATUS_TRANSACTION_ALREADY_EXISTS, '[GET VOUCHERS]', 403);
                 case 3003:
-                    $status = ProjectGotItVoucherTransaction::STATUS_SIGNATURE_INCORRECT; 
-                    break;
+                    throw new GotItVoucherException(ProjectGotItVoucherTransaction::STATUS_SIGNATURE_INCORRECT, '[GET VOUCHERS]', 404);
                 default:
-                    $status = 'Lỗi chưa xác định.';
-                    break;
+                    throw new GotItVoucherException('Lỗi chưa xác định.', 498);
             }
-
-            throw new \Exception($status);
         }
 
         $responseVouchersData = $responseData['data'];
@@ -151,24 +146,21 @@ class APIObject
         {
             switch(intval($responseData['error']))
             {
+                case 2:
+                    throw new GotItVoucherException(ProjectGotItVoucherTransaction::STATUS_API_INCORRECT, '[SEND SMS]', 400);
+                case 1012:
+                    throw new GotItVoucherException(ProjectGotItVoucherTransaction::STATUS_PRODUCT_NOT_ALLOWED, '[SEND SMS]', 401);
                 case 2014:
-                    $status = ProjectGotItVoucherTransaction::STATUS_PRODUCT_NOT_ALLOWED;
-                    break;
+                    throw new GotItVoucherException(ProjectGotItVoucherTransaction::STATUS_PRODUCT_NOT_ALLOWED, '[SEND SMS]', 401);
                 case 2015:
-                    $status = ProjectGotItVoucherTransaction::STATUS_MIN_VOUCHER_E_VALUE; 
-                    break;
+                    throw new GotItVoucherException(ProjectGotItVoucherTransaction::STATUS_MIN_VOUCHER_E_VALUE, '[SEND SMS]', 402);
                 case 2008:
-                    $status = ProjectGotItVoucherTransaction::STATUS_TRANSACTION_ALREADY_EXISTS; 
-                    break;
+                    throw new GotItVoucherException(ProjectGotItVoucherTransaction::STATUS_TRANSACTION_ALREADY_EXISTS, '[SEND SMS]', 403);
                 case 3003:
-                    $status = ProjectGotItVoucherTransaction::STATUS_SIGNATURE_INCORRECT; 
-                    break;
+                    throw new GotItVoucherException(ProjectGotItVoucherTransaction::STATUS_SIGNATURE_INCORRECT, '[SEND SMS]', 404);
                 default:
-                    $status = 'Lỗi chưa xác định.';
-                    break;
+                    throw new GotItVoucherException('Lỗi chưa xác định.', 498);
             }
-
-            throw new \Exception($status);
         }
         
         return $responseData['data'];

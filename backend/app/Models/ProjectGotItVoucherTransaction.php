@@ -11,10 +11,11 @@ class ProjectGotItVoucherTransaction extends Model
 
     const STATUS_PENDING_VERIFICATION = 'Giao dịch đang chờ xác thực.';
     const STATUS_VOUCHER_SUCCESS = 'Voucher được cập nhật thành công.';
-    const STATUS_PRODUCT_NOT_ALLOWED = 'Product ID này không được phép request';
-    const STATUS_MIN_VOUCHER_E_VALUE = 'Price ID này không được phép request';
-    const STATUS_TRANSACTION_ALREADY_EXISTS = 'Voucher Ref Id đã tồn tại/ trùng lặp';
-    const STATUS_SIGNATURE_INCORRECT = 'Chữ ký không hợp lệ';
+    const STATUS_PRODUCT_NOT_ALLOWED = 'Product ID này không được phép request.';
+    const STATUS_MIN_VOUCHER_E_VALUE = 'Price ID này không được phép request.';
+    const STATUS_TRANSACTION_ALREADY_EXISTS = 'Voucher Ref Id đã tồn tại/ trùng lặp.';
+    const STATUS_SIGNATURE_INCORRECT = 'Chữ ký không hợp lệ.';
+    const STATUS_API_INCORRECT = 'API không hợp lệ.';
 
     protected $table = 'project_gotit_voucher_transactions';
 
