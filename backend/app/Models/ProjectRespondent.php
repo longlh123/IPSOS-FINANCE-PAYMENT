@@ -89,6 +89,16 @@ class ProjectRespondent extends Model
         return $this->vinnetTransactions()->create($data);
     }
 
+    public static function findByInterviewURL(Project $project, $interviewURL): self
+    {
+        $projectRespondent = $project->projectRespondents()
+                                    ->where('respondent_id', $interviewURL->respondent_id)
+                                    ->orWhere('shell_chainid', $interviewURL->shell_chainid)
+                                    ->first();
+
+        return $projectRespondent;
+    }
+    
     public static function checkIfRespondentProcessed(Project $project, $interviewURL)
     {
         $exists = $project->projectRespondents()

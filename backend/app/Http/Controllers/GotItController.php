@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
 use App\Http\Requests\StoreProjectGotItRequest;
 use App\Models\APIObject;
@@ -14,6 +15,7 @@ use App\Models\ProjectRespondent;
 use App\Models\ProjectGotItVoucherTransaction;
 use App\Models\ProjectGotItSMSTransaction;
 use App\Models\ENVObject;
+use App\Exceptions\GotItVoucherException;
 
 class GotItController extends Controller
 {
@@ -114,8 +116,7 @@ class GotItController extends Controller
             //Kiểm tra số điện thoại đáp viên nhập đã được nhận quà trước đó hay chưa?
             ProjectRespondent::checkGiftPhoneNumber($project, $validatedRequest['phone_number']);
 
-            Log::info('Store the Project Respondent');
-
+            //Tạo Project Respondent
             $projectRespondent = $project->createProjectRespondents([
                 'project_id' => $project->id,
                 'shell_chainid' => $interviewURL->shell_chainid,
@@ -137,29 +138,22 @@ class GotItController extends Controller
                 throw new \Exception(ProjectRespondent::ERROR_CANNOT_STORE_RESPONDENT);
             }
             
-            Log::info('Project respondent: ' . $projectRespondent);
-
-            Log::info('Find the price item by province');
-            
+            //Tính giá và loại voucher
             $price = $project->getPriceForProvince($interviewURL);
- 
-            Log::info('Price: ' . intval($price));
+            $voucher_link_type = $price >= 50000 ? 'e' : 'v';
 
-            if($price >= 50000)
-            { 
-                $voucher_link_type = 'e';
-            }
-            else 
-            {
-                $voucher_link_type = 'v';
-            }
-
-            Log::info('Generate a voucher request');
+            Log::info('Call API GotIt');
             $apiObject = new APIObject();
             
             $voucherRequest = $this->generate_voucher_request($apiObject, $voucher_link_type, $interviewURL, $validatedRequest['phone_number'], $price);
             
-            Log::info('Voucher link: ' . $voucher_link_type);
+            $responsedVoucher = $apiObject->get_vouchers($voucher_link_type, $voucherRequest);
+
+            Log::info('Responsed Voucher: ' . json_encode($responsedVoucher));
+            
+            $updateRespondentStatus = $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_WAITING_FOR_GIFT);
+
+            Log::info('Store the information of transaction.');
 
             if($voucher_link_type === 'e'){
                 
@@ -172,27 +166,15 @@ class GotItController extends Controller
                     'voucher_status' => ProjectGotItVoucherTransaction::STATUS_PENDING_VERIFICATION
                 ]);
             } else {
-                $amount = 0;
-
-                Log::info('Amount: ' . $amount);
-
-                switch($voucherRequest['productPriceId'])
-                {
-                    case 3088:
-                        $amount = 10000;
-                        break;
-                    case 3090:
-                        $amount = 20000;
-                        break;
-                    case 3555:
-                        $amount = 30000;
-                        break;
-                    case 17940:
-                        $amount = 40000;
-                        break;
-                    default:
-                        throw new \Exception('Giá trị $productPriceId chưa được định nghĩa mức giá.');
-                }
+                $priceMap = [
+                    3088 => 10000,
+                    3090 => 20000,
+                    3555 => 30000,
+                    17940 => 40000
+                ];
+                
+                $amount = $priceMap[$voucherRequest['productPriceId']]
+                            ?? throw new \Exception('Giá trị $productPriceId chưa được định nghĩa mức giá.');
                 
                 $voucherTransaction = $projectRespondent->createGotitVoucherTransactions([
                     'project_respondent_id' => $projectRespondent->id,
@@ -205,14 +187,6 @@ class GotItController extends Controller
                     'voucher_status' => ProjectGotItVoucherTransaction::STATUS_PENDING_VERIFICATION
                 ]);
             }
-
-            $updateRespondentStatus = $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_WAITING_FOR_GIFT);
-            
-            Log::info('Call API');
-
-            $responsedVoucher = $apiObject->get_vouchers($voucher_link_type, $voucherRequest);
-
-            Log::info('Responsed Voucher: ' . json_encode($responsedVoucher));
 
             $updateVoucherTransactionStatus = $voucherTransaction->updateGotitVoucherTransaction($responsedVoucher['vouchers'][0], $voucher_link_type);
 
@@ -233,13 +207,26 @@ class GotItController extends Controller
             $smsTransactionStatus = $smsTransaction->updateStatus(ProjectGotItSMSTransaction::STATUS_SMS_SUCCESS);
 
             $updateRespondentStatus = $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED);
-
+            
             return response()->json([
                 'status_code' => Response::HTTP_OK, //200
                 'message' => ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED,
             ]);
             
-        } catch (\Exception $e) {
+        }
+        catch (GotItVoucherException $e){
+            Log::error($e->getLogContext());
+
+            if($projectRespondent){
+                $projectRespondent->updateStatus($e->getUserMessage());
+            }
+
+            return response()->json([
+                'status_code' => $e->getCode(),
+                'message' => $e->getUserMessage(),
+            ]);
+        }
+        catch (\Exception $e) {
             Log::error($e->getMessage());
             
             return response()->json([
@@ -382,76 +369,4 @@ class GotItController extends Controller
             throw new \Exception('The information of voucher updating failed: ' . $e->getMessage());
         }
     }
-
-    // public static function storeGotitVoucherransaction($interviewURL, $voucherInfo, $status)
-    // {
-    //     try
-    //     {
-    //         Log::info('Store gotit transaction: ' . json_encode($voucherInfo));
-
-    //         $projectQuery = Project::with('projectDetails', 'projectRespondents')
-    //             ->where('internal_code', $interviewURL->internal_code)
-    //             ->where('project_name', $interviewURL->project_name)
-    //             ->whereHas('projectDetails', function(Builder $query) use ($interviewURL){
-    //                 $query->where('remember_token', $interviewURL->remember_token);
-    //             });
-            
-    //         $project = $projectQuery->first();
-            
-    //         $price = 0;
-
-    //         if(isset($voucherInfo['amount']))
-    //         {
-    //             $price = $voucherInfo['amount'];
-    //         }
-    //         else 
-    //         {
-    //             switch($voucherInfo['productPriceId'])
-    //             {
-    //                 case 17931:
-    //                     $price = 10000;
-    //                     break;
-    //                 case 3090:
-    //                     $price = 20000;
-    //                     break;
-    //                 case 3555:
-    //                     $price = 30000;
-    //                     break;
-    //                 case 17940:
-    //                     $price = 40000;
-    //                     break;
-    //             }
-    //         }
-
-    //         //Create the respondent with validated data
-    //         $projectRespondent = ProjectRespondent::create([
-    //             'project_id' => $project->id,
-    //             'shell_chainid' => $interviewURL->shell_chainid,
-    //             'respondent_id' => $interviewURL->respondent_id,
-    //             'employee_id' => $interviewURL->employee->id,
-    //             'province_id' => $interviewURL->province_id,
-    //             'interview_start' => $interviewURL->interview_start,
-    //             'interview_end' => $interviewURL->interview_end,
-    //             'respondent_phone_number' => $interviewURL->respondent_phone_number,
-    //             'phone_number' => $voucherInfo['phone'],
-    //             'transaction_ref_id' => $voucherInfo['transactionRefId'],
-    //             'expiry_date' => $voucherInfo['expiryDate'],
-    //             'order_name' => $voucherInfo['orderName'],
-    //             'amount' => $price,
-    //             'status' => $status
-    //         ]);
-            
-    //         // Check if the record was successfully created
-    //         if (!$projectRespondent) {
-    //             throw new \Exception('Failed to create the transaction record.');
-    //         }
-
-    //         Log::info('Transaction stored successfully', ['internal_code' => $interviewURL->internal_code, 'respondent_id' => $interviewURL->respondent_id]);
-    //         return true;
-    //     } catch (\Exception $e) {
-    //         // Log the exception message
-    //         Log::error('The status of transaction updating failed: ' . $e->getMessage());
-    //         throw new \Exception('The status of transaction updating failed: ' . $e->getMessage());
-    //     }
-    // }
 }
