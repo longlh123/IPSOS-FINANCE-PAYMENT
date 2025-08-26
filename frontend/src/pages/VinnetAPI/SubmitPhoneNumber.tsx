@@ -61,23 +61,52 @@ const SubmitPhoneNumber = () => {
 
     const [selectedProvider, setSelectedProvider] = useState('');
     const [selectedServiceCode, setSelectedServiceCode] = useState('');
-
+    const [isManualProviderSelection, setIsManualProviderSelection] = useState(false);
+    
     const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
     const [rejectReason, setRejectReason] = useState('');
 
     const handleChangeProvider = (event: SelectChangeEvent<string>) => {
         const providerLabel = event.target.value as string;
 
-        setSelectedProvider(event.target.value);
+        console.log('=== DEBUG handleChangeProvider ===');
+        console.log('Selected providerLabel:', providerLabel);
+        console.log('All providers:', providers);
 
+        setSelectedProvider(event.target.value);
+        setIsManualProviderSelection(true);
+        
         // Find the provider object based on the selected label
         const selectedProviderObj = providers.find(provider => provider.label === providerLabel);
+
+        console.log('Found selectedProviderObj:', selectedProviderObj);
         
         // Set the corresponding serviceCode
         if (selectedProviderObj) {
+            console.log('Setting serviceCode to:', selectedProviderObj.serviceCode);
+            console.log('Previous selectedServiceCode:', selectedServiceCode);
+
             setSelectedServiceCode(selectedProviderObj.serviceCode);
+
+            // Verify the change (này sẽ không hiện ngay vì state update là async)
+            console.log('selectedServiceCode after setState (might not reflect immediately):', selectedServiceCode);
+        } else {
+            console.log('selectedProviderObj not found!');
         }
+        
+        console.log('=== END DEBUG ==='); 
     };
+
+    // Thêm useEffect để theo dõi sự thay đổi của selectedServiceCode
+    useEffect(() => {
+        console.log('selectedServiceCode changed to:', selectedServiceCode);
+    }, [selectedServiceCode]);
+
+    // Cũng có thể debug providers array để đảm bảo structure đúng
+    useEffect(() => {
+        console.log('Current providers structure:', providers);
+        console.log('Sample provider:', providers[0]); // kiểm tra structure của phần tử đầu tiên
+    }, []);
 
     const handleChangeInput = (value: string) => {
         setPhoneNumber(value)
@@ -88,6 +117,7 @@ const SubmitPhoneNumber = () => {
 
         if (serviceCode) {
             const provider = providers.find((p) => p.serviceCode === serviceCode);
+
             if (provider) {
                 setSelectedProvider(provider.label);
                 setSelectedServiceCode(provider.serviceCode);
@@ -157,7 +187,7 @@ const SubmitPhoneNumber = () => {
             setShouldSubmit(false);
         }
         
-    }, [url, phoneNumber]);
+    }, [url, phoneNumber, selectedServiceCode]);
     
     const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();

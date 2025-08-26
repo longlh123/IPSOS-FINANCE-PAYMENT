@@ -74,7 +74,7 @@ return new class extends Migration
             $table->decimal('price_main_3', 15, 2)->nullable();
             $table->decimal('price_main_4', 15, 2)->nullable();
             $table->decimal('price_main_5', 15, 2)->nullable();
-            $table->integer('sample_size_booters')->nullable();
+            $table->integer('sample_size_boosters')->nullable();
             $table->decimal('price_boosters', 15, 2)->nullable();
             $table->decimal('price_boosters_1', 15, 2)->nullable();
             $table->decimal('price_boosters_2', 15, 2)->nullable();
