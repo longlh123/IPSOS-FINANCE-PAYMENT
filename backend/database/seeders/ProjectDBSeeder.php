@@ -99,17 +99,17 @@ class ProjectDBSeeder extends Seeder
         // };
 
         $projectPilot = Project::create([
-            'internal_code' => '2025-079',
-            'project_name' => 'GALLEON_082025',
+            'internal_code' => '2025-174',
+            'project_name' => 'HAGA',
         ]);
 
         $projectPilot->projectDetails()->create([
-            'symphony' => '25022579',
+            'symphony' => '25046836',
             'status' => Project::STATUS_PLANNED,
             'platform' => 'ifield',
             'created_user_id' => 1,
-            'planned_field_start' => date('Y-m-d', strtotime('2025-08-14')),
-            'planned_field_end' => date('Y-m-d', strtotime('2025-08-20')),
+            'planned_field_start' => date('Y-m-d', strtotime('2025-08-27')),
+            'planned_field_end' => date('Y-m-d', strtotime('2025-09-06')),
         ]);
 
         $projectPilot->projectPermissions()->create([
@@ -118,29 +118,24 @@ class ProjectDBSeeder extends Seeder
 
         $provinces = [
             [
-                'province_id' => 1,
-                'sample_size_main' => 75,
-                'price_main' => 30000
+                'province_id' => 1, //hcm
+                'sample_size_main' => 120,
+                'price_main' => 0
             ],
             [
-                'province_id' => 2,
-                'sample_size_main' => 75,
-                'price_main' => 30000
+                'province_id' => 2, //hanoi
+                'sample_size_main' => 120,
+                'price_main' => 0
             ],
             [
-                'province_id' => 3,
-                'sample_size_main' => 50,
-                'price_main' => 30000
+                'province_id' => 3, //danang
+                'sample_size_main' => 120,
+                'price_main' => 0
             ],
             [
-                'province_id' => 4,
-                'sample_size_main' => 50,
-                'price_main' => 30000
-            ],
-            [
-                'province_id' => 5,
-                'sample_size_main' => 50,
-                'price_main' => 30000
+                'province_id' => 7, //haiphong
+                'sample_size_main' => 120,
+                'price_main' => 0
             ]
         ];
 
