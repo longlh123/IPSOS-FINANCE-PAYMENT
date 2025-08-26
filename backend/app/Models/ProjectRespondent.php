@@ -36,6 +36,7 @@ class ProjectRespondent extends Model
         'interview_end',
         'respondent_phone_number',
         'phone_number',
+        'service_code',
         'reject_message',
         'price_level',
         'channel',

@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         //Thêm column
-        Schema::table('project_vinnet_transactions', function(Blueprint $table){
+        Schema::table('project_respondents', function(Blueprint $table){
 
-            $table->enum('recipient_type', ['TS', 'TT', 'NT'])->default('NT')->after('payment_amt');
+            $table->string('service_code')->after('phone_number');
         });
     }
 
@@ -24,8 +24,8 @@ return new class extends Migration
     public function down(): void
     {
         //Xoá column 
-        Schema::table('project_vinnet_transactions', function (Blueprint $table) {
-            $table->dropColumn('recipient_type');
+        Schema::table('project_respondents', function (Blueprint $table) {
+            $table->dropColumn('provider');
         });
     }
 };

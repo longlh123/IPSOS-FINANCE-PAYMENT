@@ -135,22 +135,22 @@ class Project extends Model
                 $price = intval($price_item->price_main_5);
                 break;
             case 'booster':
-                $price = intval($price_item->price_main);
+                $price = intval($price_item->price_boosters);
                 break;
             case 'booster_1':
-                $price = intval($price_item->price_main_1);
+                $price = intval($price_item->price_boosters_1);
                 break;
             case 'booster_2':
-                $price = intval($price_item->price_main_2);
+                $price = intval($price_item->price_boosters_2);
                 break;
             case 'booster_3':
-                $price = intval($price_item->price_main_3);
+                $price = intval($price_item->price_boosters_3);
                 break;
             case 'booster_4':
-                $price = intval($price_item->price_main_4);
+                $price = intval($price_item->price_boosters_4);
                 break;
             case 'booster_5':
-                $price = intval($price_item->price_main_5);
+                $price = intval($price_item->price_boosters_5);
                 break;
         }
 
