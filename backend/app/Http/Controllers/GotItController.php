@@ -127,6 +127,7 @@ class GotItController extends Controller
                 'interview_end' => $interviewURL->interview_end,
                 'respondent_phone_number' => $interviewURL->respondent_phone_number,
                 'phone_number' => $validatedRequest['phone_number'],
+                'service_code' => $validatedRequest['service_code'],
                 'price_level' => $interviewURL->price_level,
                 'channel' => $interviewURL->channel,
                 'status' => ProjectRespondent::STATUS_RESPONDENT_PENDING
