@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         //Thêm column
-        Schema::table('project_respondents', function(Blueprint $table){
+        Schema::table('provinces', function(Blueprint $table){
 
-            $table->string('service_code')->after('phone_number');
+            $table->string('code')->after('name');
         });
     }
 
@@ -24,8 +24,8 @@ return new class extends Migration
     public function down(): void
     {
         //Xoá column 
-        Schema::table('project_respondents', function (Blueprint $table) {
-            $table->dropColumn('provider');
+        Schema::table('provinces', function (Blueprint $table) {
+            $table->dropColumn('code');
         });
     }
 };

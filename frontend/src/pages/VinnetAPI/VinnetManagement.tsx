@@ -93,23 +93,23 @@ const VinnetManagement = () => {
       <Box sx={{ flexGrow: 1 }}>
         <Grid container spacing={2}>
           {visibilityConfig.vinnet.components.visible_deposited && (
-            <Grid item xs={6} md={3}>
-              <SummaryWidget title='DEPOSITED' widget_name='bank' trend="up" avatar_color_index={0} value={numeral(vinnetAccount.deposited).format('0,000') } />
+            <Grid item xs={12} sm={6} md={3}>
+              <SummaryWidget title='DEPOSITED' widget_name='bank' avatar_color_index={0} value={numeral(vinnetAccount.deposited).format('0,000') } />
             </Grid>
           )}
           {visibilityConfig.vinnet.components.visible_spent && (
-            <Grid item xs={6} md={3}>
-              <SummaryWidget title='SPENT' widget_name='money' trend="up" avatar_color_index={1} value={numeral(vinnetAccount.spent).format('0,000') } />
+            <Grid item xs={12} sm={6} md={3}>
+              <SummaryWidget title='SPENT' widget_name='money' avatar_color_index={1} value={numeral(vinnetAccount.spent).format('0,000') } />
             </Grid>
           )}
           {visibilityConfig.vinnet.components.visible_balance && (
-            <Grid item xs={6} md={3}>
-              <SummaryWidget title='BALANCE' widget_name='dollar' trend="up" avatar_color_index={2} value={numeral(vinnetAccount.balance).format('0,000')} />
+            <Grid item xs={12} sm={6} md={3}>
+              <SummaryWidget title='BALANCE' widget_name='dollar' avatar_color_index={2} value={numeral(vinnetAccount.balance).format('0,000')} />
             </Grid>
           )}
           {visibilityConfig.vinnet.components.visible_transactions && (
-            <Grid item xs={6} md={3}>
-              <SummaryWidget title='TRANSACTIONS' widget_name='dollar' trend="up" avatar_color_index={3} value={'1000'} />
+            <Grid item xs={12} sm={6} md={3}>
+              <SummaryWidget title='TRANSACTIONS' widget_name='dollar' avatar_color_index={3} value={'1000'} />
             </Grid>
           )}
           {visibilityConfig.vinnet.components.visible_merchantinfor && (

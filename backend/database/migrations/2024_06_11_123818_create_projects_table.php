@@ -36,6 +36,7 @@ return new class extends Migration
             $table->enum('status', ['planned', 'in coming', 'on going', 'completed', 'on hold', 'cancelled'])->default('planned'); //status of the project
             $table->foreignId('created_user_id')->constrained('users')->onDelete('cascade');
             $table->enum('platform', ['ifield', 'dimensions']); //platform the project run on
+            $table->text('project_objectives');
             $table->datetime('planned_field_start'); //start date of the project
             $table->datetime('planned_field_end'); //end date of the project
             $table->datetime('actual_field_start')->nullable(); //actual start date of the project
@@ -102,6 +103,39 @@ return new class extends Migration
             $table->timestamps();
 
             $table->unique(['project_id', 'employee_id'], 'unique_project_employees');
+        });
+
+        Schema::create('project_clients', function(Blueprint $table) {
+            $table->id();
+            $table->foreignId('project_id')->constrained('projects')->onDelete('cascade');
+            $table->string('name');
+            $table->timestamps();
+        });
+
+        Schema::create('interview_methods', function(Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->timestamps();
+        });
+
+        Schema::create('project_interview_methods', function(Blueprint $table) {
+            $table->id();
+            $table->foreignId('project_id')->constrained('projects')->onDelete('cascade');
+            $table->foreignId('interview_method_id')->constrained('interview_methods')->onDelete('cascade');
+            $table->timestamps();
+        });
+
+        Schema::create('recruit_methods', function(Blueprint $table){
+            $table->id();
+            $table->string('name');
+            $table->timestamps();
+        });
+
+        Schema::create('project_recruit_methods', function(Blueprint $table) {
+            $table->id();
+            $table->foreignId('project_id')->constrained('projects')->onDelete('cascade');
+            $table->foreignId('recruit_method_id')->constrained('recruit_methods')->onDelete('cascade');
+            $table->timestamps();
         });
     }
 
