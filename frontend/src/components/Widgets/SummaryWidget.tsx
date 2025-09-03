@@ -13,7 +13,7 @@ export interface WidgetProps {
     title: string;
     widget_name: string;
     diff?: number;
-    trend: 'up' | 'down';
+    trend?: 'up' | 'down';
     value: string;
     avatar_color_index: number;
 }
@@ -46,41 +46,28 @@ const SummaryWidget:React.FC<WidgetProps> = ({ title, widget_name, diff, trend, 
     return (
         <Card className='widget-container'>
             <CardContent>
-                <Stack spacing={3}>
-                    <Stack direction="row" sx={{ alignItems: 'flex-start', justifyContent: 'space-between' }} spacing={3}>
-                        <Stack spacing={2}>
-                            <Typography sx={{
-                                color: 'var(--font-primary)',
-                                fontWeight: 500,
-                                fontSize: '14px'
-                            }} variant="overline">
-                                {title}
-                            </Typography>
-                            <Typography sx={{
-                                color: 'var(--font-fifth)',
-                                fontWeight: 700,
-                                fontSize: '2.50rem'
-                            }} variant="h4">
-                                {value}
-                            </Typography>
-                        </Stack>
-                        <Avatar sx={{ bgcolor: avatarColor, height: '60px', width: '60px', color: 'white' }}>
-                            <WidgetIcon size={32} />
+                <Stack spacing={2}>
+                    {/* Hàng 1: Title + Icon */}
+                    <Stack direction="row" alignItems="center" justifyContent="space-between">
+                        <Typography className='widget-title' variant="overline">
+                        {title}
+                        </Typography>
+                        <Avatar
+                        sx={{
+                            bgcolor: avatarColor,
+                            height: { xs: 36, sm: 48, md: 60 },
+                            width: { xs: 36, sm: 48, md: 60 },
+                            color: 'white'
+                        }}
+                        >
+                        <WidgetIcon className='widget-icon' />
                         </Avatar>
                     </Stack>
-                    {diff ? (
-                        <Stack sx={{ alignItems: 'center' }} direction="row" spacing={2}>
-                        <Stack sx={{ alignItems: 'center' }} direction="row" spacing={0.5}>
-                            <TrendIcon color={trendColor} fontSize="var(--icon-fontSize-md)" />
-                            <Typography color={trendColor} variant="body2">
-                            {diff}%
-                            </Typography>
-                        </Stack>
-                        <Typography color="text.secondary" variant="caption">
-                            Since last month
-                        </Typography>
-                        </Stack>
-                    ) : null}
+
+                    {/* Hàng 2: Content */}
+                    <Typography className='widget-content' variant="h4">
+                        {value}
+                    </Typography>
                 </Stack>
             </CardContent>
         </Card>

@@ -9,8 +9,11 @@ class Province extends Model
 {
     use HasFactory;
 
+    protected $table = 'provinces';
+
     protected $fillable = [
-        'name', 
+        'name',
+        'code', 
         'abbreviation', 
         'region_id', 
         'area_code'
@@ -19,6 +22,16 @@ class Province extends Model
     public function region()
     {
         return $this->belongsTo(Region::class);
+    }
+
+    public function districts()
+    {
+        return $this->hasMany(District::class);
+    }
+
+    public function gso2025Provinces()
+    {
+        return $this->belongsToMany(GSO2025Province::class, 'province_mapping', 'province_id', 'gso2025_province_id');
     }
 
     public function projectProvinces()

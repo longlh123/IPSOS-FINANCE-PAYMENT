@@ -21,7 +21,10 @@ use App\Http\Middleware\EnsureUserHasRole;
 Route::post('/login', [LoginController::class, 'login'])
     ->name('index');
 
-Route::get('/administrative-divisions/provinces', [AdministrativeDivisionsController::class, 'index']);
+Route::get('/administrative-divisions/old/provinces', [AdministrativeDivisionsController::class, 'get_old_provinces']);
+Route::get('/administrative-divisions/old/{provinceId}/districts', [AdministrativeDivisionsController::class, 'get_old_districts']);
+Route::get('/administrative-divisions/new/provinces', [AdministrativeDivisionsController::class, 'get_provinces']);
+Route::get('/administrative-divisions/new/{provinceId}/districts', [AdministrativeDivisionsController::class, 'get_districts']);
 
 Route::get('/project-management/departments', [DepartmentController::class, 'index']);
 Route::get('/project-management/{department_id}/teams', [DepartmentController::class, 'get_teams']);

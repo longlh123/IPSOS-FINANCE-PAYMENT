@@ -28,14 +28,12 @@ class VinnetController extends Controller
     {
         try
         {
-            $query = ProjectVinnetTransaction::with([ 'project','employee','employee.role','employee.team','province']);
-
-            $vinnetData = $query->get();
+            $project_respondents = ProjectRespondent::with(['project'])->get();
 
             return response()->json([
                 'status_code' => Response::HTTP_OK, //200
                 'message' => 'Successful request.',
-                'data' => VinnetProjectResource::collection($vinnetData) 
+                'data' => $project_respondents
             ]);
         }
         catch(\Exception $e)
