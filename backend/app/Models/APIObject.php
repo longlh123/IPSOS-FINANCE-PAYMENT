@@ -101,6 +101,8 @@ class APIObject
                     throw new GotItVoucherException(ProjectGotItVoucherTransaction::STATUS_TRANSACTION_ALREADY_EXISTS, '[GET VOUCHERS]', 403);
                 case 3003:
                     throw new GotItVoucherException(ProjectGotItVoucherTransaction::STATUS_SIGNATURE_INCORRECT, '[GET VOUCHERS]', 404);
+                case 3004:
+                    throw new GotItVoucherException(ProjectGotItVoucherTransaction::STATUS_ORDER_LIMIT_EXCEEDED, '[GET VOUCHERS]', 405);
                 default:
                     throw new GotItVoucherException('Lỗi chưa xác định.', 498);
             }
@@ -158,6 +160,8 @@ class APIObject
                     throw new GotItVoucherException(ProjectGotItVoucherTransaction::STATUS_TRANSACTION_ALREADY_EXISTS, '[SEND SMS]', 403);
                 case 3003:
                     throw new GotItVoucherException(ProjectGotItVoucherTransaction::STATUS_SIGNATURE_INCORRECT, '[SEND SMS]', 404);
+                case 3004:
+                    throw new GotItVoucherException(ProjectGotItVoucherTransaction::STATUS_ORDER_LIMIT_EXCEEDED, '[GET VOUCHERS]', 405);
                 default:
                     throw new GotItVoucherException('Lỗi chưa xác định.', 498);
             }

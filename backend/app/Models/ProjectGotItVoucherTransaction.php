@@ -16,6 +16,7 @@ class ProjectGotItVoucherTransaction extends Model
     const STATUS_TRANSACTION_ALREADY_EXISTS = 'Voucher Ref Id đã tồn tại/ trùng lặp.';
     const STATUS_SIGNATURE_INCORRECT = 'Chữ ký không hợp lệ.';
     const STATUS_API_INCORRECT = 'API không hợp lệ.';
+    const STATUS_ORDER_LIMIT_EXCEEDED = 'Giới hạn đơn hàng đã hết.';
 
     protected $table = 'project_gotit_voucher_transactions';
 

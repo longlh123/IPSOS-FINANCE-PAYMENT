@@ -36,13 +36,24 @@ return new class extends Migration
             $table->enum('status', ['planned', 'in coming', 'on going', 'completed', 'on hold', 'cancelled'])->default('planned'); //status of the project
             $table->foreignId('created_user_id')->constrained('users')->onDelete('cascade');
             $table->enum('platform', ['ifield', 'dimensions']); //platform the project run on
-            $table->text('project_objectives');
             $table->datetime('planned_field_start'); //start date of the project
             $table->datetime('planned_field_end'); //end date of the project
             $table->datetime('actual_field_start')->nullable(); //actual start date of the project
             $table->datetime('actual_field_end')->nullable(); //actual end date of the project
             $table->string('remember_token', 100);
             $table->string('remember_uuid');
+            $table->timestamps();
+        });
+
+        Schema::create('project_general', function(Blueprint $table) {
+
+            $table->id();
+            $table->foreignId('project_id')->constrained('projects')->onDelete('cascade');
+            $table->text('project_objectives');
+            $table->string('type_of_quota_control')->nullable();
+            $table->text('quota_description')->nullable();
+            $table->text('service_line');
+            
             $table->timestamps();
         });
         
@@ -82,6 +93,14 @@ return new class extends Migration
             $table->decimal('price_boosters_3', 15, 2)->nullable();
             $table->decimal('price_boosters_4', 15, 2)->nullable();
             $table->decimal('price_boosters_5', 15, 2)->nullable();
+            $table->integer('sample_size_non')->nullable();
+            $table->decimal('price_non', 15, 2)->nullable();
+            $table->decimal('price_non_1', 15, 2)->nullable();
+            $table->decimal('price_non_2', 15, 2)->nullable();
+            $table->decimal('price_non_3', 15, 2)->nullable();
+            $table->decimal('price_non_4', 15, 2)->nullable();
+            $table->decimal('price_non_5', 15, 2)->nullable();
+            
             $table->timestamps();
             
             $table->unique(['project_id', 'province_id'], 'unique_project_province');
@@ -135,6 +154,18 @@ return new class extends Migration
             $table->id();
             $table->foreignId('project_id')->constrained('projects')->onDelete('cascade');
             $table->foreignId('recruit_method_id')->constrained('recruit_methods')->onDelete('cascade');
+            $table->timestamps();
+        });
+
+        Schema::create('industries', function(Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->timestamps();
+        });
+
+        Schema::create('target_audiences', function(Blueprint $table) {
+            $table->id();
+            $table->string('name');
             $table->timestamps();
         });
     }

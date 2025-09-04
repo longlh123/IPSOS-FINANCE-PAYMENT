@@ -581,8 +581,14 @@ class VinnetController extends Controller
             Log::info('Find the price item by province');
             
             $price = $project->getPriceForProvince($interviewURL);
- 
+            
             Log::info('Price: ' . intval($price));
+
+            if($price == 0)
+            {
+                $projectRespondent->updateStatus(ProjectVinnetTransaction::STATUS_INVALID_DENOMINATION);
+                throw new \Exception(ProjectVinnetTransaction::STATUS_INVALID_DENOMINATION);
+            }
 
             Log::info('Step 6: Authentication Token to make API calls and retrieve information about suitable carrier pricing tiers.');
 
