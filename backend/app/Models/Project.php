@@ -112,47 +112,20 @@ class Project extends Model
             Log::error(Project::STATUS_PROJECT_NOT_SUITABLE_PRICES);
             throw new \Exception(Project::STATUS_PROJECT_NOT_SUITABLE_PRICES.' Vui lòng liên hệ Admin để biết thêm thông tin.');
         }
+        
+        $level = $interviewURL->price_level;
 
-        $price = 0;
-
-        switch($interviewURL->price_level){
-            case 'main':
-                $price = intval($price_item->price_main);
-                break;
-            case 'main_1':
-                $price = intval($price_item->price_main_1);
-                break;
-            case 'main_2':
-                $price = intval($price_item->price_main_2);
-                break;
-            case 'main_3':
-                $price = intval($price_item->price_main_3);
-                break;
-            case 'main_4':
-                $price = intval($price_item->price_main_4);
-                break;
-            case 'main_5':
-                $price = intval($price_item->price_main_5);
-                break;
-            case 'booster':
-                $price = intval($price_item->price_boosters);
-                break;
-            case 'booster_1':
-                $price = intval($price_item->price_boosters_1);
-                break;
-            case 'booster_2':
-                $price = intval($price_item->price_boosters_2);
-                break;
-            case 'booster_3':
-                $price = intval($price_item->price_boosters_3);
-                break;
-            case 'booster_4':
-                $price = intval($price_item->price_boosters_4);
-                break;
-            case 'booster_5':
-                $price = intval($price_item->price_boosters_5);
-                break;
+        if(str_starts_with($level, 'main')){
+            $property = 'price_' . $level;
+        } elseif(str_starts_with($level, 'booster')){
+            $property = 'price_' . str_replace('booster', 'boosters', $level);
+        } elseif(str_starts_with($level, 'none')) {
+            $property = 'price_' . $level;
+        } else {
+            $property = null;
         }
+
+        $price = $property && isset($price_item->$property) ? intval($price_item->$property) : 0;
 
         return $price;
     }
