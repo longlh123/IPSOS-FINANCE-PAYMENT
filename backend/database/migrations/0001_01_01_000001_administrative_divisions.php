@@ -24,6 +24,8 @@ return new class extends Migration
             $table->string('abbreviation');
             $table->integer('old_area_code');
             $table->integer('area_code');
+            $table->string('codename');
+            $table->string('short_codename');
             $table->foreignId('region_id')->constrained('regions')->onDelete('cascade');
             $table->timestamps();
         });
@@ -35,6 +37,8 @@ return new class extends Migration
             $table->string('code');
             $table->float('land_area');
             $table->integer('population');
+            $table->string('codename');
+            $table->string('short_codename');
             $table->timestamps();
         });
 
@@ -45,6 +49,8 @@ return new class extends Migration
             $table->string('code');
             $table->float('land_area');
             $table->integer('population');
+            $table->string('codename');
+            $table->string('short_codename');
             $table->timestamps();
         });
         
