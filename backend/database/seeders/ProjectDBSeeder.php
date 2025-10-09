@@ -99,17 +99,17 @@ class ProjectDBSeeder extends Seeder
         // };
 
         $projectPilot = Project::create([
-            'internal_code' => '2025-079',
-            'project_name' => 'GALLEON_092025',
+            'internal_code' => '2025-194',
+            'project_name' => 'MOON',
         ]);
 
         $projectPilot->projectDetails()->create([
-            'symphony' => '25046836',
+            'symphony' => '25-051557-01',
             'status' => Project::STATUS_PLANNED,
             'platform' => 'ifield',
             'created_user_id' => 1,
-            'planned_field_start' => date('Y-m-d', strtotime('2025-09-12')),
-            'planned_field_end' => date('Y-m-d', strtotime('2025-09-18')),
+            'planned_field_start' => date('Y-m-d', strtotime('2025-10-01')),
+            'planned_field_end' => date('Y-m-d', strtotime('2025-10-03')),
         ]);
 
         $projectPilot->projectPermissions()->create([
@@ -119,28 +119,13 @@ class ProjectDBSeeder extends Seeder
         $provinces = [
             [
                 'province_id' => 1, //hcm
-                'sample_size_main' => 75,
-                'price_main' => 0
+                'sample_size_main' => 100,
+                'price_main' => 50000
             ],
             [
                 'province_id' => 2, //hanoi
-                'sample_size_main' => 75,
-                'price_main' => 0
-            ],
-            [
-                'province_id' => 3, //danang
-                'sample_size_main' => 50,
-                'price_main' => 0
-            ],
-            [
-                'province_id' => 4, //haiphong
-                'sample_size_main' => 50,
-                'price_main' => 0
-            ],
-            [
-                'province_id' => 5, //haiphong
-                'sample_size_main' => 50,
-                'price_main' => 0
+                'sample_size_main' => 100,
+                'price_main' => 50000
             ]
         ];
 
