@@ -35,7 +35,7 @@ return new class extends Migration
             $table->string('job_number')->nullable(); //job number code for the project
             $table->enum('status', ['planned', 'in coming', 'on going', 'completed', 'on hold', 'cancelled'])->default('planned'); //status of the project
             $table->foreignId('created_user_id')->constrained('users')->onDelete('cascade');
-            $table->enum('platform', ['ifield', 'dimensions']); //platform the project run on
+            $table->enum('platform', ['ifield', 'dimensions','other']); //platform the project run on
             $table->datetime('planned_field_start'); //start date of the project
             $table->datetime('planned_field_end'); //end date of the project
             $table->datetime('actual_field_start')->nullable(); //actual start date of the project

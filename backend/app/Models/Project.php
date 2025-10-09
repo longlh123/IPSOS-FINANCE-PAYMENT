@@ -42,12 +42,12 @@ class Project extends Model
 
     public function projectTypes()
     {
-        return $this->belongsToMany(ProjectType::class, 'project_project_types', 'project_id', 'project_type_id');
+        return $this->belongsToMany(ProjectType::class, 'project_project_types', 'project_id', 'project_type_id')->withTimestamps();
     }
 
     public function teams()
     {
-        return $this->belongsToMany(Team::class, 'project_teams', 'project_id', 'team_id');
+        return $this->belongsToMany(Team::class, 'project_teams', 'project_id', 'team_id')->withTimestamps();
     }
 
     public function projectProvinces()
@@ -68,6 +68,11 @@ class Project extends Model
     public function projectRespondents()
     {
         return $this->hasMany(ProjectRespondent::class, 'project_id');
+    }
+
+    public function projectIUURespondents()
+    {
+        return $this->hasMany(ProjectIUURespondent::class, 'project_id');
     }
     
     public function projectVinnetTokens()

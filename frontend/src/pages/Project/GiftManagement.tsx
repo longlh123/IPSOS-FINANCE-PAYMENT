@@ -4,7 +4,7 @@ import { useParams } from "react-router-dom";
 import { ApiConfig } from "../../config/ApiConfig";
 import TableRespondents from "../../components/Table/TableRespondents";
 import Directional from "../../components/Directional/Directional";
-import { ProjectData } from "../../config/ProjectDataConfig";
+import { ProjectData } from "../../config/ProjectFieldsConfig";
 import { VisibilityConfig } from "../../config/RoleConfig";
 import TableParttimeEmployees from "../../components/Table/TableParttimeEmployees";
 
@@ -66,7 +66,7 @@ const GiftManagement: React.FC = () => {
       {visibilityConfig.projects.components.visible_employees && (
         <>
           <Directional title="Respondents" />
-          <TableRespondents project_id={id || ""} />
+          <TableRespondents />
         </>
       )}
     </>

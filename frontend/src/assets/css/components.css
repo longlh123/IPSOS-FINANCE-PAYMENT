@@ -1,13 +1,53 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+*{
+  font-style: var(--main-font);
+}
+
+.wrapper {
+  display: flex;
+  background-color: var(--background-color);
+}
+
+.content {
+  min-height: 92vh;
+  position: relative;
+  width: calc(100% - 15.625rem); /* 250px → rem */
+  left: 15.625rem;
+  transition: var(--transition-02);
+  margin-top: 3.75rem; /* 60px */
+  border-radius: 1.25rem;
+  padding: 1.875rem; /* 30px */
+}
+
+.content-detail {
+  margin: 0.625rem auto;
+}
+
 .btn{
-    padding: 8px 22px !important;
+    padding: 0.5rem 1.375rem !important;
     color: #fff !important;
     border: 0 !important;
-    box-shadow: 0px 3px 1px -2px rgba(0,0,0,0.2),0px 2px 2px 0px rgba(0,0,0,0.14),0px 1px 5px 0px rgba(0,0,0,0.12);
     font-size: 0.9375rem !important;
+    font-weight: 500;
+    border-radius: 0.5rem;
+    box-shadow:
+        0 0.1875rem 0.0625rem -0.125rem rgba(0, 0, 0, 0.2),
+        0 0.125rem 0.125rem 0 rgba(0, 0, 0, 0.14),
+        0 0.0625rem 0.3125rem 0 rgba(0, 0, 0, 0.12);
 }
 
 .bg-primary { background-color: var(--main-color) !important; }
 .bg-reject { background-color: var(--status-cancelled-color) !important; }
+
+.bg-gotit-primary { background-color: var(--gotit-color-secondary) !important; }
+.bg-gotit-secondary { background-color: var(--gotit-color-primary) !important; }
+
+.bg-vinnet-primary { background-color: var(--vinnet-color-primary) !important; }
 
 h4 span { 
     font-weight: 600;
@@ -23,26 +63,26 @@ h4 span {
     flex-direction: column;
     align-items: center;
     justify-content: space-between;
-    gap: 10px;
-    padding: 10px 10px;
+    gap: 0.625rem; /* 10px */
+    padding: 0.625rem;
     width: 100%;
-    border-radius: 10px;
+    border-radius: 0.625rem;
     text-align: justify;
     background-color: var(--background-color);
 }
 
 .icon-status-project {
-    width: 15px;
-    height: 15px;
+    width: 0.9375rem; /* 15px */
+    height: 0.9375rem;
     border-radius: 50%;
     position: relative;
     cursor: pointer;
 }
 
 .txt-status-project {
-    padding: 4px;
-    border-radius: 10px;
-    font-size: 12px;
+    padding: 0.25rem;
+    border-radius: 0.625rem;
+    font-size: 0.75rem;
     font-weight: 500;
 }
 
@@ -51,7 +91,7 @@ h4 span {
 }
 
 .icon-project img {
-    width: 40px;
+    width: 2.5rem;
     text-align: center;
 }
 
@@ -63,9 +103,9 @@ h4 span {
 .cancelled { background-color: var(--status-cancelled-color); }
 
 .box-status-button{
-    font-size: 13px;
-    padding: 5px 5px;
-    border-radius: 5px;
+    font-size: 0.8125rem;
+    padding: 0.3125rem;
+    border-radius: 0.3125rem;
     color: #fff;
     font-weight: 600;
 }
@@ -74,28 +114,33 @@ h4 span {
     opacity: 0.5;
 }
 
+/* =========================
+   Action menu
+========================= */
 .actions-menu-item {
     display: flex;
     flex-direction: row;
     justify-content: space-around;
     align-items: center;
-    padding-top: 5px;
-    padding-bottom: 5px;
+    padding: 0.3125rem 0;
 }
 
 .actions-menu-item .text {
     text-align: center;
     vertical-align: middle;
-    margin-left: 10px;
+    margin-left: 0.625rem;
 }
 
+/* =========================
+   Subtotal
+========================= */
 .subtotal-container {
     display: flex;
     flex-direction: column;
     justify-content: stretch;
     align-items: center;
-    gap: 10px;
-    font-size: 18px;
+    gap: 0.625rem;
+    font-size: 1.125rem;
 }
 
 .subtotal-container .row {
@@ -121,6 +166,9 @@ h4 span {
     position: relative; /* Ensure SVG positioning is relative to this container */
 }
 
+/* =========================
+   Widget
+========================= */
 .widget-container {
     display: flex;
     flex-direction: column;
@@ -128,9 +176,11 @@ h4 span {
     align-items: stretch;
     flex-wrap: nowrap;
     width: 100%;
-    padding: 20px 20px;
-    box-shadow: rgb(145, 158, 171, 0.3) 0px 0px 2px 0px,rgb(145, 158, 171, 0.12) 0px 12px 24px -4px !important;
-    border-radius: 20px !important;
+    padding: 1.25rem;
+    border-radius: 1.25rem !important;
+    box-shadow:
+        rgba(145, 158, 171, 0.3) 0 0 0.125rem 0,
+        rgba(145, 158, 171, 0.12) 0 0.75rem 1.5rem -0.25rem !important;
 }
 
 .widget-container .widget-title {
@@ -145,7 +195,7 @@ h4 span {
 .widget-container .widget-content {
     color: var(--font-fifth);
     font-weight: 700;
-    font-size: 1.2rem;
+    font-size: 1rem;
     overflow: hidden;
     word-break:normal;
     text-overflow: ellipsis;
@@ -170,9 +220,12 @@ h4 span {
     width: 100%;
 }
 
+/* =========================
+   Legend
+========================= */
 .legend-container {
     display: block;
-    width: 300px;
+    width: 18.75rem;
 }
 
 .legend {
@@ -193,30 +246,36 @@ h4 span {
 .legend-horizontal li {
     display: flex;
     flex-direction: row;
-    font-size: 12px;
+    font-size: 0.75rem;
     align-items:center;
 }
 
 .legend .legend-square,
 .legend-horizontal .legend-square {
     display: inline-block;
-    width: 12px;  /* Adjust size as needed */
-    height: 12px; /* Adjust size as needed */
-    margin-right: 5px;  /* Space between the square and the label */
+    width: 0.75rem;  /* Adjust size as needed */
+    height: 0.75rem; /* Adjust size as needed */
+    margin-right: 0.3125rem;  /* Space between the square and the label */
     vertical-align: middle;  /* Aligns the square with the text */
 }
 
+/* =========================
+   Tooltip
+========================= */
 .tooltip {
     position: absolute;
     background-color: #fff;
     border: 1px solid #ccc;
-    padding: 5px;
-    border-radius: 3px;
+    padding: 0.3125rem;
+    border-radius: 0.1875rem;
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.2s;
 }
 
+/* =========================
+   Table
+========================= */
 .table-container {
     overflow-x: auto !important;
     box-shadow: none !important;
@@ -225,25 +284,26 @@ h4 span {
 
 .table-cell {
     white-space: nowrap !important;
-    height: 50px !important;
-    /* padding: 0 !important; */
-    font-size: 14px !important;
+    height: 3.125rem !important; 
+    font-size: 0.875rem !important;
     color: var(--text-color) !important;
 }
 
-/* VINNET WELCOME CSS */
+/* =========================
+   Welcome section
+========================= */
 .welcome-header {
     background-image: url(../img/ipsos_banner.jpeg);
     background-repeat: no-repeat;
     background-size: cover;
     height: auto;
-    min-height: 220px;
+    min-height: 13.75rem;
 }
 
 .welcome-container {
     display: flex;
     flex-direction: column;
-    margin-top: 20px;
+    margin-top: 1.25rem;
     width: 100%;
 }
 
@@ -251,17 +311,17 @@ h4 span {
     display: flex;
     flex-direction: column;
     text-align: justify;
-    gap: 3;
-    padding: 30px 30px;
+    gap: 0.1875rem;
+    padding: 1.875rem;
     width: 100%;
-    margin-bottom: 20px;
+    margin-bottom: 1.25rem;
 }
 
 .welcome-body .item {
-    padding: 10px 10px;
+    padding: 0.625rem;
     width: 100%;
     font-weight: 400;
-    font-size: 16px;
+    font-size: 1rem;
     line-height: 2.5rem;
 }
 
@@ -270,10 +330,8 @@ h4 span {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 10px;
-    width: 100%;
-    font-weight: 400;
-    font-size: 16px;
+    padding: 0.625rem;
+    font-size: 1rem;
     line-height: 2.5rem;
 }
 
@@ -283,20 +341,29 @@ h4 span {
     width: 100%;
     align-items: center;
     justify-content: center;
-    gap: 10;
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--main-color);
-    padding: 20px 20px;
+    gap: 0.625rem;
+    padding: 1.25rem;
 }
 
 .welcome-footer img {
-    margin-right: 20px;
+    margin-right: 1.25rem;
+}
+
+.welcome-footer .gotit-slogan {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--gotit-color-primary);
+}
+
+.welcome-footer .vinnet-slogan {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--vinnet-color-secondary);
 }
 
 .provider-warning {
     color: var(--status-cancelled-color);
-    font-size: 18px;
+    font-size: 1.125rem;
     font-weight: 600;
 }
 
@@ -306,35 +373,40 @@ h4 span {
     align-items: center;
 }
 
-/* Tablet >= 600px */
-@media screen and (min-width: 600px) {
-    
-    .widget-container .widget-title {
-        font-size: 1.5rem;
-    }
-
-    .widget-container .widget-content {
-        font-size: 2rem;
-    }
-
-    .widget-container .widget-icon {
-        font-size: 1.2rem;
-    }
+/* Tablet */
+@media (min-width: 768px) {
+  .content {
+    width: 100%;
+    left: 0;
+    border-radius: 0;
+    padding: 1rem;
+  }
+  .widget-container .widget-title {
+    font-size: 1.25rem;
+  }
+  .widget-container .widget-content {
+    font-size: 2rem;
+  }
+  .widget-container .widget-icon {
+    font-size: 1.2rem;
+  }
 }
 
-/* Desktop >=960px */
-@media screen and (min-width: 960px) {
-    
-    .widget-container .widget-title {
-        font-size: 2rem;
-    }
-
-    .widget-container .widget-content {
-        font-size: 3.5rem;
-    }
-
-    .widget-container .widget-icon {
-        font-size: 1.5rem;
-    }
+/* Laptop nhỏ */
+@media (min-width: 1024px) {
+  .content-detail {
+    width: 100%;
+    margin: 1.25rem auto 0 auto; /* 20px */
+  }
+  .widget-container .widget-title {
+    font-size: 1.5rem;
+  }
+  .widget-container .widget-content {
+    font-size: 3.5rem;
+  }
+  .widget-container .widget-icon {
+    font-size: 1.5rem;
+  }
 }
+
 

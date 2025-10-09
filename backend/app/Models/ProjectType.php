@@ -15,6 +15,6 @@ class ProjectType extends Model
     ];
 
     public function projects(){
-        return $this->belongsToMany(Project::class, 'project_project_types', 'project_id', 'project_type_id');
+        return $this->belongsToMany(Project::class, 'project_project_types', 'project_id', 'project_type_id')->withTimestamps();
     }
 }

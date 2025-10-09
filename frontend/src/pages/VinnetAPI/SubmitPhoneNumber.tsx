@@ -335,7 +335,7 @@ const SubmitPhoneNumber = () => {
                                 loading={loadingConfirmed}
                                 loadingPosition="end"
                                 variant="contained"
-                                className='btn bg-primary'
+                                className='btn bg-vinnet-primary'
                                 >
                                 <span>XÁC NHẬN</span>
                             </LoadingButton>
@@ -357,7 +357,7 @@ const SubmitPhoneNumber = () => {
                 <Divider/>
                 <CardContent className='welcome-footer'>
                     <img src={VinnetJSC}/>
-                    <div>Giữ an toàn cho thông tin của bạn là trách nhiệm của chúng tôi.</div>
+                    <div className="vinnet-slogan">Giữ an toàn cho thông tin của bạn là trách nhiệm của chúng tôi.</div>
                 </CardContent>
             </Card>
             

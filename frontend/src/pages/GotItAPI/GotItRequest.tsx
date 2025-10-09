@@ -6,7 +6,7 @@ import ViettelLogo from "../../assets/img/providers/viettel_logo.png";
 import VinaphoneLogo from "../../assets/img/providers/vinaphone_logo.png";
 import WintelLogo from "../../assets/img/providers/wintel_logo.png";
 import GmobileLogo from "../../assets/img/providers/gmobile_logo.svg";
-import VinnetJSC from "../../assets/img/providers/Vinnet JSC.png";
+import GotIt from "../../assets/img/providers/GotIt.png";
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -311,7 +311,7 @@ const GotItRequest = () => {
                                 loading={loadingConfirmed}
                                 loadingPosition="end"
                                 variant="contained"
-                                className='btn bg-primary'
+                                className='btn bg-gotit-primary'
                                 >
                                 <span>XÁC NHẬN</span>
                             </LoadingButton>
@@ -332,8 +332,8 @@ const GotItRequest = () => {
                 </CardContent>
                 <Divider/>
                 <CardContent className='welcome-footer'>
-                    <img src={VinnetJSC}/>
-                    <div>Giữ an toàn cho thông tin của bạn là trách nhiệm của chúng tôi.</div>
+                    <img src={GotIt}/>
+                    <div className="gotit-slogan">Giữ an toàn cho thông tin của bạn là trách nhiệm của chúng tôi.</div>
                 </CardContent>
             </Card>
             

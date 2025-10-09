@@ -14,35 +14,35 @@ import {
 import "../../../assets/css/modal.css";
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { ApiConfig } from "../../../config/ApiConfig";
-import { ModalAddProjectConfig } from "../../../config/ModalAddProjectConfig";
 import { SelectChangeEvent } from "@mui/material/Select";
 import { useNavigate } from "react-router-dom";
-import useDialog from "../../../hook/useDialog"; // Import useDialog hook
-import AlertDialog from "../../AlertDialog/AlertDialog"; // Import AlertDialog component
 import { ColumnFormat } from "../../../config/ColumnConfig";
-import { ProjectData } from "../../../config/ProjectDataConfig";
+import { ProjectData } from "../../../config/ProjectFieldsConfig";
+import { ProjectGeneralFieldsConfig } from "../../../config/ProjectFieldsConfig";
+import { useProjects } from "../../../hook/useProjects";
 
 interface ModalProps {
   openModal: boolean;
   onClose: () => void;
+  metadata: {
+    project_types: { id: number; name: string }[];
+    departments: { id: number; name: string }[];
+    teams: { id: number; name: string}[];
+  }
 }
 
-const ModalAddProject: React.FC<ModalProps> = ({ openModal, onClose }) => {
+const ModalAddProject: React.FC<ModalProps> = ({ openModal, onClose, metadata }) => {
   const navigate = useNavigate();
   
   const [statusMessage, setStatusMessage] = useState<string>("");
   const [isError, setIsError] = useState<boolean>(false);
 
-  const { open, openDialog, closeDialog } = useDialog(); // Initialize useDialog
-  const [textDialog, setTextDialog] = useState({
-    textHeader: "",
-    textContent: "",
-  });
+  const { addProject } = useProjects();
 
-  const [formFieldsConfig, setFormFieldsConfig] = useState(ModalAddProjectConfig);
+  const [formFieldsConfig, setFormFieldsConfig] = useState(ProjectGeneralFieldsConfig);
   const [formValues, setFormValues] = useState<ProjectData>({
     internal_code: '',
+    symphony: '',
     project_name: '',
     platform: '',
     teams: [],
@@ -50,52 +50,42 @@ const ModalAddProject: React.FC<ModalProps> = ({ openModal, onClose }) => {
     planned_field_start: '',
     planned_field_end: ''
   });
-
-  useEffect(() => {
-    const fetchTeamOptions = async () => {
-      try
-      {
-        const url = ApiConfig.project.getTeams.replace('{department_id}', '3');
-
-        const responseTeam = await axios.get(url);
-
-        setFormFieldsConfig(fieldsConfig => fieldsConfig.map(field => field.name == 'teams' ? {...field, options: responseTeam.data.data} : field));
-      }
-      catch(error)
-      {
-        console.log('Error fetching team options: ', error);
-        openDialog();
-        setTextDialog({
-          textHeader: "Lỗi API",
-          textContent: "Error fetching team options: " + error,
-        });
-      }
-    };
-
-    const fetchProjectTypeOptions = async () => {
-      try
-      {
-        const responseProjectType = await axios.get(ApiConfig.project.getProjectTypes);
-
-        setFormFieldsConfig(fieldsConfig => fieldsConfig.map(field => field.name == 'project_types' ? {...field, options: responseProjectType.data.data} : field));
-      }
-      catch(error)
-      {
-        console.log('Error fetching team options: ', error);
-        openDialog();
-        setTextDialog({
-          textHeader: "Lỗi API",
-          textContent: "Error fetching team options: " + error,
-        });
-      }
-    };
-
-    fetchTeamOptions();
-    fetchProjectTypeOptions();
-  }, []);
-
-  console.log(formFieldsConfig);
   
+  useEffect(() => {
+    if(metadata){
+      setFormFieldsConfig((fieldsConfig) => 
+        fieldsConfig.map((field) => {
+          if(field.name === "project_types"){
+            return {
+              ...field,
+              options: metadata.project_types.map((pt) => ({
+                value: pt.id,
+                label: pt.name
+              })),
+            };
+          } else if(field.name === "departments"){
+            return {
+              ...field,
+              options: metadata.departments.map((d) => ({
+                value: d.id,
+                label: d.name
+              }))
+            }
+          } else if(field.name === "teams"){
+            return{
+              ...field,
+              options: metadata.teams.map((team) => ({
+                value: team.id,
+                label: team.name
+              }))
+            }
+          }
+          return field;
+        })
+      )
+    }
+  }, [metadata]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     
@@ -151,8 +141,8 @@ const ModalAddProject: React.FC<ModalProps> = ({ openModal, onClose }) => {
             onChange={handleSelectChange}
           >
             {column.options?.map((option, index) => (
-              <MenuItem key={index} value={option}>
-                {option}
+              <MenuItem key={index} value={option.value}>
+                {option.label}
               </MenuItem>
             ))}
           </Select>
@@ -165,16 +155,10 @@ const ModalAddProject: React.FC<ModalProps> = ({ openModal, onClose }) => {
   
   const handleSave = async () => {
     try {
-      const token = localStorage.getItem("authToken");
-      console.log(token);
-      const response = await axios.post(ApiConfig.project.addProject, formValues, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      console.log("Add successful", response.data);
-      navigate("/project-management/projects/1");
+      const new_project = await addProject(formValues);
+      console.log("Add successful");
+      onClose();
+      navigate(`/project-management/projects/${new_project.id}/settings`);
     } catch (error) {
       if (axios.isAxiosError(error)) {
         setStatusMessage(error.response?.data.message ?? error.message);
@@ -238,13 +222,6 @@ const ModalAddProject: React.FC<ModalProps> = ({ openModal, onClose }) => {
               Save
             </Button>
           </Box>
-          {/* show dialog khi có phản hồi từ API */}
-          <AlertDialog
-            openDialog={open}
-            closeDialog={closeDialog}
-            textHeader={textDialog.textHeader}
-            textContent={textDialog.textContent}
-          />
         </Box>
       </Modal>
   );

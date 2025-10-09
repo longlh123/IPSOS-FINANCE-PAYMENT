@@ -1,6 +1,7 @@
 import ConfirmPassword from "../pages/Auth/ConfirmPassword";
 import Projects from "../pages/Project/Projects";
-import EditProject from "../pages/Project/EditProject";
+import ProjectSettings from "../pages/Project/ProjectSettings";
+import EditProject from "../pages/Project/ProjectSettings";
 import VinnetManagement from "../pages/VinnetAPI/VinnetManagement";
 import GiftManagement from "../pages/Project/GiftManagement";
 
@@ -14,8 +15,8 @@ export const DefaultRoute = [
     component: Projects,
   }, 
   {
-    path: "/project-management/projects/:id",
-    component: EditProject,
+    path: "/project-management/projects/:id/settings",
+    component: ProjectSettings,
   },
   {
     path: "/project-management/projects/:id/gift-management",

@@ -25,7 +25,7 @@ class Team extends Model
 
     public function projects()
     {
-        return $this->belongsToMany(Project::class, 'project_teams', 'project_id', 'team_id');
+        return $this->belongsToMany(Project::class, 'project_teams', 'project_id', 'team_id')->withTimestamps();
     }
 
     public function users()

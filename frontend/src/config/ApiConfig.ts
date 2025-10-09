@@ -4,18 +4,20 @@ export const ApiConfig = {
   project: {
     viewProjects: `${host}/api/project-management/projects`,
     viewProject: `${host}/api/project-management/projects?platform=ifield&created_user_id=`,
-    updateStatusOfProject: `${host}/api/project-management/projects/{project_id}/status`,
-    addProject: `${host}/api/project-management/projects`,
+    updateStatusOfProject: `${host}/api/project-management/projects/{projectId}/status`,
+    getMetadata: `${host}/api/project-management/metadata`,
+    addProject: `${host}/api/project-management/projects/store`,
     editProject: `${host}/`,
     getProjectTypes: `${host}/api/project-management/project-types`,
     getDepartments: `${host}/api/project-management/departments`,
     getTeams: `${host}/api/project-management/{department_id}/teams`,
+    viewTransactions: `${host}/api/project-management/{projectId}/transactions/view`,
   },
   respondent: {
-    viewRespondents: `${host}/api/project-management/projects/{project_id}/respondents/show`,
+    viewRespondents: `${host}/api/project-management/projects/{projectId}/respondents/show`,
   },
   employee: {
-    viewEmployees: `${host}/api/project-management/projects/{project_id}/employees/show`
+    viewEmployees: `${host}/api/project-management/projects/{projectId}/employees/show`
   },
   vinnet: {
     viewMerchantInfo: `${host}/api/project-management/vinnet/merchant/view`,
@@ -24,7 +26,6 @@ export const ApiConfig = {
     changeMerchantKey: `${host}/api/project-management/vinnet/change-key`,
     verifiedVinnetToken: `${host}/api/project-management/project/verify-vinnet-token`,
     storeVinnetToken: `${host}/api/project-management/project/store-vinnet-token`,
-    viewVinnetTransactions: `${host}/api/project-management/vinnet/transactions/view`,
     rejectTransaction: `${host}/api/project-management/vinnet/reject-transaction`
   },
   gotit: {

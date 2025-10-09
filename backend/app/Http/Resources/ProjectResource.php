@@ -16,6 +16,14 @@ class ProjectResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        if($request->get('type') === 'metadata'){
+            return [
+                'id' => $this->id,
+                'internal_code' => $this->internal_code,
+                'project_name' => $this->project_name
+            ];
+        }
+
         return [
             'id' => $this->id,
             'internal_code' => $this->internal_code,

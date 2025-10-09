@@ -1,5 +1,4 @@
-import axios from "axios";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import TablePagination from "@mui/material/TablePagination";
 import "./Table.css";
 import {
@@ -21,26 +20,16 @@ import {
   Menu,
   MenuItem,
 } from "@mui/material";
-import { ApiConfig } from "../../config/ApiConfig";
-import useDialog from "../../hook/useDialog";
-import AlertDialog from "../AlertDialog/AlertDialog";
 import ModalAddProject from "../Modals/Project/ModalAddProject";
-import ModalEditProject from "../Modals/Project/ModalEditProject";
-import RefreshIcon from "@mui/icons-material/Refresh";
-import SearchIcon from "@mui/icons-material/Search";
 import SdCardAlertOutlinedIcon from '@mui/icons-material/SdCardAlertOutlined';
 import { TableCellConfig } from "../../config/TableProjectConfig";
 import { VisibilityConfig } from "../../config/RoleConfig";
 import SummarizeIcon from "@mui/icons-material/Summarize";
 import ModalReport from "../Modals/Report/ModalReport";
-
-import { IconDelete } from "../Icon/IconDelete";
 import ModalConfirmDelete from "../Modals/Confirm/ModalConfirmDelete";
-import CircleIcon from "@mui/icons-material/Circle";
 import { useNavigate } from "react-router-dom";
 import { formatDate } from "../../utils/DateUtils";
 import logo from "../../assets/img/Ipsos logo.svg";
-import { Upload as UploadIcon } from '@phosphor-icons/react/dist/ssr/Upload';
 import ModalImportExcel from "../Modals/Project/ModalImportExcel";
 import { toProperCase } from "../../utils/format-text-functions";
 import MoreVertIcon from '@mui/icons-material/MoreVert';
@@ -48,66 +37,20 @@ import GiftIcon from '@mui/icons-material/CardGiftcard';
 import { IconEdit } from "../Icon/IconEdit";
 import { useAuth } from "../../contexts/AuthContext";
 import { STATUS_COMPLETED } from "../../constants/statusProjectConstants";
+import { useProjects } from "../../hook/useProjects";
+import { useMetadata } from "../../hook/useMetadata";
 
-const TableProject = () => {
+const TableProjects = () => {
   const navigate = useNavigate();
 
-  const token = localStorage.getItem("authToken");
-  
   const storedUser = localStorage.getItem('user');
   const user = storedUser ? JSON.parse(storedUser) : null;
-  
-  const visibilityConfig = VisibilityConfig[user.role as keyof typeof VisibilityConfig];
 
-  const [statusMessage, setStatusMessage] = useState("");
-  const [isError, setIsError] = useState<boolean>(false);
-  const [loadingData, setLoadingData ] = useState<boolean>(true);
-
-  const [ projects, setProjects ] = useState<any>([]); //data
-  
   //Chọn số trang (pagination)
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  
-  const handleChangePage = (event: any, newPage: number) => {
-    setPage(newPage);
-  };
-  const handleChangeRowsPerPage = (event: any) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
 
-  useEffect(() => {
-    setLoadingData(true);
-    setIsError(false);
-    setStatusMessage("");
-
-    const fetchProjectData = async () => {
-      try {
-        const response = await axios.get(ApiConfig.project.viewProjects, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-            'Show-Only-Enabled': '1',
-          },
-        });
-        
-        setProjects(response.data.data);
-      } catch (error) {
-        if (axios.isAxiosError(error)) {
-          setStatusMessage(error.response?.data.message ?? error.message);
-          setIsError(true);
-        } 
-      } finally {
-        setLoadingData(false);
-      }
-    };
-
-    fetchProjectData();
-  }, []);
-
-  // Define color mapping for each status
+    // Define color mapping for each status
   const statusColors: { [key: string]: string } = {
     'planned': '#FFA500', // Orange
     'in coming': '#FFD700', // Gold
@@ -133,6 +76,21 @@ const TableProject = () => {
 
   const opendStatusOfProject = Boolean(anchorEl);
   const idStatusOfProject = opendStatusOfProject ? "simple-popover" : undefined;
+
+
+  const { projects, updateProjectStatus, loading: projectsLoading, error: projectError } = useProjects();
+  const { metadata, loading: metadataLoading, error: metadataError } = useMetadata();
+
+  const visibilityConfig = VisibilityConfig[user.role as keyof typeof VisibilityConfig];
+
+  const handleChangePage = (event: any, newPage: number) => {
+    setPage(newPage);
+  };
+  
+  const handleChangeRowsPerPage = (event: any) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
 
   const handleMenuStatusClose = () => {
     setAnchorElStatus(null);
@@ -160,60 +118,32 @@ const TableProject = () => {
         navigate(`/project-management/projects/${selectedProject.id}/gift-management`);
         break;
       case 'edit_project':
-        navigate(`/project-management/projects/${selectedProject.id}`);
+        navigate(`/project-management/projects/${selectedProject.id}/settings`);
         break;
       case 'delete':
         setOpenModalConfirm(true);
-        break;
-      case 'report':
-        handleOpenModalReport(selectedProject);
         break;
       default:
         break;
     }
   };
 
-  const handleStatusChange = async (newStatus: string) => {
-    if(selectedProject){
-      try{
-        // Make an API call to update the project status on the server
-        const url = ApiConfig.project.updateStatusOfProject.replace('{project_id}', selectedProject.id);
-
-        const response = await axios.put(url, { status: newStatus }, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-        });
-
-        // Update the local state with the new status
-        setProjects(projects.map((project: any) => 
-          project.id === selectedProject.id ? { ...project, status: newStatus } : project
-        ));
-
-        handleMenuStatusClose();
-      } catch (error) {
-        console.log('Failed to update status', error);
-      }
-    }
-  }
-
-  const [ openImportExcelModal, setOpenImportExcelModal] = useState<boolean>(false);
+  // const [ openImportExcelModal, setOpenImportExcelModal] = useState<boolean>(false);
   
-  // const [role, setRole] = useState<string>("");
-  const { open, openDialog, closeDialog } = useDialog();
-  const [textDialog, setTextDialog] = useState({
-    textHeader: "",
-    textContent: "",
-  });
+  // // const [role, setRole] = useState<string>("");
+  // const { open, openDialog, closeDialog } = useDialog();
+  // const [textDialog, setTextDialog] = useState({
+  //   textHeader: "",
+  //   textContent: "",
+  // });
+
   const [openModalAdd, setOpenModalAdd] = useState<boolean>(false);
   const [openModalEdit, setOpenModalEdit] = useState<boolean>(false);
   const [openModalReport, setOpenModalReport] = useState<boolean>(false);
   const [openModalConfirm, setOpenModalConfirm] = useState<boolean>(false);
   
   const handleCloseModal = () => {
-    setOpenImportExcelModal(false);
+    //setOpenImportExcelModal(false);
     setOpenModalAdd(false);
     setOpenModalEdit(false);
     setOpenModalReport(false);
@@ -255,13 +185,13 @@ const TableProject = () => {
           </div>
         </div>
         
-        {isError ? (
+        { (projectError && metadataError) ? (
           <Box display="flex" justifyContent="center" alignItems="center" height="100%">
             <SdCardAlertOutlinedIcon />
-            <div>{statusMessage}</div>
+            <div>{projectError ?? metadataError}</div>
           </Box>
         ) : (
-          loadingData ? (
+          (projectsLoading && metadataLoading) ? (
             <Box display="flex" justifyContent="center" alignItems="center" height="100%">
               <CircularProgress />
             </Box>
@@ -343,11 +273,18 @@ const TableProject = () => {
                           >
                             <List>
                               {statusTransitions[project.status].map((status_item, status_index) => (
-                                <ListItem button key={status_index} onClick={
-                                  () => {
-                                    handleStatusChange(status_item);
-                                  }
-                                }>
+                                <ListItem 
+                                  button 
+                                  key={status_index} 
+                                  onClick= { async () => {
+                                    try{
+                                      updateProjectStatus(selectedProject.id, status_item);
+                                      handleMenuStatusClose();
+                                    } catch(error){
+                                      console.log("Update status failed:", error);
+                                    }
+                                  }}
+                                >
                                   <ListItemText primary= {
                                     <div className="box-status-popover">
                                       <div className={"icon-status-project " + status_item.toLocaleLowerCase().replace(" ", "-")}></div>
@@ -400,11 +337,6 @@ const TableProject = () => {
                                 </div>
                               )}
                             </MenuItem>
-                            <MenuItem onClick={() => handleAction('report')}>
-                              <div className="actions-menu-item">
-                                <SummarizeIcon fontSize="small" /><span className="text">View Report</span>
-                              </div>
-                            </MenuItem>
                           </Menu>
                         </TableCell>
                       </TableRow>
@@ -427,28 +359,20 @@ const TableProject = () => {
       </Box>
       
       {/* SHOW MODAL IMPORT EXCEL */}
-      <ModalImportExcel openModal={openImportExcelModal} onClose={handleCloseModal} project={selectedProject} />
+      {/* <ModalImportExcel openModal={openImportExcelModal} onClose={handleCloseModal} project={selectedProject} /> */}
 
       {/* show Modal Add */}
-      <ModalAddProject openModal={openModalAdd} onClose={handleCloseModal} />
-      {/* show Modal edit */}
-      <ModalEditProject
-        openModal={openModalEdit}
-        onClose={handleCloseModal}
-        project={selectedProject}
+      <ModalAddProject 
+        openModal={openModalAdd} 
+        onClose={handleCloseModal} 
+        metadata={metadata}
       />
+      
       {/* show Modal report */}
       <ModalReport
         openModal={openModalReport}
         onClose={handleCloseModal}
         reportValue={selectedProject}
-      />
-      {/* show dialog khi lỗi */}
-      <AlertDialog
-        openDialog={open}
-        closeDialog={closeDialog}
-        textHeader={textDialog.textHeader}
-        textContent={textDialog.textContent}
       />
       <ModalConfirmDelete
         onClose={handleCloseModal}
@@ -458,4 +382,4 @@ const TableProject = () => {
   );
 };
 
-export default TableProject;
+export default TableProjects;

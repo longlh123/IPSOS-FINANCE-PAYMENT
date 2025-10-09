@@ -22,6 +22,7 @@ return new class extends Migration
             $table->datetime('interview_end'); 
             $table->string('respondent_phone_number'); //Số điện thoại đáp viên, thu thập trong quá trình phỏng vấn
             $table->string('phone_number'); //Số điện thoại của đáp viên, được đáp viên xác nhận khi nhận quà
+            $table->string('service_code');
             $table->text('reject_message')->nullable();
             $table->enum('channel', ['gotit', 'vinnet']);
             $table->enum('price_level', ['main','main_1','main_2','main_3','main_4','main_5','booster','booster_1','booster_2','booster_3','booster_4','booster_5']);
