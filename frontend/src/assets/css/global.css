@@ -1,12 +1,14 @@
 @import url("https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap");
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
 :root {
+  --breakpoint-sm: 480px;   /* Mobile nhỏ */
+  --breakpoint-md: 768px;   /* Tablet */
+  --breakpoint-lg: 1024px;  /* Laptop */
+  --breakpoint-xl: 1280px;  /* Desktop lớn */
+
+  --sidebar-collapsed: 5.5rem;  /* 88px */
+  --sidebar-expanded: 15.625rem; /* 250px */
+
   --main-color: #009d9c;
 
   --text-primary-color: #707070;
@@ -45,10 +47,14 @@
   --avatar-eighth-color: #32CD32; /*  (Lime Green) */
   --avatar-ninth-color: #FF8C00; /*  (Dark Orange) */
   --avatar-tenth-color: #4682B4; /*  (Steel Blue) */
-}
 
-*{
-  font-style: var(--main-font);
+  /* Got It */
+  --gotit-color-primary: #ed1c24;
+  --gotit-color-secondary: #00bd8f;
+
+  /* Vinnet */
+  --vinnet-color-primary: #007aff;
+  --vinnet-color-secondary: #7a00df;
 }
 
 body.dark {
@@ -59,32 +65,4 @@ body.dark {
   --body-color: #121212;
   --text-color: #eaeff4;
   --background-color: #1a1625;
-}
-
-.wrapper {
-  display: flex;
-  background-color: var(--background-color);
-}
-.content {
-  min-height: 92vh;
-  position: relative;
-  width: calc(100% - 250px);
-  left: 250px;
-  transition: var(--transition-02);
-  margin-top: 60px;
-  background-color: var(--body-color);
-  border-radius: 20px;
-  padding: 30px 30px;
-}
-
-.content-detail {
-  /* width: 1200px; */
-  margin: 10px auto;
-}
-
-@media screen and (max-width: 1024px) {
-  .content-detail {
-    width: 90%;
-    margin: 20px auto 0 auto;
-  }
 }

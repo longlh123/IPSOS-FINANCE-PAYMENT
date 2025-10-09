@@ -13,59 +13,50 @@ interface SideBarProps {
   isOpen: boolean;
   toggleSidebar: () => void;
 }
+
 const Sidebar: React.FC<SideBarProps> = ({ isOpen, toggleSidebar }) => {
   const [isSmallScreen, setIsSmallScreen] = useState<boolean>(false);
-  
-  const storedUser = localStorage.getItem('user');
+
+  const storedUser = localStorage.getItem("user");
   const user = storedUser ? JSON.parse(storedUser) : null;
-  
-  const visibilityConfig = VisibilityConfig[user.role as keyof typeof VisibilityConfig];
+
+  const visibilityConfig =
+    VisibilityConfig[user.role as keyof typeof VisibilityConfig];
 
   useEffect(() => {
-    
-    const mediaQuery = window.matchMedia("(max-width: 600px)");
+    const mediaQuery = window.matchMedia("(max-width: 767px)"); // mobile < 768px
     setIsSmallScreen(mediaQuery.matches);
 
-    const handleResize = () => {
-      setIsSmallScreen(mediaQuery.matches);
+    const handleResize = (e: MediaQueryListEvent) => {
+      setIsSmallScreen(e.matches);
     };
+
     mediaQuery.addEventListener("change", handleResize);
     return () => {
       mediaQuery.removeEventListener("change", handleResize);
     };
   }, []);
 
-  
-
   return (
-    <>
-      {isSmallScreen ? (
-        <Drawer anchor="left" open={isOpen} onClose={toggleSidebar}>
-          <div className="sidebar-drawer">{listSideBar(visibilityConfig)}</div>
-        </Drawer>
-      ) : (
-        <div className={isOpen ? "sidebar" : "sidebar close"}>
-          {listSideBar(visibilityConfig)}
-        </div>
-      )}
-    </>
-  );
-};
-
-const listSideBar = (visibilityConfig: any) => {
-  return (
-    <>
+    <div className={`sidebar ${isOpen ? "open" : "close"}`}>
       <div className="logo-sidebar">
-        <img src={logo} alt="" />
+        <img src={logo} alt="Logo" />
       </div>
+
       <div className="menu">
         <div className="header-title-menu">
           <span>Project management</span>
         </div>
+
         <ul className="menu-links">
           {visibilityConfig.sidebar.visible_projects && (
             <li className="nav-link">
-              <NavLink to="/project-management/projects">
+              <NavLink
+                to="/project-management/projects"
+                onClick={() => {
+                  if (isSmallScreen) toggleSidebar(); // chỉ đóng nếu là mobile
+                }}
+              >
                 <i className="icon">
                   <LibraryBooks style={{ fontSize: "18px" }} />
                 </i>
@@ -73,20 +64,27 @@ const listSideBar = (visibilityConfig: any) => {
               </NavLink>
             </li>
           )}
+
           {visibilityConfig.sidebar.visible_vinnet && (
             <li className="nav-link">
-              <NavLink to="/vinnet-management/index">
+              <NavLink
+                to="/vinnet-management/index"
+                onClick={() => {
+                  if (isSmallScreen) toggleSidebar();
+                }}
+              >
                 <i className="icon">
                   <GridViewIcon style={{ fontSize: "18px" }} />
                 </i>
-                <span className="text nav-text">Vinnet</span>
+                <span className="text nav-text">Transactions</span>
               </NavLink>
             </li>
           )}
         </ul>
+
         <Divider style={{ margin: "18px 0" }} />
       </div>
-    </>
+    </div>
   );
 };
 

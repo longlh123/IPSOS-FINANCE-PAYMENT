@@ -109,6 +109,16 @@ class GotItController extends Controller
             Log::info('Project respondent');
 
             $project = Project::findByInterviewURL($interviewURL);
+
+            if(strtolower($interviewURL->location_id) === '_defaultsp'){
+
+                $price = $project->getPriceForProvince($interviewURL);
+                
+                return response()->json([
+                    'status_code' => Response::HTTP_OK, //200
+                    'message' => ProjectGotItVoucherTransaction::STATUS_TRANSACTION_TEST . '[ Giá trị quà tặng: ' . $price . ']'
+                ], Response::HTTP_OK);
+            }
             
             //Kiểm tra đáp viên đã thực hiện giao dịch nhận quà trước đó hay chưa?
             ProjectRespondent::checkIfRespondentProcessed($project, $interviewURL);

@@ -47,6 +47,7 @@ class ProjectVinnetTransaction extends Model
 
     const STATUS_INVALID_DENOMINATION = 'Mệnh giá quà không hợp lệ'; // Invalid denomination
     const STATUS_TRANSACTION_FAILED = 'Giao dịch được thực hiện không qua quá trình phỏng vấn. Vui lòng liên hệ Admin để kiểm tra.';
+    const STATUS_TRANSACTION_TEST = 'Giao dịch test đang được thực hiện';
 
     public function respondent()
     {

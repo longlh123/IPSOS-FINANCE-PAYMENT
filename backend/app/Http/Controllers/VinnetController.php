@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 use GuzzleHttp\Client;
 use Ramsey\Uuid\Uuid;
 use Symfony\Component\HttpFoundation\Response;
@@ -24,28 +25,6 @@ use App\Http\Resources\VinnetProjectResource;
 
 class VinnetController extends Controller
 {
-    public function transactions_view()
-    {
-        try
-        {
-            $project_respondents = ProjectRespondent::with(['project'])->get();
-
-            return response()->json([
-                'status_code' => Response::HTTP_OK, //200
-                'message' => 'Successful request.',
-                'data' => $project_respondents
-            ]);
-        }
-        catch(\Exception $e)
-        {
-            Log::error($e->getMessage());
-            return response()->json([
-                'status_code' => Response::HTTP_BAD_REQUEST, //400
-                'message' => $e->getMessage(),
-            ]);
-        }
-    }
-
     /** 
      * Get the merchant information
      * 
@@ -545,6 +524,16 @@ class VinnetController extends Controller
             Log::info('Project respondent');
 
             $project = Project::findByInterviewURL($interviewURL);
+
+            if(strtolower($interviewURL->location_id) === '_defaultsp'){
+
+                $price = $project->getPriceForProvince($interviewURL);
+                
+                return response()->json([
+                    'status_code' => Response::HTTP_OK, //200
+                    'message' => ProjectVinnetTransaction::STATUS_TRANSACTION_TEST . '[ Giá trị quà tặng: ' . $price . ']'
+                ], Response::HTTP_OK);
+            } 
             
             //Kiểm tra đáp viên đã thực hiện giao dịch nhận quà trước đó hay chưa?
             ProjectRespondent::checkIfRespondentProcessed($project, $interviewURL);

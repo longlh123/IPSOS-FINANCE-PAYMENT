@@ -18,81 +18,20 @@ import {
   CircularProgress,
 } from "@mui/material";
 import SdCardAlertOutlinedIcon from '@mui/icons-material/SdCardAlertOutlined';
-import DeleteIcon from "@mui/icons-material/Delete";
-import EditIcon from "@mui/icons-material/Edit";
 import { TableCellRespondentConfig } from "../../config/TableRespondentConfig";
 import { ApiConfig } from "../../config/ApiConfig";
-import useDialog from "../../hook/useDialog";
-import AlertDialog from "../AlertDialog/AlertDialog";
-import ModalAddRespondent from "../Modals/Respondent/ModalAddRespondent";
-import RefreshIcon from "@mui/icons-material/Refresh";
-import AddIcon from "@mui/icons-material/Add";
-import ModalEditRespondent from "../Modals/Respondent/ModalEditRespondent";
-import { VisibilityConfig } from "../../config/RoleConfig";
-import { toProperCase } from "../../utils/format-text-functions";
+import ModalAddProject from "../Modals/Project/ModalAddProject";
 
-interface TableRespondentsProps {
-  project_id: string
-}
+const TableRespondents: React.FC = () => {
+  const [openModalAdd, setOpenModalAdd] = useState<boolean>(false);
 
-const TableRespondents: React.FC<TableRespondentsProps> = ({project_id}) => {
-  const navigate = useNavigate();
-  const token = localStorage.getItem("authToken");
-  
-  const [statusMessage, setStatusMessage] = useState("");
-  const [isError, setIsError] = useState<boolean>(false);
-  const [loadingData, setLoadingData ] = useState<boolean>(true);
-
-  const [ respondents, setRespondents ] = useState<any>([]); //data
-
-  const [ openModelAdd, setOpenModalAdd ] = useState<boolean>(false);
-
-  //Chọn số trang (pagination)
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  
-  const handleChangePage = (event: any, newPage: number) => {
-    setPage(newPage);
-  };
-  const handleChangeRowsPerPage = (event: any) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-
-  useEffect(() => {
-    setLoadingData(true);
-    setIsError(false);
-    setStatusMessage("");
-
-    const fetchProjectData = async () => {
-      try {
-        const url = ApiConfig.respondent.viewRespondents.replace('{project_id}', project_id);
-        
-        const response = await axios.get(url, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-        });
-        
-        setRespondents(response.data.data);
-      } catch (error) {
-        if (axios.isAxiosError(error)) {
-          setStatusMessage(error.response?.data.message ?? error.message);
-          setIsError(true);
-        } 
-      } finally {
-        setLoadingData(false);
-      }
-    };
-
-    fetchProjectData();
-  }, []);
+  const handleCloseModal = () => {
+    setOpenModalAdd(false)
+  }
   
   return (
     <>
-      <Box className="box-table">
+      {/* <Box className="box-table">
         <div className="filter">
           <h2>List</h2>
           <div className="">
@@ -131,7 +70,7 @@ const TableRespondents: React.FC<TableRespondentsProps> = ({project_id}) => {
                       <TableRow key={respondent.id} className="table-row" hover={true}>
                         {TableCellRespondentConfig.map((item, index) => (
                           <TableCell key={item.name} className="table-cell">
-                            {/* { 
+                            { { 
                               item.label === 'Status' ? (
                                 <div>
                                   <span className={"txt-status-project " + project.status.toLocaleLowerCase().replace(" ", "-")} >{toProperCase(project[item.name])}</span>
@@ -140,7 +79,7 @@ const TableRespondents: React.FC<TableRespondentsProps> = ({project_id}) => {
                                 <div className="icon-project"><img src={logo}></img></div>
                                 
                               ) : (renderContent(item, project)))) 
-                            } */}
+                            } }
                           </TableCell>
                         ))}
                       </TableRow>
@@ -161,6 +100,8 @@ const TableRespondents: React.FC<TableRespondentsProps> = ({project_id}) => {
           )
         )}
       </Box>
+
+      <ModalAddProject openModal={openModalAdd} onClose={handleCloseModal} metadata={metadata} /> */ }
     </>
   )
 };

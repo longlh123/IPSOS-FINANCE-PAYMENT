@@ -3,7 +3,7 @@ import axios from "axios";
 import { InputProvider } from "../../contexts/InputContext";
 import Directional from "../../components/Directional/Directional";
 import MerchantInfor from "./MerchantInfor";
-import VinnetTransactionsManager from "./VinnetTransactionsManager";
+import TransactionsManager from "../Project/TransactionsManager";
 import { Box } from "@mui/material";
 import Grid from '@mui/material/Grid';
 import SummaryWidget from "../../components/Widgets/SummaryWidget";
@@ -119,7 +119,7 @@ const VinnetManagement = () => {
           )}
           {visibilityConfig.vinnet.components.visible_vinnettransactionsmanager && (
             <Grid item xs={6} md={12}>
-              <VinnetTransactionsManager />
+              <TransactionsManager />
             </Grid>
           )}
         </Grid>

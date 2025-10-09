@@ -23,14 +23,15 @@ class StoreProjectRequest extends FormRequest
     {
         return [
             'internal_code' => 'required|string',
+            'symphony' => 'required|string',
             'project_name' => 'required|string',
-            'platform' => 'required|string|in:ifield,dimensions,iField,Dimensions',
+            'platform' => 'required|string|in:ifield,dimensions,other,iField,Dimensions,Other',
             'planned_field_start' => 'required|date',
             'planned_field_end' => 'required|date',
             'project_types' => 'required|array|min:1',
-            'project_types.*' => 'required|string|in:HUT,CLT,F2F,CATI,FGD,IDI,IHV',
+            'project_types.*' => 'required|numeric|min:1',
             'teams' => 'required|array|min:1',
-            'teams.*' => 'string|exists:teams,name',
+            'teams.*' => 'numeric|exists:teams,id',
         ];
     }
 
@@ -38,6 +39,9 @@ class StoreProjectRequest extends FormRequest
         return [
             'internal_code.required' => 'The internal code is required.',
             'internal_code.string' => 'The internal code must be a string.',
+            
+            'symphony.required' => 'The symphony is required.',
+            'symphony.string' => 'The symphony must be a string.',
 
             'project_name.required' => 'The project name is required.',
             'project_name.string' => 'The project name must be a string.',
@@ -56,14 +60,14 @@ class StoreProjectRequest extends FormRequest
             'project_types.array' => 'The project types must be an array.',
             'project_types.min' => 'You must select at least one project type.',
             'project_types.*.required' => 'Each project type is required.',
-            'project_types.*.string' => 'Each project type must be a string.',
-            'project_types.*.in' => 'The selected project type is invalid. Valid types are: HUT, CLT, F2F, CATI, FGD, IDI, IHV.',
+            'project_types.*.numeric' => 'Each project type must be a numeric.',
+            'project_types.*.min' => 'The selected project type is invalid',
             
             'teams.required' => 'At least one team is required.',
             'teams.array' => 'The teams must be an array.',
             'teams.min' => 'You must select at least one team.',
-            'teams.*.string' => 'Each team name must be a string.',
-            'teams.*.exists' => 'The selected team does not exist.',
+            'teams.*.numeric' => 'Each team name must be a numeric.',
+            'teams.*.exists' => 'The selected team does not exist.'
         ];
     }
 }

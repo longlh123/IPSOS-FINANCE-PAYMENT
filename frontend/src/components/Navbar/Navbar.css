@@ -1,51 +1,62 @@
 .navbar {
-  /* background-color: red; */
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 64px;
+  height: 4rem; /* 64px */
   position: fixed;
   top: 0;
-  left: 250px;
+  left: 0;
   right: 0;
-  padding: 20px 20px;
+  padding: 1rem; /* 16px */
   z-index: 100;
   background-color: var(--background-color);
+  border-bottom: 2px solid var(--body-color);
 }
-.navbar.fullWidth {
-  left: 88px;
-}
+
 .nav-left {
   display: flex;
   align-items: center;
 }
 
 .nav-right > * {
-  margin: 0 10px;
+  margin: 0 0.5rem;     
+  font-size: 1.25rem;    
   color: rgb(105, 105, 105);
-  cursor: pointer;
-  font-size: 25px !important;
-}
-
-.toggle-open span {
   cursor: pointer;
 }
 
 .btn-toggle-sidebar {
   color: var(--main-color);
-  height: 18px !important;
-  width: 18px !important;
+  height: 1.125rem !important;
+  width: 1.125rem !important;
 }
 
-@media screen and (max-width: 600px) {
-  .nav-left .logo img {
-    display: none;
-  }
-  .toggle-open {
-    margin-left: 0;
-    display: block;
+/* Tablet ≥600px */
+@media screen and (min-width: 600px) {
+  .nav-right > * {
+    font-size: 1.375rem; 
   }
   .navbar {
-    left: 0 !important;
+    left: 5.5rem; /* 88px (sidebar closed) */
+    width: calc(100% - 5.5rem);
+  }
+  .navbar.fullWidth {
+    left: 0;
+    width: 100%;
+  }
+}
+
+/* Desktop ≥1024px */
+@media screen and (min-width: 1024px) {
+  .nav-right > * {
+    font-size: 1.5625rem;
+  }
+  .navbar {
+    left: 15.625rem; /* 250px (sidebar open) */
+    width: calc(100% - 15.625rem);
+  }
+  .navbar.fullWidth {
+    left: 5.5rem; /* 88px */
+    width: calc(100% - 5.5rem);
   }
 }

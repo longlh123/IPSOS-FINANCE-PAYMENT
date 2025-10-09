@@ -10,6 +10,7 @@ use App\Http\Controllers\ForgotPasswordController;
 use App\Http\Controllers\VinnetController;
 use App\Http\Controllers\AdministrativeDivisionsController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\MetadataController;
 use App\Http\Controllers\ProjectTypeController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\RespondentController;
@@ -26,6 +27,8 @@ Route::get('/administrative-divisions/old/{provinceId}/districts', [Administrati
 Route::get('/administrative-divisions/new/provinces', [AdministrativeDivisionsController::class, 'get_provinces']);
 Route::get('/administrative-divisions/new/{provinceId}/districts', [AdministrativeDivisionsController::class, 'get_districts']);
 
+Route::get('/project-management/metadata', [MetadataController::class, 'index']);
+
 Route::get('/project-management/departments', [DepartmentController::class, 'index']);
 Route::get('/project-management/{department_id}/teams', [DepartmentController::class, 'get_teams']);
 Route::get('/project-management/project-types', [ProjectTypeController::class, 'index']);
@@ -35,23 +38,24 @@ Route::middleware(['auth:sanctum'])->group(function(){
     Route::post('/logout', [LoginController::class, 'logout']);
 
     Route::get('/project-management/projects', [ProjectController::class, 'index']);
-    Route::get('/project-management/projects/{id}/show', [ProjectController::class, 'show']);
+    Route::get('/project-management/projects/{projectId}/show', [ProjectController::class, 'show']);
 
-    Route::post('/project-management/projects', [ProjectController::class, 'store'])->middleware('ensureUserHasRole:admin');
+    Route::post('/project-management/projects/store', [ProjectController::class, 'store'])->middleware('ensureUserHasRole:admin');
     Route::put('/project-management/projects/{projectId}/update', [ProjectController::class, 'update'])->middleware('ensureUserHasRole:admin');
     Route::put('/project-management/projects/{projectId}/status', [ProjectController::class, 'updateStatus'])->middleware('ensureUserHasRole:admin');
     Route::put('/project-management/projects/{projectId}/disabled', [ProjectController::class, 'updateDisabled'])->middleware('ensureUserHasRole:admin');
 
     Route::delete('/project-management/projects/{projectId}/provinces/{provinceId}/remove', [ProjectController::class, 'removeProvinceFromProject'])->middleware('ensureUserHasRole:admin');
 
-    Route::get('/project-management/projects/{project_id}/respondents/show', [RespondentController::class, 'show'])->middleware('ensureUserHasRole:admin');
+    Route::get('/project-management/{projectId}/transactions/view', [ProjectController::class, 'showTransactions'])->middleware('ensureUserHasRole:admin,Finance');
+    
+    Route::get('/project-management/projects/{projectId}/respondents/show', [RespondentController::class, 'show'])->middleware('ensureUserHasRole:admin');
 
-    Route::get('/project-management/projects/{project_id}/employees/show', [EmployeeController::class, 'show'])->middleware('ensureUserHasRole:admin,Field Manager,Finance');
+    Route::get('/project-management/projects/{projectId}/employees/show', [EmployeeController::class, 'show'])->middleware('ensureUserHasRole:admin,Field Manager,Finance');
 
     Route::get('/project-management/vinnet/merchant/view', [VinnetController::class, 'get_merchant_info'])->middleware('ensureUserHasRole:admin,Finance');
     Route::post('/project-management/vinnet/change-key', [VinnetController::class, 'change_key'])->middleware('ensureUserHasRole:admin,Finance');
     Route::get('/project-management/vinnet/merchantinfo', [VinnetController::class, 'merchantinfo'])->middleware('ensureUserHasRole:admin,Finance');
-    Route::get('/project-management/vinnet/transactions/view', [VinnetController::class, 'transactions_view'])->middleware('ensureUserHasRole:admin,Finance');
 });
 
 Route::get('/project-management/project/verify-vinnet-token/{internal_code}/{project_name}/{respondent_id}/{remember_token}', [ProjectController::class, 'verify_vinnet_token']);

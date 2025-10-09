@@ -3,5 +3,8 @@ export interface ColumnFormat {
     name: string,
     type: "string" | "number" | "select" | "image" | "date" | "menu",
     width?: number, 
-    options?: string[],
+    options?: { value: any, label: string }[],
+    grid?: number,
+    order?: number,
+    visible?: boolean
 }

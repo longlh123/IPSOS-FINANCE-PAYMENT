@@ -15,7 +15,10 @@ export const ModalAddRespondentConfig: ColumnFormat[] = [
     label: "Gender",
     name: "gender",
     type: "select",
-    options: ['Nam', 'Nữ'],
+    options: [
+      { value: 1, label: 'Nam' },
+      { value: 2, label: 'Nữ' }
+    ],
   },
   {
     label: "Date Of Birth",

@@ -10,6 +10,7 @@ class InterviewURL
 {
     public $internal_code;
     public $project_name;
+    public $location_id;
     public $interviewer_id;
     public $interview_start;
     public $interview_end;
@@ -25,16 +26,17 @@ class InterviewURL
     {
         $this->internal_code = $splittedURL[0] ?? null;
         $this->project_name = $splittedURL[1] ?? null;
-        $this->interviewer_id = $splittedURL[2] ?? null;
-        $this->interview_start = $this->convertToDate($splittedURL[3]) ?? null;
-        $this->interview_end = $this->convertToDate($splittedURL[4]) ?? null;
-        $this->shell_chainid = $splittedURL[5] ?? null;
-        $this->respondent_id = $splittedURL[6] ?? null;
-        $this->respondent_phone_number = $splittedURL[7] ?? null;
-        $this->province_id = $splittedURL[8] ?? null;
-        $this->price_level = $splittedURL[9] ?? null;
-        $this->channel = $splittedURL[10] ?? null;
-        $this->remember_token = implode('', array_slice($splittedURL, 11)) ?? null;
+        $this->location_id = $splittedURL[2] ?? null;
+        $this->interviewer_id = $splittedURL[3] ?? null;
+        $this->interview_start = $this->convertToDate($splittedURL[4]) ?? null;
+        $this->interview_end = $this->convertToDate($splittedURL[5]) ?? null;
+        $this->shell_chainid = $splittedURL[6] ?? null;
+        $this->respondent_id = $splittedURL[7] ?? null;
+        $this->respondent_phone_number = $splittedURL[8] ?? null;
+        $this->province_id = $splittedURL[9] ?? null;
+        $this->price_level = $splittedURL[10] ?? null;
+        $this->channel = $splittedURL[11] ?? null;
+        $this->remember_token = implode('', array_slice($splittedURL, 12)) ?? null;
         
         // Validate the properties
         $this->validateProperties();
@@ -54,6 +56,7 @@ class InterviewURL
         $properties = [
             'internal_code' => $this->internal_code,
             'project_name' => $this->project_name,
+            'location_id' => $this->location_id,
             'interviewer_id' => $this->interviewer_id,
             'interview_start' => $this->interview_start,
             'interview_end' => $this->interview_end,
@@ -84,6 +87,7 @@ class InterviewURL
     {
         Log::info('Internal Code: ' . $this->internal_code
             . ', Project Name: ' . $this->project_name
+            . ', Location ID: ' . $this->location_id 
             . ', Interviewer ID: ' . $this->interviewer_id
             . ', Respondent ID: ' . $this->respondent_id
             . ', Interview Start: ' . $this->interview_start->format('Y-m-d H:i:s')

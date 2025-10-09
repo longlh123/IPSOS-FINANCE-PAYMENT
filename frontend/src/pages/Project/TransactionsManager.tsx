@@ -6,15 +6,11 @@ import { saveAs } from 'file-saver';
 import { Alert, Box, Button, Card, CardActions, CardContent, CardHeader, CircularProgress, Divider, FormControlLabel, FormLabel, InputAdornment, OutlinedInput, Paper, Radio, RadioGroup, SelectChangeEvent, Snackbar, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow } from "@mui/material";
 import { Select, MenuItem, InputLabel, FormControl } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { Theme, useTheme } from '@mui/material/styles';
 import { ApiConfig } from '../../config/ApiConfig';
-import useDialog from '../../hook/useDialog';
-import { ArrowLeft } from '@mui/icons-material';
 import dayjs, { Dayjs } from 'dayjs';
 import { DatePicker, DatePickerProps } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import TextField, { TextFieldProps } from '@mui/material/TextField';
 import { DesktopDatePicker } from '@mui/x-date-pickers/DesktopDatePicker';
 import numeral from 'numeral';
 import { TableCellConfig } from '../../config/TableVinnetConfig';
@@ -24,44 +20,44 @@ import SdCardAlertOutlinedIcon from '@mui/icons-material/SdCardAlertOutlined';
 import ErrorOutlineOutlinedIcon from '@mui/icons-material/ErrorOutlineOutlined';
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 import LoadingButton from "@mui/lab/LoadingButton";
+import { useMetadata } from "../../hook/useMetadata";
+import { useProjects } from "../../hook/useProjects";
 
-interface VinnetTransactionData {
-    id: number,
-    vinnet_payservice_requuid: string,
-    project_id: string,
+interface TransactionData {
     internal_code: string,
     project_name: string,
+    shell_chainid: string,
     employee_id: string,
     first_name: string,
     last_name: string,
-    role: string,
-    team: string,
-    shell_chainid: string,
-    respondent_id: string,
-    province: string,
+    province_name: string,
     interview_start: string,
     interview_end: string,
-    respondent_phone_number: string,
     phone_number: string,
-    vinnet_token_status: string,
-    status: string,
-    total_amt: number,
-    commission: number,
+    transaction_id: string,
+    amount: number,
     discount: number,
     payment_amt: number,
     created_at: string,
-    vinnet_invoice_date: string,
+    updated_at: string,
+    channel: string,
+    service_code: string,
+    invoice_date: string
 };
 
 interface ProjectData {
-    project_id: string,
+    id: number,
     internal_code: string,
     project_name: string,
 };
 
-const VinnetTransactionsManager = () => {
+const TransactionsManager = () => {
     const token = localStorage.getItem('authToken');
 
+    const { getTransactions } = useProjects();
+    const { metadata, loading: metadataLoading, error: metadataError } = useMetadata();
+    const [ transactions, setTransactions ] = useState<TransactionData[]>([]);
+    
     const [statusMessage, setStatusMessage] = useState("");
     const [isError, setIsError] = useState<boolean>(false);
     const [loading, setLoading] = useState(false);
@@ -70,8 +66,7 @@ const VinnetTransactionsManager = () => {
     
     const [filterType, setFilterType] = useState<string>('by_month');
 
-    const [ vinnetTransactions, setVinnetTransactions ] = useState<VinnetTransactionData[]>([]);
-    const [ filterVinnetTransactions, setFilterVinnetTransactions ] = useState<VinnetTransactionData[]>([]);
+    
     const [ projectIdSelected, setProjectIdSelected] = useState<string>('');
     const [ uniqueProjects , setUniqueProjects ] = useState<ProjectData[]>([]);
 
@@ -98,7 +93,6 @@ const VinnetTransactionsManager = () => {
         setFilterType(event.target.value);
         // Reset other filters when switching
         setProjectIdSelected('');
-        setFilterVinnetTransactions([]);
         setSelectedDate(null);
 
         setNumberOfTransactions(0);
@@ -108,61 +102,63 @@ const VinnetTransactionsManager = () => {
         setPage(0);
     };
 
-    useEffect(() => {
-        setLoading(true);
+    // useEffect(() => {
+    //     setLoading(true);
 
-        const fetchData = async () => {
-            try{
-                const response = await axios.get(ApiConfig.vinnet.viewVinnetTransactions, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
+    //     const fetchData = async () => {
+    //         try{
+    //             const response = await axios.get(ApiConfig.project.viewTransactions, {
+    //                 method: 'GET',
+    //                 headers: {
+    //                     'Content-Type': 'application/json',
+    //                     'Authorization': `Bearer ${token}`
+    //                 }
+    //             });
 
-                const transactions: VinnetTransactionData[] = response.data.data;
+    //             const transactions: VinnetTransactionData[] = response.data.data;
 
-                setVinnetTransactions(transactions);
+    //             setVinnetTransactions(transactions);
 
-                setUniqueProjects(
-                    Array.from(new Set(transactions.map((transaction: VinnetTransactionData) => transaction.project_id)))
-                        .map(project_id => {
-                            const transaction = transactions.find(transaction => transaction?.project_id === project_id);
-                            return transaction ? { project_id: transaction.project_id, internal_code: transaction.internal_code, project_name: transaction.project_name } : {project_id: '', internal_code: '', project_name: '' };
-                        })
-                        .filter(project => project)
-                );
+    //             setUniqueProjects(
+    //                 Array.from(new Set(transactions.map((transaction: VinnetTransactionData) => transaction.project_id)))
+    //                     .map(project_id => {
+    //                         const transaction = transactions.find(transaction => transaction?.project_id === project_id);
+    //                         return transaction ? { project_id: transaction.project_id, internal_code: transaction.internal_code, project_name: transaction.project_name } : {project_id: '', internal_code: '', project_name: '' };
+    //                     })
+    //                     .filter(project => project)
+    //             );
                 
-            } catch (error) {
-                if (axios.isAxiosError(error)) {
-                    setStatusMessage(error.response?.data.message ?? error.message);
-                    setIsError(true);
-                }
-            } finally {
-                setLoading(false);
-            }
-        }
+    //         } catch (error) {
+    //             if (axios.isAxiosError(error)) {
+    //                 setStatusMessage(error.response?.data.message ?? error.message);
+    //                 setIsError(true);
+    //             }
+    //         } finally {
+    //             setLoading(false);
+    //         }
+    //     }
 
-        fetchData();
-    }, []);
+    //     fetchData();
+    // }, []);
     
-    const handleProjectSelectedChange = (event: SelectChangeEvent<string>, child: React.ReactNode) => {
+    const handleProjectSelectedChange = async (event: SelectChangeEvent<string>, child: React.ReactNode) => {
         const project_id = event.target.value as string;
 
-        setProjectIdSelected(project_id);
+        const data = await getTransactions(parseInt(project_id));
 
-        const filterTransactions = vinnetTransactions.filter(transaction => (transaction.project_id === project_id)); 
+        setTransactions(data);
 
-        setFilterVinnetTransactions(filterTransactions);
+        // const filterTransactions = vinnetTransactions.filter(transaction => (transaction.project_id === project_id)); 
 
-        const number_of_transactions = filterTransactions.filter(transaction => transaction.status === 'Token verified').length;
-        const total_amt = filterTransactions.reduce((sum, transaction) => sum + transaction.total_amt, 0);
-        const total_payment_amt = filterTransactions.reduce((sum, transaction) => sum + transaction.payment_amt, 0);
+        // setFilterVinnetTransactions(filterTransactions);
 
-        setNumberOfTransactions(number_of_transactions);
-        setTotalAmount(total_amt);
-        setPaymentAmount(total_payment_amt);
+        // const number_of_transactions = filterTransactions.filter(transaction => transaction.status === 'Token verified').length;
+        // const total_amt = filterTransactions.reduce((sum, transaction) => sum + transaction.total_amt, 0);
+        // const total_payment_amt = filterTransactions.reduce((sum, transaction) => sum + transaction.payment_amt, 0);
+
+        // setNumberOfTransactions(number_of_transactions);
+        // setTotalAmount(total_amt);
+        // setPaymentAmount(total_payment_amt);
 
         setPage(0);
     }
@@ -172,7 +168,7 @@ const VinnetTransactionsManager = () => {
 
         console.log(newDate?.month);
 
-        const filterTransactions = vinnetTransactions.filter(transaction => {
+        const filterTransactions = transactions.filter(transaction => {
             const transactionDate = dayjs(transaction.created_at);
 
             return (
@@ -180,10 +176,10 @@ const VinnetTransactionsManager = () => {
             )
         });
 
-        setFilterVinnetTransactions(filterTransactions);
+        setTransactions(filterTransactions);
 
-        const number_of_transactions = filterTransactions.filter(transaction => transaction.status === 'Token verified').length;
-        const total_amt = filterTransactions.reduce((sum, transaction) => sum + transaction.total_amt, 0);
+        const number_of_transactions = filterTransactions.filter(transaction => transaction.invoice_date === 'Token verified').length;
+        const total_amt = filterTransactions.reduce((sum, transaction) => sum + transaction.amount, 0);
         const total_payment_amt = filterTransactions.reduce((sum, transaction) => sum + transaction.payment_amt, 0);
 
         setNumberOfTransactions(number_of_transactions);
@@ -198,7 +194,7 @@ const VinnetTransactionsManager = () => {
         {
             setLoadingExportToExcel(true);
 
-            if(filterVinnetTransactions.length === 0)
+            if(transactions.length === 0)
             {
                 throw new Error("No data to export.");
             }
@@ -219,18 +215,18 @@ const VinnetTransactionsManager = () => {
                 vinnet_invoice_date: 'Invoiced At'
             }
 
-            const exportData = filterVinnetTransactions.map(transaction => {
+            const exportData = transactions.map(transaction => {
                 const filteredTransaction: {[key: string]: any} = {};
 
                 Object.entries(columnsToExport).forEach((key) => {
                     if(key[0] === 'created_at' || key[0] === 'vinnet_invoice_date')
                     {
 
-                        filteredTransaction[key[1]] = transaction[key[0] as keyof VinnetTransactionData] === null ? null : dayjs(transaction[key[0] as keyof VinnetTransactionData]).format("YYYY-MM-DD HH:mm:ss");
+                        filteredTransaction[key[1]] = transaction[key[0] as keyof TransactionData] === null ? null : dayjs(transaction[key[0] as keyof TransactionData]).format("YYYY-MM-DD HH:mm:ss");
                     }
                     else
                     {
-                        filteredTransaction[key[1]] = transaction[key[0] as keyof VinnetTransactionData];
+                        filteredTransaction[key[1]] = transaction[key[0] as keyof TransactionData];
                     }
                 })
 
@@ -315,11 +311,13 @@ const VinnetTransactionsManager = () => {
                                                 <MenuItem value="">
                                                     <em>Please select a project</em>
                                                 </MenuItem>
-                                                {uniqueProjects.map((project, index) => (
-                                                    <MenuItem key={project.project_id} value={project.project_id}>
-                                                    {project.internal_code + " - " + project.project_name}
-                                                    </MenuItem>
-                                                ))}
+                                                { 
+                                                    metadata.projects.map((project: ProjectData) => (
+                                                        <MenuItem key={project.id} value={project.id} >
+                                                            {project.internal_code + " - " + project.project_name}
+                                                        </MenuItem>
+                                                    ))
+                                                }
                                             </Select>
                                         </FormControl>
                                     </div>
@@ -379,17 +377,17 @@ const VinnetTransactionsManager = () => {
                                                 </TableHead>
                                                 <TableBody>
                                                     {
-                                                        filterVinnetTransactions.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((transaction: VinnetTransactionData, index) => {
+                                                        transactions.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((transaction: TransactionData, index) => {
                                                             return (
                                                                 <TableRow
-                                                                    key={transaction.id} 
+                                                                    key={transaction.transaction_id} 
                                                                     className="table-row"
                                                                     hover={true}   
                                                                 >
                                                                     {
                                                                         TableCellConfig.map((column: {[key: string]: any}, index) => {
-                                                                            const valueFormat = column.type === 'number' ? numeral(transaction[column.name as keyof VinnetTransactionData]).format(column.name === 'discount' ? ('0.00') : ('0,000'))
-                                                                            : (column.type === 'date' ? (dayjs(transaction[column.name as keyof VinnetTransactionData]).format("YYYY-MM-DD HH:MM")) : (transaction[column.name as keyof VinnetTransactionData]));
+                                                                            const valueFormat = column.type === 'number' ? numeral(transaction[column.name as keyof TransactionData]).format(column.name === 'discount' ? ('0.00') : ('0,000'))
+                                                                            : (column.type === 'date' ? (dayjs(transaction[column.name as keyof TransactionData]).format("YYYY-MM-DD HH:MM")) : (transaction[column.name as keyof TransactionData]));
                                                                             return (
                                                                             <TableCell
                                                                                 key={column.name}
@@ -398,7 +396,7 @@ const VinnetTransactionsManager = () => {
                                                                                 sx={{verticalAlign: 'middle'}}
                                                                             >
                                                                                 { column.type === 'image' ? (
-                                                                                    transaction.status === 'Token verified' ? (
+                                                                                    transaction.invoice_date === 'Token verified' ? (
                                                                                         valueFormat === null  ? (<RadioButtonUncheckedOutlinedIcon sx={{ color: 'var(--text-primary-color)', fontSize: '18px' }} />) 
                                                                                                             : (<CheckCircleOutlineOutlinedIcon sx={{ color: 'var(--status-completed-color)', fontSize: '18px' }} />)
                                                                                     ) : (
@@ -420,7 +418,7 @@ const VinnetTransactionsManager = () => {
                                         <TablePagination
                                             rowsPerPageOptions={[15, 20, 25]}
                                             component='div'
-                                            count={filterVinnetTransactions.length}
+                                            count={transactions.length}
                                             rowsPerPage={rowsPerPage}
                                             page={page}
                                             onPageChange={handleChangePage}
@@ -495,4 +493,4 @@ const VinnetTransactionsManager = () => {
     )
 }
 
-export default VinnetTransactionsManager;
+export default TransactionsManager;

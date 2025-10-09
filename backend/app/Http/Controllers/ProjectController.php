@@ -149,6 +149,7 @@ class ProjectController extends Controller
                 ]);
 
                 $project->projectDetails()->create([
+                    'symphony' => $validatedRequest['symphony'],
                     'created_user_id' => $user->id,
                     'platform' => strtolower($validatedRequest['platform']),
                     'planned_field_start' => $validatedRequest['planned_field_start'],
@@ -160,51 +161,44 @@ class ProjectController extends Controller
                 ]);
 
                 $projectTypes = $validatedRequest['project_types'];
-                $projectTypeIds = ProjectType::whereIn('name', $projectTypes)->pluck('id');
-
-                if($projectTypeIds->isEmpty())
-                {
-                    throw new \Exception('Invalid project types provided');
-                }
-
+                
                 // Attach the project types to the project (assuming a many-to-many relationship)
-                $project->projectTypes()->attach($projectTypeIds);
+                $project->projectTypes()->attach($projectTypes);
 
                 $teams = $validatedRequest['teams'];
-                $teamIds = Team::whereIn('name', $teams)->pluck('id');
-
-                if($teamIds->isEmpty())
-                {
-                    throw new Exception('Invalid teams provided');
-                }
-
+                
                 //Attach the teams to the project (assuming a many-to-many relationship)
-                $project->teams()->attach($teamIds);
+                $project->teams()->attach($teams);
                 
                 DB::commit();
                 
                 Log::info('The project stored successfully.');
+
                 return response()->json([
-                    'status_code' => Response::HTTP_OK,
+                    'status_code' => 200,
                     'message' => 'The project stored successfully.',
                     'data' => new ProjectResource($project)
                 ]);
             } 
             catch (\Exception $e)
             {
-                DB::rollBack();
-            
                 // Log the error for debugging
                 Log::error('Project creation failed: ' . $e->getMessage());
-                throw new \Exception('Project '.$validatedRequest['internal_code'].' already exists.');
+
+                DB::rollBack();
+
+                return response()->json([
+                    'status_code' => 400,
+                    'message' => 'Project creation failed: ' . $e->getMessage()
+                ]);
             }
         } catch(\Exception $e)
         {
             Log::error('Storage failed: ' . $e->getMessage());
             return response()->json([
-                'status_code' => Response::HTTP_BAD_REQUEST, //400
+                'status_code' => 400, 
                 'message' => 'Storage failed: ' . $e->getMessage()
-            ], Response::HTTP_BAD_REQUEST);
+            ]);
         }
     }
 
@@ -480,5 +474,56 @@ class ProjectController extends Controller
                 'message' => 'An error occurred while removing province from the project: ' . $e->getMessage()
             ]);
         }
-    } 
+    }
+    
+    public function showTransactions($project_id)
+    {
+        try
+        {
+            $results = DB::table('project_respondents as pr')
+            ->select([
+                'p.internal_code',
+                'p.project_name',
+                'pr.shell_chainid',
+                'ep.employee_id',
+                'ep.first_name',
+                'ep.last_name',
+                'provinces.name AS province_name',
+                'pr.interview_start',
+                'pr.interview_end',
+                'pr.phone_number',
+                DB::raw('COALESCE(pvt.vinnet_token_requuid, pgt.transaction_ref_id) AS transaction_id'),
+                DB::raw('COALESCE(pvt.total_amt, pgt.voucher_value) AS amount'),
+                'pvt.discount',
+                'pvt.payment_amt',
+                DB::raw('COALESCE(pvt.created_at, pgt.created_at) AS created_at'),
+                DB::raw('COALESCE(pvt.updated_at, pgt.updated_at) AS updated_at'),
+                'pr.channel',
+                'pr.service_code',
+                DB::raw('COALESCE(pvt.vinnet_invoice_date, pgt.invoice_date) AS invoice_date'),
+            ])
+            ->leftJoin('project_vinnet_transactions as pvt', 'pr.id', '=', 'pvt.project_respondent_id')
+            ->leftJoin('project_gotit_voucher_transactions as pgt', 'pr.id', '=', 'pgt.project_respondent_id')
+            ->join('projects as p', 'p.id', '=', 'pr.project_id')
+            ->join('provinces', 'provinces.id', '=', 'pr.province_id')
+            ->join('employees as ep', 'ep.id', '=', 'pr.employee_id')
+            ->where('pr.status', 'LIKE', 'Đã nhận quà.')
+            ->where('p.id', $project_id)
+            ->get();
+
+            return response()->json([
+                'status_code' => Response::HTTP_OK, //200
+                'message' => 'Successful request.',
+                'data' => $results
+            ]);
+        }
+        catch(\Exception $e)
+        {
+            Log::error($e->getMessage());
+            return response()->json([
+                'status_code' => Response::HTTP_BAD_REQUEST, //400
+                'message' => $e->getMessage(),
+            ]);
+        }
+    }
 }
