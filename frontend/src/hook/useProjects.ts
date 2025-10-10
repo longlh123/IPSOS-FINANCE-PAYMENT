@@ -55,7 +55,7 @@ export function useProjects() {
 
         const token = localStorage.getItem("authToken");
 
-        const url = ApiConfig.project.updateStatusOfProject.replace('{project_id}', id.toString());
+        const url = ApiConfig.project.updateStatusOfProject.replace('{projectId}', id.toString());
 
         const response = await axios.put(url, { status: status }, {
             method: 'PUT',
