@@ -271,8 +271,8 @@ class GotItController extends Controller
             "expiryDate" => $expiryDate->format('Y-m-d'),
             "receiver_name" => $orderName,
             "transactionRefId" => $apiObject->getTransactionRefId(),
-            "use_otp" => 1,
-            "otp_type" => 1,    
+            // "use_otp" => 1,
+            // "otp_type" => 1,    
             "phone" => $phone_number,
         ];
 
