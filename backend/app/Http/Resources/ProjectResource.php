@@ -50,17 +50,16 @@ class ProjectResource extends JsonResource
             'permissions' => $this->projectPermissions->map(function($projectPermission){
                 return User::where('id', $projectPermission->user_id)->pluck('email')[0];
             }),
-            'provinces' => $this->projectProvinces->mapWithKeys(function($item){
-                return array(
-                    $item->province_id => array(
-                        'name' => Province::where('id', $item->province_id)->pluck('name')[0],
-                        'sample_size_main' => $item->sample_size_main,
-                        'price_main' => $item->price_main,
-                        'sample_size_booters' => $item->sample_size_booters,
-                        'price_boosters' => $item->price_boosters
-                    )
-                );
-            }),
+            'provinces' => $this->projectProvinces->map(function($item){
+                return [
+                    'id' => $item->province_id,
+                    'name' => Province::where('id', $item->province_id)->pluck('name')[0],
+                    'sample_size_main' => $item->sample_size_main,
+                    'price_main' => $item->price_main,
+                    'sample_size_booters' => $item->sample_size_booters,
+                    'price_boosters' => $item->price_boosters
+                ];
+            })->values(),
         ];
     }
 }

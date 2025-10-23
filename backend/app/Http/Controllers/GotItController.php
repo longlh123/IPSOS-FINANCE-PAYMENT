@@ -102,55 +102,140 @@ class GotItController extends Controller
 
             $decodedURL = base64_decode($validatedRequest['url']);
 
+            if (!$decodedURL || !str_contains($decodedURL, '/')) {
+                return response()->json([
+                    'message' => 'URL không hợp lệ.',
+                    'error' => 'INVALID_URL'
+                ], 400);
+            }
+
             $splittedURL = explode("/", $decodedURL);
 
-            $interviewURL = new InterviewURL($splittedURL);
+            try{
 
-            Log::info('Project respondent');
+                $interviewURL = new InterviewURL($splittedURL);
 
+                if($interviewURL->channel != 'gotit'){
+                    throw new \Exception(ProjectGotItVoucherTransaction::STATUS_TRANSACTION_FAILED);
+                }
+
+            } catch (\Exception $e){
+                return response()->json([
+                    'message' => $e->getMessage(),
+                    'error' => $e->getMessage()
+                ], 404);
+            }
+
+            //Tìm thông tin dự án dựa trên dữ liệu từ Interview URL
             $project = Project::findByInterviewURL($interviewURL);
 
-            if(strtolower($interviewURL->location_id) === '_defaultsp'){
+            if (!$project->projectDetails) {
+                return response()->json([
+                    'message' => Project::ERROR_PROJECT_DETAILS_NOT_CONFIGURED . ' Vui lòng liên hệ Admin để biết thêm thông tin.',
+                    'error' => Project::ERROR_PROJECT_DETAILS_NOT_CONFIGURED
+                ], 404);
+            }
 
+            //Tìm thông tin dự án đã được set up giá dựa trên dữ liệu từ Interview URL
+            Log::info('Find the price item by province');
+            
+            try {
                 $price = $project->getPriceForProvince($interviewURL);
+            } catch(\Exception $e){
+
+                Log::error($e->getMessage());
+
+                return response()->json([
+                    'message' => $e->getMessage() . ' Vui lòng liên hệ Admin để biết thêm thông tin.',
+                    'error' => Project::STATUS_PROJECT_NOT_SUITABLE_PRICES
+                ], 404);
+            }
+
+            Log::info('Price: ' . intval($price));
+
+            if($project->projectDetails->status === Project::STATUS_IN_COMING || $project->projectDetails->status === Project::STATUS_ON_HOLD || 
+                ($project->projectDetails->status === Project::STATUS_ON_GOING && strtolower($interviewURL->location_id) === '_defaultsp')){
+                
+                    Log::info('Staging Environment: ');
+                
+                    return response()->json([
+                        'message' => ProjectGotItVoucherTransaction::STATUS_TRANSACTION_TEST . ' [Giá trị quà tặng: ' . $price . ']'
+                    ], Response::HTTP_OK);
+            } 
+            
+            Log::info('Live Environment:');
+            
+            if($price == 0)
+            {   
+                Log::error(Project::STATUS_PROJECT_NOT_SUITABLE_PRICES);
                 
                 return response()->json([
-                    'status_code' => Response::HTTP_OK, //200
-                    'message' => ProjectGotItVoucherTransaction::STATUS_TRANSACTION_TEST . '[ Giá trị quà tặng: ' . $price . ']'
-                ], Response::HTTP_OK);
+                    'message' => Project::STATUS_PROJECT_NOT_SUITABLE_PRICES . ' Vui lòng liên hệ Admin để biết thêm thông tin.',
+                    'error' => Project::STATUS_PROJECT_NOT_SUITABLE_PRICES
+                ], 404);
             }
-            
-            //Kiểm tra đáp viên đã thực hiện giao dịch nhận quà trước đó hay chưa?
-            ProjectRespondent::checkIfRespondentProcessed($project, $interviewURL);
 
-            //Kiểm tra số điện thoại đáp viên nhập đã được nhận quà trước đó hay chưa?
-            ProjectRespondent::checkGiftPhoneNumber($project, $validatedRequest['phone_number']);
+            try
+            {
+                //Kiểm tra đáp viên đã thực hiện giao dịch nhận quà trước đó hay chưa?
+                ProjectRespondent::checkIfRespondentProcessed($project, $interviewURL);
 
-            //Tạo Project Respondent
-            $projectRespondent = $project->createProjectRespondents([
-                'project_id' => $project->id,
-                'shell_chainid' => $interviewURL->shell_chainid,
-                'respondent_id' => $interviewURL->respondent_id,
-                'employee_id' => $interviewURL->employee->id,
-                'province_id' => $interviewURL->province_id,
-                'interview_start' => $interviewURL->interview_start,
-                'interview_end' => $interviewURL->interview_end,
-                'respondent_phone_number' => $interviewURL->respondent_phone_number,
-                'phone_number' => $validatedRequest['phone_number'],
-                'service_code' => $validatedRequest['service_code'],
-                'price_level' => $interviewURL->price_level,
-                'channel' => $interviewURL->channel,
-                'status' => ProjectRespondent::STATUS_RESPONDENT_PENDING
-            ]);
+                //Kiểm tra số điện thoại đáp viên nhập đã được nhận quà trước đó hay chưa?
+                ProjectRespondent::checkGiftPhoneNumber($project, $validatedRequest['phone_number']);
+
+            } catch(\Exception $e){
+                return response()->json([
+                    'message' => $e->getMessage(),
+                    'error' => $e->getMessage()
+                ], 409);
+            }
+
+            DB::beginTransaction();
+
+            try{
+                //Tạo Project Respondent
+                $projectRespondent = $project->createProjectRespondents([
+                    'project_id' => $project->id,
+                    'shell_chainid' => $interviewURL->shell_chainid,
+                    'respondent_id' => $interviewURL->respondent_id,
+                    'employee_id' => $interviewURL->employee->id,
+                    'province_id' => $interviewURL->province_id,
+                    'interview_start' => $interviewURL->interview_start,
+                    'interview_end' => $interviewURL->interview_end,
+                    'respondent_phone_number' => $interviewURL->respondent_phone_number,
+                    'phone_number' => $validatedRequest['phone_number'],
+                    'service_code' => $validatedRequest['service_code'],
+                    'price_level' => $interviewURL->price_level,
+                    'channel' => $interviewURL->channel,
+                    'status' => ProjectRespondent::STATUS_RESPONDENT_PENDING
+                ]);
+
+                DB::commit();
+
+            } catch(\Exception $e) {
+
+                DB::rollBack();
+
+                Log::error('SQL Error ['.$e->getCode().']: '.$e->getMessage());
+
+                if($e->getCode() === '23000'){
+                    return response()->json([
+                        'message' => ProjectRespondent::ERROR_CANNOT_STORE_RESPONDENT,
+                        'error' => $e->getMessage()
+                    ], 409); // 409 Conflict
+                }
+                
+                return response()->json([
+                    'message' => ProjectRespondent::ERROR_CANNOT_STORE_RESPONDENT,
+                    'error' => $e->getMessage()
+                ], 500);
+            }
 
             Log::info('Transaction stored successfully', ['internal_code' => $interviewURL->internal_code, 'respondent_id' => $interviewURL->respondent_id]);
 
-            if (!$projectRespondent) {
-                throw new \Exception(ProjectRespondent::ERROR_CANNOT_STORE_RESPONDENT);
-            }
+            Log::info('Project respondent: ' . json_encode($projectRespondent->toArray()));
             
-            //Tính giá và loại voucher
-            $price = $project->getPriceForProvince($interviewURL);
+            //Tìm loại voucher tương ứng với mức giá quà tặng
             $voucher_link_type = $price >= 50000 ? 'e' : 'v';
 
             Log::info('Call API GotIt');
@@ -271,8 +356,8 @@ class GotItController extends Controller
             "expiryDate" => $expiryDate->format('Y-m-d'),
             "receiver_name" => $orderName,
             "transactionRefId" => $apiObject->getTransactionRefId(),
-            "use_otp" => 1,
-            "otp_type" => 1,    
+            // "use_otp" => 1,
+            // "otp_type" => 1,    
             "phone" => $phone_number,
         ];
 

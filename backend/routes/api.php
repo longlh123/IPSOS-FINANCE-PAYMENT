@@ -37,18 +37,21 @@ Route::middleware(['auth:sanctum'])->group(function(){
     Route::get('/users', [UserController::class, 'index'])->middleware('ensureUserHasRole:admin');
     Route::post('/logout', [LoginController::class, 'logout']);
 
-    Route::get('/project-management/projects', [ProjectController::class, 'index']);
-    Route::get('/project-management/projects/{projectId}/show', [ProjectController::class, 'show']);
+    Route::get('/project-management/projects', [ProjectController::class, 'index'])
+        ->middleware('ensureUserHasRole:Admin,Scripter');
 
-    Route::post('/project-management/projects/store', [ProjectController::class, 'store'])->middleware('ensureUserHasRole:admin');
+    Route::get('/project-management/projects/{projectId}/show', [ProjectController::class, 'show'])
+        ->middleware('ensureUserHasRole:Admin,Scripter');
+
+    Route::post('/project-management/projects/store', [ProjectController::class, 'store'])->middleware('ensureUserHasRole:Admin,Scripter');
     Route::put('/project-management/projects/{projectId}/update', [ProjectController::class, 'update'])->middleware('ensureUserHasRole:admin');
-    Route::put('/project-management/projects/{projectId}/status', [ProjectController::class, 'updateStatus'])->middleware('ensureUserHasRole:admin');
+    Route::put('/project-management/projects/{projectId}/status', [ProjectController::class, 'updateStatus'])->middleware('ensureUserHasRole:Admin,Scripter');
     Route::put('/project-management/projects/{projectId}/disabled', [ProjectController::class, 'updateDisabled'])->middleware('ensureUserHasRole:admin');
 
     Route::delete('/project-management/projects/{projectId}/provinces/{provinceId}/remove', [ProjectController::class, 'removeProvinceFromProject'])->middleware('ensureUserHasRole:admin');
 
     Route::get('/project-management/{projectId}/transactions/view', [ProjectController::class, 'showTransactions'])->middleware('ensureUserHasRole:admin,Finance');
-    
+
     Route::get('/project-management/projects/{projectId}/respondents/show', [RespondentController::class, 'show'])->middleware('ensureUserHasRole:admin');
 
     Route::get('/project-management/projects/{projectId}/employees/show', [EmployeeController::class, 'show'])->middleware('ensureUserHasRole:admin,Field Manager,Finance');
@@ -86,6 +89,8 @@ Route::get('/techcombank-panel/venn-products', [TechcombankPanelController::clas
 Route::get('/techcombank-panel/panellist', [TechcombankPanelController::class, 'getPanellist']);
 
 Route::get('/techcombank-panel/surveys', [TechcombankSurveysController::class, 'index']);
+
+Route::post('/cmc-telecom/sendsms', [VinnetController::class, 'cmc_telecom_send_sms']);
 
 
 

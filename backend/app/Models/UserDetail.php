@@ -41,9 +41,8 @@ class UserDetail extends Model
         return $this->belongsTo(Department::class);
     }
 
-    public function hasRole($roles)
+    public function hasAnyRole($roles)
     {
-        Log::info(implode(",", $roles));
         if(is_array($roles)){
             return $this->role()->whereIn('name', (array) $roles)->exists();
         }

@@ -1,10 +1,6 @@
 import { Box, Grid, TextField, Typography } from "@mui/material";
 import SecretTextBox from "../../components/SecretTextBox";
-import { useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { useProjects } from "../../hook/useProjects";
 import { ProjectData } from "../../config/ProjectFieldsConfig";
-import TicketMultiSelect from "../../components/TicketMultiSelect";
 
 interface GeneralProjectProps {
     project: ProjectData | null
@@ -15,8 +11,8 @@ const GeneralProject: React.FC<GeneralProjectProps> = ({project}) => {
     if(!project) return <p>Loading...</p>;
 
     const options = (project?.provinces ?? []).map(province => ({
-        value: province.value,
-        label: province.label
+        id: province.id,
+        name: province.name
     }));
 
     return (

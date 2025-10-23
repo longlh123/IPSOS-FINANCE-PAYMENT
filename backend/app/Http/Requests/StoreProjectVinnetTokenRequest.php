@@ -24,6 +24,7 @@ class StoreProjectVinnetTokenRequest extends FormRequest
         return [
             'url' => 'required|string',
             'phone_number' => 'required|string|digits_between:10,11',
+            'service_type' => 'required|string|in:topup,card',
             'service_code' => 'required|string|max:10'
         ];
     }
@@ -33,6 +34,10 @@ class StoreProjectVinnetTokenRequest extends FormRequest
             'url.required' => 'The url is required', 
             'phone_number.required' => 'The phone number is required.',
             'phone_number.digits_between' => 'The phone number must be between 10 and 11 digits.',
+            
+            'service_type.required' => 'Service Type is required',
+            'service_type.in' => 'The service type must be one of the following: topup, card.',
+
             'service_code.required' => 'The service code is required.'
         ];
     }

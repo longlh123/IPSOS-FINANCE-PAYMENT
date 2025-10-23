@@ -29,12 +29,20 @@ import {
     TextField,
 } from "@mui/material";
 import Alert from "@mui/material/Alert";
-import { getServiceCode } from "../../utils/VinnetFunctions";
+import { getServiceCode, getServiceCodeForMobileCardPurchaseService } from "../../utils/VinnetFunctions";
 import ConfirmDialog from "../../components/Dialogs/ConfirmDialog";
 import useDialog from "../../hook/useDialog";
 import RejectDialog from "../../components/Dialogs/RejectDialog";
- 
-const providers = [
+
+interface Provider {
+    label: string,
+    serviceCode: string,
+    imgSrc: string
+}
+
+type ServiceType = 'topup' | 'card';
+
+const MobileTopUpServices: Provider[] = [
     { label: 'Viettel', serviceCode: 'S0002', imgSrc: ViettelLogo },
     { label: 'MobiFone', serviceCode: 'S0003', imgSrc: MobiFoneLogo },
     { label: 'Vinaphone', serviceCode: 'S0028', imgSrc: VinaphoneLogo },
@@ -44,57 +52,87 @@ const providers = [
     { label: 'I-Telecom', serviceCode: 'S0033', imgSrc: ITelecomLogo },
 ];
 
+const MobileCardPurchaseServices: Provider[] = [
+    { label: 'Viettel', serviceCode: 'S0004', imgSrc: ViettelLogo },
+    { label: 'MobiFone', serviceCode: 'S0012', imgSrc: MobiFoneLogo },
+    { label: 'Vinaphone', serviceCode: 'S0014', imgSrc: VinaphoneLogo },
+    { label: 'Vietnamobile', serviceCode: 'S0013', imgSrc: VietnameMobileLogo },
+    { label: 'Gmobile', serviceCode: 'S0011', imgSrc: GmobileLogo },
+    { label: 'Wintel', serviceCode: 'S0015', imgSrc: WintelLogo },
+    { label: 'I-Telecom', serviceCode: 'S0014', imgSrc: ITelecomLogo },
+];
+
+const MobileServices: Record<ServiceType, Provider[]> = {
+    topup: MobileTopUpServices,
+    card: MobileCardPurchaseServices
+};
+
+const isValidServiceType = (type: any): type is ServiceType => {
+    return type === 'topup' || type === 'card';
+};
+
 const SubmitPhoneNumber = () => {
     const navigate = useNavigate();
 
     const { open, openDialog, closeDialog } = useDialog();
     const [ shouldSubmit, setShouldSubmit] = useState<boolean>(false);
     const [ messageConfirm, setMessageConfirm ] = useState<string>("");
+    const [ phoneNumber, setPhoneNumber] = useState('');
+    const [ loadingConfirmed, setLoadingConfirmed] = useState(false);
+    const [ loadingReject, setLoadingReject] = useState(false);
+    const [ isError, setIsError] = useState(false);
+    const [ statusMessage, setStatusMessage] = useState('');
 
-    const { url } = useParams<{url?:string | undefined}>();
-
-    const [phoneNumber, setPhoneNumber] = useState('');
-    const [loadingConfirmed, setLoadingConfirmed] = useState(false);
-    const [loadingReject, setLoadingReject] = useState(false);
-    const [isError, setIsError] = useState(false);
-    const [statusMessage, setStatusMessage] = useState('');
-
-    const [selectedProvider, setSelectedProvider] = useState('');
-    const [selectedServiceCode, setSelectedServiceCode] = useState('');
-    const [isManualProviderSelection, setIsManualProviderSelection] = useState(false);
+    const [ selectedProvider, setSelectedProvider] = useState('');
+    const [ selectedServiceCode, setSelectedServiceCode] = useState('');
+    const [ isManualProviderSelection, setIsManualProviderSelection] = useState(false);
     
-    const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
-    const [rejectReason, setRejectReason] = useState('');
+    const [ isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
+    const [ rejectReason, setRejectReason] = useState('');
+
+    const { serviceType, url } = useParams<{
+        serviceType?: string,
+        url?: string
+    }>();
+
+    const providers: Provider[] = isValidServiceType(serviceType) ? MobileServices[serviceType] : [];
+
+    const getSelectedProvider = (
+        serviceType: 'topup' | 'card',
+        providerLabel: string
+    ) => {
+        const serviceList = MobileServices[serviceType];
+        const provider = serviceList.find(p => p.label === providerLabel);
+        return provider;
+    };
 
     const handleChangeProvider = (event: SelectChangeEvent<string>) => {
         const providerLabel = event.target.value as string;
-
-        console.log('=== DEBUG handleChangeProvider ===');
-        console.log('Selected providerLabel:', providerLabel);
-        console.log('All providers:', providers);
 
         setSelectedProvider(event.target.value);
         setIsManualProviderSelection(true);
         
         // Find the provider object based on the selected label
-        const selectedProviderObj = providers.find(provider => provider.label === providerLabel);
+        if(isValidServiceType(serviceType)){
+            const selectedProviderObj = getSelectedProvider(serviceType, providerLabel)
 
-        console.log('Found selectedProviderObj:', selectedProviderObj);
+            console.log('Found selectedProviderObj:', selectedProviderObj);
         
-        // Set the corresponding serviceCode
-        if (selectedProviderObj) {
-            console.log('Setting serviceCode to:', selectedProviderObj.serviceCode);
-            console.log('Previous selectedServiceCode:', selectedServiceCode);
+            // Set the corresponding serviceCode
+            if (selectedProviderObj) {
+                console.log('Setting serviceCode to:', selectedProviderObj.serviceCode);
+                console.log('Previous selectedServiceCode:', selectedServiceCode);
 
-            setSelectedServiceCode(selectedProviderObj.serviceCode);
+                setSelectedServiceCode(selectedProviderObj.serviceCode);
 
-            // Verify the change (này sẽ không hiện ngay vì state update là async)
-            console.log('selectedServiceCode after setState (might not reflect immediately):', selectedServiceCode);
+                // Verify the change (này sẽ không hiện ngay vì state update là async)
+                console.log('selectedServiceCode after setState (might not reflect immediately):', selectedServiceCode);
+            } else {
+                console.log('selectedProviderObj not found!');
+            }
         } else {
-            console.log('selectedProviderObj not found!');
+            console.error(`Invalid serviceType: ${serviceType}`);
         }
-        
-        console.log('=== END DEBUG ==='); 
     };
 
     // Thêm useEffect để theo dõi sự thay đổi của selectedServiceCode
@@ -106,14 +144,25 @@ const SubmitPhoneNumber = () => {
     useEffect(() => {
         console.log('Current providers structure:', providers);
         console.log('Sample provider:', providers[0]); // kiểm tra structure của phần tử đầu tiên
-    }, []);
+    }, [serviceType]);
 
     const handleChangeInput = (value: string) => {
         setPhoneNumber(value)
         setStatusMessage('');
         setIsError(false);
 
-        const serviceCode = getServiceCode(value);
+        let serviceCode = "";
+
+        switch (serviceType) {
+            case "topup":
+                serviceCode = getServiceCode(value) ?? "";
+                break;
+            case "card":
+                serviceCode = getServiceCodeForMobileCardPurchaseService(value) ?? "";
+                break;
+            default:
+                console.warn(`Invalid serviceType: ${serviceType}`);
+        }
 
         if (serviceCode) {
             const provider = providers.find((p) => p.serviceCode === serviceCode);
@@ -158,6 +207,7 @@ const SubmitPhoneNumber = () => {
         {
             const reqAuthenPost = await axios.post(ApiConfig.vinnet.performMultipleTransactions, {
                 url: url,
+                service_type: serviceType,
                 phone_number: phoneNumber,
                 service_code: selectedServiceCode,
             }, { 
@@ -167,7 +217,12 @@ const SubmitPhoneNumber = () => {
             });
 
             console.log(reqAuthenPost.data);
-            navigate('/page200?message=' + reqAuthenPost.data.message);
+
+            if(reqAuthenPost.status === 200){
+                navigate('/page200?message=' + reqAuthenPost.data.message);
+            } else {
+                throw new Error(reqAuthenPost.data.message);
+            }
         } catch (error) {
             setIsError(true);
 

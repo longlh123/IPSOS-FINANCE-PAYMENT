@@ -22,7 +22,7 @@ class Project extends Model
     ];
 
     const STATUS_PLANNED = 'planned'; 
-    const STAdUS_IN_COMING = 'in coming'; 
+    const STATUS_IN_COMING = 'in coming'; 
     const STATUS_ON_GOING = 'on going';
     const STATUS_COMPLETED = 'completed';
     const STATUS_ON_HOLD = 'on hold';
@@ -30,10 +30,11 @@ class Project extends Model
     
     const STATUS_PROJECT_NOT_FOUND = 'Không tìm thấy dự án. Vui lòng liên hệ Admin để biết thêm thông tin.'; // Project not found
     const STATUS_PROJECT_SUSPENDED_OR_NOT_FOUND = 'Dự án đang tạm dừng giao dịch hoặc không tồn tại'; // Project temporarily suspended or does not exist
-    const STATUS_PROJECT_NOT_SUITABLE_PRICES = 'Dự án chưa tạo mức giá phù hợp cho mỗi phần quà. Vui lòng liên hệ Admin để biết thêm thông tin.';
+    const STATUS_PROJECT_NOT_SUITABLE_PRICES = 'Dự án chưa tạo mức giá phù hợp cho mỗi phần quà.';
     const STATUS_REJECT_REASON_PHONE_NUMBER = 'Từ chối nhập số điện thoại để nhận quà.';
 
-    const ERROR_INTERVIEWER_ID_NOT_REGISTERED = 'Mã số PVV không có trong danh sách đăng ký của dự án này. Vui lòng liên hệ Admin để biết thêm thông tin.';
+    const ERROR_PROJECT_DETAILS_NOT_CONFIGURED =   'Dự án chưa được cấu hình chi tiết';
+    const ERROR_INTERVIEWER_ID_NOT_REGISTERED =    'Mã số PVV không có trong danh sách đăng ký của dự án này.';
 
     public function projectDetails()
     {
@@ -100,7 +101,7 @@ class Project extends Model
         } else {
             //Log::info('Status of project:' . $project->projectDetails->status);
 
-            if($project->projectDetails->status !== self::STATUS_ON_GOING){
+            if($project->projectDetails->status == self::STATUS_PLANNED || $project->projectDetails->status == self::STATUS_COMPLETED || $project->projectDetails->status == self::STATUS_CANCELLED){
                 Log::error(self::STATUS_PROJECT_SUSPENDED_OR_NOT_FOUND);
                 throw new \Exception(self::STATUS_PROJECT_SUSPENDED_OR_NOT_FOUND);
             } 
@@ -115,15 +116,15 @@ class Project extends Model
 
         if(!$price_item){
             Log::error(Project::STATUS_PROJECT_NOT_SUITABLE_PRICES);
-            throw new \Exception(Project::STATUS_PROJECT_NOT_SUITABLE_PRICES.' Vui lòng liên hệ Admin để biết thêm thông tin.');
+            throw new \Exception(Project::STATUS_PROJECT_NOT_SUITABLE_PRICES);
         }
         
         $level = $interviewURL->price_level;
 
         if(str_starts_with($level, 'main')){
             $property = 'price_' . $level;
-        } elseif(str_starts_with($level, 'booster')){
-            $property = 'price_' . str_replace('booster', 'boosters', $level);
+        } elseif(str_starts_with($level, 'boosters')){
+            $property = 'price_' . str_replace('boosters', 'boosters', $level);
         } elseif(str_starts_with($level, 'none')) {
             $property = 'price_' . $level;
         } else {

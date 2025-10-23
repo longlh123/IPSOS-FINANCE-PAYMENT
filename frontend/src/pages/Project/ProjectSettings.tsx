@@ -1,6 +1,4 @@
-import { Box, Grid, Tab, Tabs, TextField, Typography } from "@mui/material";
-import Directional from "../../components/Directional/Directional"
-import SecretTextBox from "../../components/SecretTextBox";
+import { Tab, Tabs } from "@mui/material";
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useProjects } from "../../hook/useProjects";

@@ -13,10 +13,12 @@ export const DefaultRoute = [
   {
     path: "/project-management/projects",
     component: Projects,
+    roles: ["admin", "scripter"]
   }, 
   {
     path: "/project-management/projects/:id/settings",
     component: ProjectSettings,
+    roles: ["admin", "scripter"]
   },
   {
     path: "/project-management/projects/:id/gift-management",

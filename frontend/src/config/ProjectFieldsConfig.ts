@@ -7,7 +7,7 @@ export interface ProjectData {
     platform: string;
     teams: string[];
     project_types: string[];
-    provinces?: { value: number, label: string }[];
+    provinces?: { id: number, name: string }[];
     planned_field_start: string;
     planned_field_end: string;
     actual_field_start?: string;

@@ -1,22 +1,14 @@
 import { Button } from "@mui/material";
-import "../Page404/Page404.css";
+import "./ErrorPage.css";
 import { Link } from "react-router-dom";
 import { useNavigate, useLocation } from 'react-router-dom';
 
-interface Page404Props {
-  errMessage: string
-}
 
-const Page404: React.FC<Page404Props> = ({errMessage}) => {
+
+const ErrorPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const handleGoBack = () => {
-    navigate('/');
-  };
-
-  // Parse the query string to get the error message
-  const searchParams = new URLSearchParams(location.search);
-  const errorMessage = searchParams.get('message') || errMessage;
+  const { errorCode, errorMessage } = location.state || {};
 
   return (
     <>
@@ -40,7 +32,7 @@ const Page404: React.FC<Page404Props> = ({errMessage}) => {
                 </div>
               </div>
             </div>
-            <div className="number">4</div>
+            <div className="number">{errorCode}</div>
           </div>
           <div className="text-404">
             {errorMessage}
@@ -59,4 +51,4 @@ const Page404: React.FC<Page404Props> = ({errMessage}) => {
   );
 };
 
-export default Page404;
+export default ErrorPage;

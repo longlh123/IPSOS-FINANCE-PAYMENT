@@ -23,28 +23,32 @@ import {
 import ModalAddProject from "../Modals/Project/ModalAddProject";
 import SdCardAlertOutlinedIcon from '@mui/icons-material/SdCardAlertOutlined';
 import { TableCellConfig } from "../../config/TableProjectConfig";
-import { VisibilityConfig } from "../../config/RoleConfig";
-import SummarizeIcon from "@mui/icons-material/Summarize";
 import ModalReport from "../Modals/Report/ModalReport";
 import ModalConfirmDelete from "../Modals/Confirm/ModalConfirmDelete";
 import { useNavigate } from "react-router-dom";
 import { formatDate } from "../../utils/DateUtils";
 import logo from "../../assets/img/Ipsos logo.svg";
-import ModalImportExcel from "../Modals/Project/ModalImportExcel";
 import { toProperCase } from "../../utils/format-text-functions";
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import GiftIcon from '@mui/icons-material/CardGiftcard';
 import { IconEdit } from "../Icon/IconEdit";
-import { useAuth } from "../../contexts/AuthContext";
 import { STATUS_COMPLETED } from "../../constants/statusProjectConstants";
 import { useProjects } from "../../hook/useProjects";
 import { useMetadata } from "../../hook/useMetadata";
+import { useVisibility } from "../../hook/useVisibility";
+import axios from "axios";
+import useDialog from "../../hook/useDialog";
+import AlertDialog from "../AlertDialog/AlertDialog";
+import { title } from "process";
 
 const TableProjects = () => {
   const navigate = useNavigate();
 
   const storedUser = localStorage.getItem('user');
   const user = storedUser ? JSON.parse(storedUser) : null;
+
+  const { canView } = useVisibility();
+  const { open, title, message, showConfirmButton, openDialog, closeDialog, confirmDialog } = useDialog();
 
   //Chọn số trang (pagination)
   const [page, setPage] = useState(0);
@@ -80,8 +84,6 @@ const TableProjects = () => {
 
   const { projects, updateProjectStatus, loading: projectsLoading, error: projectError } = useProjects();
   const { metadata, loading: metadataLoading, error: metadataError } = useMetadata();
-
-  const visibilityConfig = VisibilityConfig[user.role as keyof typeof VisibilityConfig];
 
   const handleChangePage = (event: any, newPage: number) => {
     setPage(newPage);
@@ -128,14 +130,37 @@ const TableProjects = () => {
     }
   };
 
-  // const [ openImportExcelModal, setOpenImportExcelModal] = useState<boolean>(false);
-  
-  // // const [role, setRole] = useState<string>("");
-  // const { open, openDialog, closeDialog } = useDialog();
-  // const [textDialog, setTextDialog] = useState({
-  //   textHeader: "",
-  //   textContent: "",
-  // });
+  const handleUpdateStatus = async (projectId: number, status: string) => {
+    openDialog({
+      title: "Update Status",
+      message: `Bạn có chắc chắn muốn thay đổi trạng thái dự án sang "${status}" không?`,
+      showConfirmButton: true,
+      onConfirm: async () => {
+        try{
+          await updateProjectStatus(projectId, status);
+          console.log("Cập nhật status thành công.");
+        } catch(error){
+          console.log("Update status failed:", error);
+
+          if(axios.isAxiosError(error) && error.response?.status === 403){
+            openDialog({
+              title: "Update Status",
+              message: "Bạn không có quyền thay đổi trạng thái của dự án này.",
+              showConfirmButton: false
+            });
+          } else {
+            openDialog({
+              title: "Update Status",
+              message: "Có lỗi xảy ra khi cập nhật trạng thái của dự án. Vui lòng thử lại.",
+              showConfirmButton: false
+            });
+          }
+        }finally{
+          handleMenuStatusClose();
+        }
+      }
+    });
+  }
 
   const [openModalAdd, setOpenModalAdd] = useState<boolean>(false);
   const [openModalEdit, setOpenModalEdit] = useState<boolean>(false);
@@ -177,7 +202,7 @@ const TableProjects = () => {
         <div className="filter">
           <h2>List</h2>
           <div className="">
-            {visibilityConfig.projects.functions.visible_add_new_project && (
+            {canView("projects.functions.visible_add_new_project") && (
               <Button className="btnAdd" onClick={() => setOpenModalAdd(true)}>
                 Add New Project
               </Button>
@@ -259,7 +284,7 @@ const TableProjects = () => {
                           </IconButton>
                           <Popover
                             id={`status-popover-${selectedProject?.id}`}
-                            open={visibilityConfig.projects.functions.visible_change_status_of_project && Boolean(anchorElStatus) && selectedProject?.id === project.id}
+                            open={canView("projects.functions.visible_change_status_of_project") && Boolean(anchorElStatus) && selectedProject?.id === project.id}
                             anchorEl={anchorElStatus}
                             onClose={handleMenuStatusClose}
                             anchorOrigin={{
@@ -275,22 +300,13 @@ const TableProjects = () => {
                               {statusTransitions[project.status].map((status_item, status_index) => (
                                 <ListItem 
                                   button 
-                                  key={status_index} 
-                                  onClick= { async () => {
-                                    try{
-                                      updateProjectStatus(selectedProject.id, status_item);
-                                      handleMenuStatusClose();
-                                    } catch(error){
-                                      console.log("Update status failed:", error);
-                                    }
-                                  }}
+                                  key={status_index}
+                                  onClick= { () => handleUpdateStatus(selectedProject.id, status_item) }
                                 >
                                   <ListItemText primary= {
                                     <div className="box-status-popover">
                                       <div className={"icon-status-project " + status_item.toLocaleLowerCase().replace(" ", "-")}></div>
                                       <div>{toProperCase(status_item)}</div>
-                                      <>{console.log('Current Status:', status_item)}</>
-                                      <>{console.log('Available Transitions:', toProperCase(status_item))}</>
                                     </div>
                                   }/>
                                 </ListItem>
@@ -323,20 +339,24 @@ const TableProjects = () => {
                             open={Boolean(anchorEl) && selectedProject?.id === project.id}
                             onClose={handleMenuActionsClose}
                           >
-                            <MenuItem onClick={() => handleAction('edit_project')}>
-                              {visibilityConfig.projects.functions.visible_edit_project && project.status !== STATUS_COMPLETED && (
-                                <div className="actions-menu-item" style={{color: "rgb(99, 91, 255)"}}>
-                                  <IconEdit /><span className="text">Edit Project</span>
-                                </div>
-                              )}
-                            </MenuItem>
-                            <MenuItem onClick={() => handleAction('gift_management')}>
-                              {visibilityConfig.projects.functions.visible_view_gift_manager && (
-                                <div className="actions-menu-item" style={{color: "var(--text-fifth-color)"}}>
-                                  <GiftIcon fontSize="small" /><span className="text">Gift Management</span>
-                                </div>
-                              )}
-                            </MenuItem>
+                            {
+                              canView("projects.functions.visible_edit_project") && project.status != STATUS_COMPLETED && (
+                                <MenuItem onClick={() => handleAction('edit_project')}>
+                                  <div className="actions-menu-item" style={{color: "rgb(99, 91, 255)"}}>
+                                    <IconEdit /><span className="text">Edit Project</span>
+                                  </div>
+                                </MenuItem>    
+                              )
+                            }
+                            {
+                              canView("projects.functions.visible_view_gift_manager") && (
+                                <MenuItem onClick={() => handleAction('gift_management')}>
+                                  <div className="actions-menu-item" style={{color: "var(--text-fifth-color)"}}>
+                                    <GiftIcon fontSize="small" /><span className="text">Gift Management</span>
+                                  </div>
+                                </MenuItem>
+                              )
+                            }
                           </Menu>
                         </TableCell>
                       </TableRow>
@@ -358,6 +378,15 @@ const TableProjects = () => {
         )}
       </Box>
       
+      <AlertDialog
+        open={open}
+        title={title}
+        message={message}
+        showConfirmButton={showConfirmButton}
+        onClose={closeDialog}
+        onConfirm={confirmDialog}
+      />
+
       {/* SHOW MODAL IMPORT EXCEL */}
       {/* <ModalImportExcel openModal={openImportExcelModal} onClose={handleCloseModal} project={selectedProject} /> */}
 

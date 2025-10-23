@@ -132,7 +132,9 @@ class ProjectController extends Controller
 
             if ($validator->fails()) {
                 Log::error($validator->errors());
-                throw new \Exception($validator->errors()->first());
+                return response->json([
+                    'message' => $validator->errors()->first(),
+                ], 422); // Unprocessable Entity
             }
             
             $validatedRequest = $validator->validated();
@@ -175,30 +177,37 @@ class ProjectController extends Controller
                 Log::info('The project stored successfully.');
 
                 return response()->json([
-                    'status_code' => 200,
                     'message' => 'The project stored successfully.',
                     'data' => new ProjectResource($project)
-                ]);
+                ], 201);
             } 
             catch (\Exception $e)
             {
-                // Log the error for debugging
-                Log::error('Project creation failed: ' . $e->getMessage());
-
                 DB::rollBack();
+                
+                Log::error('SQL Error: ' . $e->getMessage());
 
+                if($e->getCode() === '23000' && str_contains($e->getMessage(), 'Duplicate entry')){
+                    return response()->json([
+                        'message' => 'The project already exists with the same internal code or a similar name. Please check again!',
+                        'error' => $e->getMessage()
+                    ], 409); // 409 Conflict
+                }
+                
                 return response()->json([
-                    'status_code' => 400,
-                    'message' => 'Project creation failed: ' . $e->getMessage()
-                ]);
+                    'message' => 'Database error occurred while creating project.',
+                    'error' => $e->getMessage()
+                ], 500);
             }
         } catch(\Exception $e)
         {
-            Log::error('Storage failed: ' . $e->getMessage());
+            DB::rollBack();
+            Log::error('Unexpected error: ' . $e->getMessage());
+
             return response()->json([
-                'status_code' => 400, 
-                'message' => 'Storage failed: ' . $e->getMessage()
-            ]);
+                'message' => 'Unexpected error occurred while creating project.',
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
 

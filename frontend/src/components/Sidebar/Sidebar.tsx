@@ -6,8 +6,7 @@ import { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
 import logo from "../../assets/img/Ipsos logo.png";
 import { LibraryBooks } from "@mui/icons-material";
-import { VisibilityConfig } from "../../config/RoleConfig";
-import { useAuth } from "../../contexts/AuthContext";
+import { useVisibility } from "../../hook/useVisibility";
 
 interface SideBarProps {
   isOpen: boolean;
@@ -20,8 +19,7 @@ const Sidebar: React.FC<SideBarProps> = ({ isOpen, toggleSidebar }) => {
   const storedUser = localStorage.getItem("user");
   const user = storedUser ? JSON.parse(storedUser) : null;
 
-  const visibilityConfig =
-    VisibilityConfig[user.role as keyof typeof VisibilityConfig];
+  const { canView } = useVisibility();
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(max-width: 767px)"); // mobile < 768px
@@ -49,7 +47,7 @@ const Sidebar: React.FC<SideBarProps> = ({ isOpen, toggleSidebar }) => {
         </div>
 
         <ul className="menu-links">
-          {visibilityConfig.sidebar.visible_projects && (
+          {canView("sidebar.visible_projects") && (
             <li className="nav-link">
               <NavLink
                 to="/project-management/projects"
@@ -65,7 +63,7 @@ const Sidebar: React.FC<SideBarProps> = ({ isOpen, toggleSidebar }) => {
             </li>
           )}
 
-          {visibilityConfig.sidebar.visible_vinnet && (
+          {canView("sidebar.visible_transactions") && (
             <li className="nav-link">
               <NavLink
                 to="/vinnet-management/index"

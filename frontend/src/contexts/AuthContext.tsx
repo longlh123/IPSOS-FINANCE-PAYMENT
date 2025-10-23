@@ -1,3 +1,4 @@
+import axios from "axios";
 import React from "react";
 import { createContext, ReactNode, useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -24,11 +25,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const navigate = useNavigate();
 
     React.useEffect(() => {
-        const storedToken = localStorage.getItem('authToken');
+        const storedToken = localStorage.getItem("authToken");
+        const storedUser = localStorage.getItem("user");
         
-        if (storedToken) {
-          setToken(storedToken);
-        }
+        if (storedToken) setToken(storedToken);
+        if (storedUser) setUser(JSON.parse(storedUser));
+
         setLoading(false);
     }, []);
 
@@ -39,6 +41,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem('authToken', token);
         localStorage.setItem('user', JSON.stringify(userData))
 
+        const headers = {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+        };
+        
         navigate('/project-management/projects', { replace: true }); // Redirect to the desired page after login
     };
 

@@ -15,19 +15,33 @@ class EnsureUserHasRole
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
-    public function handle(Request $request, Closure $next, ... $role): Response
+    public function handle(Request $request, Closure $next, ... $roles): Response
     {
         //Check if the user is authenticated
         if(!Auth::check())
         {
-            return response()->json(['status_code' => 401, 'message' => 'Unauthorized'], 401);
+            return response()->json([
+                'status_code' => 401, 
+                'message' => 'Unauthorized - please log in.']
+            , 401);
         }
 
         $user = Auth::user();
 
-        if(!$user->userDetails->hasRole($role))
+        Log::info("Permission Roles: " . implode(", ", $roles));
+        
+        if ($user && $user->userDetails) {
+            Log::info('User Role: ' . $user->userDetails->role->name);
+        } else {
+            Log::warning('UserDetail not found for user ID: ' . $user?->id);
+        }
+
+        if(!$user->userDetails || !$user->userDetails->hasAnyRole($roles))
         {
-            return response()->json(['status_code' => 401, 'message' => 'You do not have the required role to access this project.'], 401);
+            return response()->json([
+                'status_code' => 403, 
+                'message' => 'You do not have permission to access this resource.']
+            , 403);
         }
 
         return $next($request);
