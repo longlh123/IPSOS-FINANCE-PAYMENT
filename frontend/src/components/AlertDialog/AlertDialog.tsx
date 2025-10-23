@@ -8,35 +8,49 @@ import {
 } from "@mui/material";
 
 interface AlertDialogProps {
-  openDialog: boolean;
-  closeDialog: () => void;
-  textHeader: string;
-  textContent: string;
+  open: boolean;
+  title: string;
+  message: string;
+  showConfirmButton: boolean;
+  onClose: () => void;
+  onConfirm?: () => void;
 }
+
 const AlertDialog: React.FC<AlertDialogProps> = ({
-  openDialog,
-  closeDialog,
-  textHeader,
-  textContent,
+  open,
+  title,
+  message,
+  showConfirmButton,
+  onClose,
+  onConfirm
 }) => {
   return (
     <>
       <Dialog
-        open={openDialog}
-        onClose={closeDialog}
+        open={open}
+        onClose={onClose}
         aria-labelledby="alert-dialog-title"
         aria-describedby="alert-dialog-description"
       >
         <DialogTitle sx={{ width: "500px" }} id="alert-dialog-title">
-          {textHeader}
+          {title}
         </DialogTitle>
         <DialogContent>
           <DialogContentText id="alert-dialog-description">
-            {textContent}
+            {message}
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={closeDialog}>Agree</Button>
+          {showConfirmButton ? (
+            <>
+              <Button onClick={onClose}>CANCEL</Button>
+              <Button onClick={onConfirm} color="primary" autoFocus>CONFIRM</Button>
+            </>
+          ) : (
+            <>
+              <Button onClick={onClose}>CLOSE</Button>
+            </>
+          )}
         </DialogActions>
       </Dialog>
     </>

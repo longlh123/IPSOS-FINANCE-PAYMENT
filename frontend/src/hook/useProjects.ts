@@ -36,19 +36,21 @@ export function useProjects() {
     }, []);
 
     const addProject = useCallback(async (payload: Partial<ProjectData>) => {
+        try{
+            const token = localStorage.getItem("authToken");
 
-        const token = localStorage.getItem("authToken");
+            const response = await axios.post(ApiConfig.project.addProject, payload, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
 
-        const response = await axios.post(ApiConfig.project.addProject, payload, {
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-            },
-        });
-
-        await fetchProjects();
-        return response.data.data;
-
+            await fetchProjects();
+            return response.data.data;
+        } catch(error){
+            throw error;
+        }
     }, [fetchProjects]);
     
     const updateProjectStatus = useCallback(async ( id: number, status: string) => {

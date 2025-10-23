@@ -10,6 +10,7 @@ import SummaryWidget from "../../components/Widgets/SummaryWidget";
 import { ApiConfig } from "../../config/ApiConfig";
 import numeral from "numeral";
 import { VisibilityConfig } from "../../config/RoleConfig";
+import { useVisibility } from "../../hook/useVisibility";
 
 interface VinnectAccountData {
   deposited: number,
@@ -21,6 +22,8 @@ const VinnetManagement = () => {
   const token = localStorage.getItem('authToken');
   const storedUser = localStorage.getItem('user');
   const user = storedUser ? JSON.parse(storedUser) : null;
+
+  const { canView } = useVisibility();
   
   const visibilityConfig = VisibilityConfig[user.role as keyof typeof VisibilityConfig];
   
@@ -92,32 +95,32 @@ const VinnetManagement = () => {
       <Directional title="Vinnet Management" />
       <Box sx={{ flexGrow: 1 }}>
         <Grid container spacing={2}>
-          {visibilityConfig.vinnet.components.visible_deposited && (
+          {canView("transactions.components.visible_deposited") && (
             <Grid item xs={12} sm={6} md={3}>
               <SummaryWidget title='DEPOSITED' widget_name='bank' avatar_color_index={0} value={numeral(vinnetAccount.deposited).format('0,000') } />
             </Grid>
           )}
-          {visibilityConfig.vinnet.components.visible_spent && (
+          {canView("transactions.components.visible_spent") && (
             <Grid item xs={12} sm={6} md={3}>
               <SummaryWidget title='SPENT' widget_name='money' avatar_color_index={1} value={numeral(vinnetAccount.spent).format('0,000') } />
             </Grid>
           )}
-          {visibilityConfig.vinnet.components.visible_balance && (
+          {canView("transactions.components.visible_balance") && (
             <Grid item xs={12} sm={6} md={3}>
               <SummaryWidget title='BALANCE' widget_name='dollar' avatar_color_index={2} value={numeral(vinnetAccount.balance).format('0,000')} />
             </Grid>
           )}
-          {visibilityConfig.vinnet.components.visible_transactions && (
+          {canView("transactions.components.visible_transactions") && (
             <Grid item xs={12} sm={6} md={3}>
               <SummaryWidget title='TRANSACTIONS' widget_name='dollar' avatar_color_index={3} value={'1000'} />
             </Grid>
           )}
-          {visibilityConfig.vinnet.components.visible_merchantinfor && (
+          {canView("transactions.components.visible_merchantinfor") && (
             <Grid item xs={6} md={12}>
               <MerchantInfor />
             </Grid>
           )}
-          {visibilityConfig.vinnet.components.visible_vinnettransactionsmanager && (
+          {canView("transactions.components.visible_transactionsmanager") && (
             <Grid item xs={6} md={12}>
               <TransactionsManager />
             </Grid>

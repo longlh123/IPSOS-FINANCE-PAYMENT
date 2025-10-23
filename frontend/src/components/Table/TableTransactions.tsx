@@ -22,7 +22,7 @@ import { TableCellRespondentConfig } from "../../config/TableRespondentConfig";
 import { ApiConfig } from "../../config/ApiConfig";
 import ModalAddProject from "../Modals/Project/ModalAddProject";
 
-const TableRespondents: React.FC = () => {
+const TableTransactions = () => {
   const [openModalAdd, setOpenModalAdd] = useState<boolean>(false);
 
   const handleCloseModal = () => {
@@ -106,4 +106,4 @@ const TableRespondents: React.FC = () => {
   )
 };
 
-export default TableRespondents;
+export default TableTransactions;
