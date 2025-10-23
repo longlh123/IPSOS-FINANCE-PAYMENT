@@ -18,6 +18,10 @@ class ENVObject
     public $gotitUrl;
     public $gotitInfo;
 
+    public $cmcTelecomEnvironment;
+    public $cmcTelecomUrl;
+    public $cmcTelecomInfo;
+
     public function __construct(){
         $this->env = $this->readEnvFile();
 
@@ -54,6 +58,24 @@ class ENVObject
             $this->gotitInfo = [
                 'API_KEY' => str_replace('"', '', $this->env['GOTIT_API_KEY_STAGING']),
                 'TRANSACTIONREFID_PREFIX' => str_replace('"', '', $this->env['GOTIT_TRANSACTIONREFID_PREFIX_STAGING'])
+            ];
+        }
+
+        $this->cmcTelecomEnvironment = $this->env['CMC_TELECOM_ENV'];
+
+        if($this->cmcTelecomEnvironment ==='production'){
+            $this->cmcTelecomUrl = $this->env['CMC_TELECOM_URL'];
+
+            $this->cmcTelecomInfo = [
+                'USERNAME' => str_replace('"', '', $this->env['CMC_TELECOM_USERNAME']),
+                'PASSWORD' => str_replace('"', '', $this->env['CMC_TELECOM_PASS'])
+            ];
+        } else {
+            $this->cmcTelecomUrl = $this->env['CMC_TELECOM_URL_STAGING'];
+
+            $this->cmcTelecomInfo = [
+                'USERNAME' => str_replace('"', '', $this->env['CMC_TELECOM_USERNAME_STAGING']),
+                'PASSWORD' => str_replace('"', '', $this->env['CMC_TELECOM_PASS_STAGING'])
             ];
         }
     }

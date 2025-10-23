@@ -23,6 +23,9 @@ class ProjectVinnetTransaction extends Model
         'commission',
         'discount',
         'payment_amt',
+        'card_serial_no',
+        'card_pin_code',
+        'card_expiry_date',
         'recipient_type',
         'vinnet_invoice_date'
     ];
@@ -46,12 +49,24 @@ class ProjectVinnetTransaction extends Model
     const STATUS_ERROR = 'Lỗi Token'; 
 
     const STATUS_INVALID_DENOMINATION = 'Mệnh giá quà không hợp lệ'; // Invalid denomination
-    const STATUS_TRANSACTION_FAILED = 'Giao dịch được thực hiện không qua quá trình phỏng vấn. Vui lòng liên hệ Admin để kiểm tra.';
+    const STATUS_TRANSACTION_FAILED = 'Giao dịch được thực hiện không qua quá trình phỏng vấn.';
     const STATUS_TRANSACTION_TEST = 'Giao dịch test đang được thực hiện';
+    
+    const ERROR_CODE_CONNECTION_FAILED = 'Could not resolve host';
 
     public function respondent()
     {
         return $this->belongsTo(ProjectRespondent::class, 'project_respondent_id');
+    }
+
+    public function vinnetSMSTransaction()
+    {
+        return $this->hasOne(ProjectVinnetSMSTransaction::class, 'vinnet_transaction_id');
+    }
+
+    public function createVinnetSMSTransaction(array $data)
+    {
+        return $this->vinnetSMSTransaction()->create($data);
     }
 
     public function updatePaymentServiceStatus($requuid, $pay_item, $status, $message): bool
@@ -65,6 +80,14 @@ class ProjectVinnetTransaction extends Model
             $this->discount = $pay_item['discount'];
             $this->payment_amt = $pay_item['paymentAmt'];
             $this->recipient_type = $pay_item['recipientType'];
+
+            if(!empty($pay_item['cardItems']) && is_array($pay_item['cardItems'])){
+                $card_item = $pay_item['cardItems'][0];
+
+                $this->card_serial_no = $card_item['serialNo'] ?? null;
+                $this->card_pin_code = $card_item['pinCode'] ?? null;
+                $this->card_expiry_date = $card_item['expiryDate'] ?? null;
+            }
         }
         
         $this->vinnet_token_status = $status;

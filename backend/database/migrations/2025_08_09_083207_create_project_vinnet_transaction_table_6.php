@@ -25,11 +25,25 @@ return new class extends Migration
             $table->double('commission')->default(0.0);
             $table->double('discount')->default(0.0);
             $table->double('payment_amt')->default(0.0);
+            $table->string('card_serial_no', 50)->nullable();
+            $table->string('card_pin_code', 50)->nullable();
+            $table->string('card_expiry_date', 50)->nullable();
             $table->enum('recipient_type', ['TS', 'TT', 'NT'])->default('NT');
             $table->datetime('vinnet_invoice_date')->nullable();
+            $table->string('vinnet_invoice_comment')->nullable();
             $table->timestamps();
 
             $table->unique(['project_respondent_id', 'vinnet_token_order'], 'unique_project_vinnet_transactions_id');
+        });
+
+        Schema::create('project_vinnet_sms_transactions', function(Blueprint $table) {
+            
+            $table->id();
+            $table->foreignId('vinnet_transaction_id')->constrained('project_vinnet_transactions')->onDelete('cascade');
+            $table->string('sms_status')->nullable();
+            $table->timestamps();
+
+            $table->unique('vinnet_transaction_id', 'unique_project_gotit_sms_transactions_id');
         });
     }
 
@@ -39,5 +53,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('project_vinnet_transactions');
+        Schema::dropIfExists('project_vinnet_sms_transactions');
     }
 };

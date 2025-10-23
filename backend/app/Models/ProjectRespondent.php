@@ -23,6 +23,7 @@ class ProjectRespondent extends Model
     const ERROR_CANNOT_STORE_RESPONDENT =                 'Đáp viên không thể lưu.';
     const ERROR_INVALID_RESPONDENT_STATUS_FOR_UPDATE =    'Đáp viên không hợp lệ để cập nhật trạng thái.';
     const ERROR_DUPLICATE_RESPONDENT =                    'Đáp viên đã tồn tại.';
+    const ERROR_RESPONDENT_GIFT_RECEIVED =                'Đáp viên đã nhận quà, không thể thao tác lại.';
 
     protected $table = "project_respondents";
 
@@ -36,6 +37,7 @@ class ProjectRespondent extends Model
         'interview_end',
         'respondent_phone_number',
         'phone_number',
+        'service_type',
         'service_code',
         'reject_message',
         'price_level',
@@ -100,10 +102,22 @@ class ProjectRespondent extends Model
         return $projectRespondent;
     }
     
+    public static function findProjectRespondent(Project $project, $interviewURL){
+
+        $projectRespondent = $project->projectRespondents()
+                                ->where('respondent_id', $interviewURL->respondent_id)
+                                ->where('shell_chainid', $interviewURL->shell_chainid)
+                                ->where('respondent_phone_number', $interviewURL->respondent_phone_number)
+                                ->first();
+
+        return $projectRespondent;
+    }
+
     public static function checkIfRespondentProcessed(Project $project, $interviewURL)
     {
         $exists = $project->projectRespondents()
                         ->where('respondent_id', $interviewURL->respondent_id)
+                        ->where('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED)
                         ->exists();
             
         if($exists)
@@ -112,9 +126,10 @@ class ProjectRespondent extends Model
             throw new \Exception(self::ERROR_DUPLICATE_RESPONDENT);
         }
 
-        //Kiểm tra shell_chainid của đáp viên đã được thực hiện giao dịch trước đó hay chưa?chưa
+        //Kiểm tra shell_chainid của đáp viên đã được thực hiện giao dịch trước đó hay chưa?
         $exists = $project->projectRespondents()
                         ->where('shell_chainid', $interviewURL->shell_chainid)
+                        ->where('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED)
                         ->exists();
             
         if($exists)
@@ -128,7 +143,9 @@ class ProjectRespondent extends Model
                         ->where(function($query) use ($interviewURL) {
                             $query->where('respondent_phone_number', $interviewURL->respondent_phone_number)
                                     ->orWhere('phone_number', $interviewURL->respondent_phone_number);
-                })->exists();
+                })
+                ->where('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED)
+                ->exists();
         
         if($exists)
         {
@@ -144,7 +161,9 @@ class ProjectRespondent extends Model
                         ->where(function($query) use ($phone_number) {
                             $query->where('respondent_phone_number', $phone_number)
                                 ->orWhere('phone_number', $phone_number);
-                        })->exists();
+                        })
+                        ->where('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED)
+                        ->exists();
         
         if($exists)
         {

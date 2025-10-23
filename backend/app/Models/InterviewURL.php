@@ -38,6 +38,8 @@ class InterviewURL
         $this->channel = $splittedURL[11] ?? null;
         $this->remember_token = implode('', array_slice($splittedURL, 12)) ?? null;
         
+        $this->logDetails();
+        
         // Validate the properties
         $this->validateProperties();
 
@@ -47,8 +49,6 @@ class InterviewURL
             Log::error($e->getMessage());
             throw $e;
         }
-
-        $this->logDetails();
     }
 
     protected function validateProperties()
