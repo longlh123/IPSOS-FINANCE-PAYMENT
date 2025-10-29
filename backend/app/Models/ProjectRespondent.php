@@ -23,7 +23,11 @@ class ProjectRespondent extends Model
     const ERROR_CANNOT_STORE_RESPONDENT =                 'Đáp viên không thể lưu.';
     const ERROR_INVALID_RESPONDENT_STATUS_FOR_UPDATE =    'Đáp viên không hợp lệ để cập nhật trạng thái.';
     const ERROR_DUPLICATE_RESPONDENT =                    'Đáp viên đã tồn tại.';
+    const ERROR_DUPLICATE_RESPONDENTID =                  'Thông tin đáp viên đã được ghi nhận trong hệ thống trước đó.';
+    const ERROR_DUPLICATE_RESPONDENT_PHONE_NUMBER =       'Số điện thoại của đáp viên đã được ghi nhận trong hệ thống trước đó.';
     const ERROR_RESPONDENT_GIFT_RECEIVED =                'Đáp viên đã nhận quà, không thể thao tác lại.';
+    const ERROR_SMS_SEND_FAILED =                         'Gửi tin nhắn không thành công.';
+    const ERROR_INVALID_INTERVIEWERURL =                  'Liên kết phỏng vấn không hợp lệ. Vui lòng sử dụng link được hệ thống cung cấp. Nếu bạn đã chỉnh sửa hoặc thay đổi thông tin trong đường link, vui lòng truy cập lại link gốc từ hệ thống.';
 
     protected $table = "project_respondents";
 
@@ -95,7 +99,7 @@ class ProjectRespondent extends Model
     public static function findByInterviewURL(Project $project, $interviewURL): self
     {
         $projectRespondent = $project->projectRespondents()
-                                    ->where('respondent_id', $interviewURL->respondent_id)
+                                    ->where('respondent_id', $interviewURL->shell_chainid . '-' . $interviewURL->respondent_id)
                                     ->orWhere('shell_chainid', $interviewURL->shell_chainid)
                                     ->first();
 
@@ -105,7 +109,7 @@ class ProjectRespondent extends Model
     public static function findProjectRespondent(Project $project, $interviewURL){
 
         $projectRespondent = $project->projectRespondents()
-                                ->where('respondent_id', $interviewURL->respondent_id)
+                                ->where('respondent_id', $interviewURL->shell_chainid . '-' . $interviewURL->respondent_id)
                                 ->where('shell_chainid', $interviewURL->shell_chainid)
                                 ->where('respondent_phone_number', $interviewURL->respondent_phone_number)
                                 ->first();
@@ -116,14 +120,14 @@ class ProjectRespondent extends Model
     public static function checkIfRespondentProcessed(Project $project, $interviewURL)
     {
         $exists = $project->projectRespondents()
-                        ->where('respondent_id', $interviewURL->respondent_id)
+                        ->where('respondent_id', $interviewURL->shell_chainid . '-' . $interviewURL->respondent_id)
                         ->where('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED)
                         ->exists();
             
         if($exists)
         {
-            Log::error(self::ERROR_DUPLICATE_RESPONDENT . ' [Respondent ID: ' . $interviewURL->respondent_id . ']');
-            throw new \Exception(self::ERROR_DUPLICATE_RESPONDENT);
+            Log::error(self::ERROR_DUPLICATE_RESPONDENTID . ' [Respondent ID: ' . $interviewURL->respondent_id . ']');
+            throw new \Exception(self::ERROR_DUPLICATE_RESPONDENTID);
         }
 
         //Kiểm tra shell_chainid của đáp viên đã được thực hiện giao dịch trước đó hay chưa?
@@ -134,24 +138,21 @@ class ProjectRespondent extends Model
             
         if($exists)
         {
-            Log::error(self::ERROR_DUPLICATE_RESPONDENT . ' [Shellchain ID: ' . $interviewURL->shell_chainid . ']');
-            throw new \Exception(self::ERROR_DUPLICATE_RESPONDENT);
+            Log::error(self::ERROR_DUPLICATE_RESPONDENTID . ' [Shellchain ID: ' . $interviewURL->shell_chainid . ']');
+            throw new \Exception(self::ERROR_DUPLICATE_RESPONDENTID);
         }
-
+        
         //Kiểm tra số điện thoại của đáp viên đã được thực hiện giao dịch trước đó hay chưa?
         $exists = $project->projectRespondents()
-                        ->where(function($query) use ($interviewURL) {
-                            $query->where('respondent_phone_number', $interviewURL->respondent_phone_number)
-                                    ->orWhere('phone_number', $interviewURL->respondent_phone_number);
-                })
-                ->where('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED)
-                ->exists();
-        
+                    ->where('respondent_phone_number', $interviewURL->respondent_phone_number)
+                    ->where('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED)
+                    ->exists();
+              
         if($exists)
         {
-            Log::error(self::ERROR_DUPLICATE_RESPONDENT . ' [Respondent Phone number: ' . $interviewURL->respondent_phone_number . ']');
-            throw new \Exception(self::ERROR_DUPLICATE_RESPONDENT);
-        }               
+            Log::error(self::ERROR_DUPLICATE_RESPONDENT_PHONE_NUMBER . ' [Respondent Phone number: ' . $interviewURL->respondent_phone_number . ']');
+            throw new \Exception(self::ERROR_DUPLICATE_RESPONDENT_PHONE_NUMBER);
+        }
     }
 
     public static function checkGiftPhoneNumber(Project $project, $phone_number)
@@ -167,8 +168,8 @@ class ProjectRespondent extends Model
         
         if($exists)
         {
-            Log::error(self::ERROR_DUPLICATE_RESPONDENT . ' [Phone number: ' . $phone_number . ']');
-            throw new \Exception(self::ERROR_DUPLICATE_RESPONDENT);
+            Log::error(self::ERROR_DUPLICATE_RESPONDENT_PHONE_NUMBER . ' [Phone number: ' . $phone_number . ']');
+            throw new \Exception(self::ERROR_DUPLICATE_RESPONDENT_PHONE_NUMBER);
         } 
     }
     

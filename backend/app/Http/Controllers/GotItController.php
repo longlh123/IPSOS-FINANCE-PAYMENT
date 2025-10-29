@@ -65,7 +65,7 @@ class GotItController extends Controller
             $projectRespondent = $project->createProjectRespondents([
                 'project_id' => $project->id,
                 'shell_chainid' => $interviewURL->shell_chainid,
-                'respondent_id' => $interviewURL->respondent_id,
+                'respondent_id' => $interviewURL->shell_chainid . '-' . $interviewURL->respondent_id,
                 'employee_id' => $interviewURL->employee->id,
                 'province_id' => $interviewURL->province_id,
                 'interview_start' => $interviewURL->interview_start,
@@ -82,7 +82,7 @@ class GotItController extends Controller
                 throw new \Exception(ProjectRespondent::ERROR_CANNOT_STORE_RESPONDENT);
             }
 
-            Log::info('Transaction stored successfully', ['internal_code' => $interviewURL->internal_code, 'respondent_id' => $interviewURL->respondent_id, 'reject_message' => $reject_message]);
+            Log::info('Transaction stored successfully', ['internal_code' => $interviewURL->internal_code, 'respondent_id' => $interviewURL->shell_chainid . '-' . $interviewURL->respondent_id, 'reject_message' => $reject_message]);
         }
         catch(\Exception $e)
         {
@@ -116,7 +116,8 @@ class GotItController extends Controller
                 $interviewURL = new InterviewURL($splittedURL);
 
                 if($interviewURL->channel != 'gotit'){
-                    throw new \Exception(ProjectGotItVoucherTransaction::STATUS_TRANSACTION_FAILED);
+                    Log::error('URL Got It nhưng thông tin đường link là quà Vinnet.');
+                    throw new \Exception(ProjectRespondent::ERROR_INVALID_INTERVIEWERURL);
                 }
 
             } catch (\Exception $e){
@@ -185,53 +186,76 @@ class GotItController extends Controller
 
             } catch(\Exception $e){
                 return response()->json([
-                    'message' => $e->getMessage(),
+                    'message' => $e->getMessage() . ' Vui lòng liên hệ Admin để biết thêm thông tin.',
                     'error' => $e->getMessage()
                 ], 409);
             }
 
-            DB::beginTransaction();
+            // Tìm thông tin của Project Respondent
+            $projectRespondent = ProjectRespondent::findProjectRespondent($project, $interviewURL);
 
-            try{
-                //Tạo Project Respondent
-                $projectRespondent = $project->createProjectRespondents([
-                    'project_id' => $project->id,
-                    'shell_chainid' => $interviewURL->shell_chainid,
-                    'respondent_id' => $interviewURL->respondent_id,
-                    'employee_id' => $interviewURL->employee->id,
-                    'province_id' => $interviewURL->province_id,
-                    'interview_start' => $interviewURL->interview_start,
-                    'interview_end' => $interviewURL->interview_end,
-                    'respondent_phone_number' => $interviewURL->respondent_phone_number,
-                    'phone_number' => $validatedRequest['phone_number'],
-                    'service_code' => $validatedRequest['service_code'],
-                    'price_level' => $interviewURL->price_level,
-                    'channel' => $interviewURL->channel,
-                    'status' => ProjectRespondent::STATUS_RESPONDENT_PENDING
-                ]);
+            if(!$projectRespondent){
 
-                DB::commit();
+                DB::beginTransaction();
 
-            } catch(\Exception $e) {
+                try{
+                    //Tạo Project Respondent
+                    $projectRespondent = $project->createProjectRespondents([
+                        'project_id' => $project->id,
+                        'shell_chainid' => $interviewURL->shell_chainid,
+                        'respondent_id' => $interviewURL->shell_chainid . '-' . $interviewURL->respondent_id,
+                        'employee_id' => $interviewURL->employee->id,
+                        'province_id' => $interviewURL->province_id,
+                        'interview_start' => $interviewURL->interview_start,
+                        'interview_end' => $interviewURL->interview_end,
+                        'respondent_phone_number' => $interviewURL->respondent_phone_number,
+                        'phone_number' => $validatedRequest['phone_number'],
+                        'service_code' => $validatedRequest['service_code'],
+                        'price_level' => $interviewURL->price_level,
+                        'channel' => $interviewURL->channel,
+                        'status' => ProjectRespondent::STATUS_RESPONDENT_PENDING
+                    ]);
 
-                DB::rollBack();
+                    DB::commit();
 
-                Log::error('SQL Error ['.$e->getCode().']: '.$e->getMessage());
+                } catch(\Exception $e) {
 
-                if($e->getCode() === '23000'){
+                    DB::rollBack();
+
+                    Log::error('SQL Error ['.$e->getCode().']: '.$e->getMessage());
+
+                    if($e->getCode() === '23000'){
+                        return response()->json([
+                            'message' => ProjectRespondent::ERROR_CANNOT_STORE_RESPONDENT,
+                            'error' => $e->getMessage()
+                        ], 409); // 409 Conflict
+                    }
+                    
                     return response()->json([
                         'message' => ProjectRespondent::ERROR_CANNOT_STORE_RESPONDENT,
                         'error' => $e->getMessage()
-                    ], 409); // 409 Conflict
+                    ], 500);
                 }
+            } else {
+                //Thông tin cũ
+                //Kiểm tra xem Project Respondent có thực hiện bất kỳ giao dịch nào chưa?
+                //Nếu chưa => xem như thông tin mới => cập nhật lại status cho Project Respondent
+                Log::info("Number of transactions: " . $projectRespondent->gotitVoucherTransactions()->count());
                 
-                return response()->json([
-                    'message' => ProjectRespondent::ERROR_CANNOT_STORE_RESPONDENT,
-                    'error' => $e->getMessage()
-                ], 500);
+                if($projectRespondent->gotitVoucherTransactions()->count() == 0){
+
+                    $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_PENDING);
+                } else {
+
+                    //Nếu đã thực hiện giao dịch => không cho thực hiện
+                    return response()->json([
+                        'message' => ProjectRespondent::ERROR_DUPLICATE_RESPONDENT,
+                        'error' => ProjectRespondent::ERROR_DUPLICATE_RESPONDENT . ' [Trường hợp Đáp viên đã tồn tại và đã có thực hiện giao dịch]'
+                    ], 500);
+                }
             }
 
-            Log::info('Transaction stored successfully', ['internal_code' => $interviewURL->internal_code, 'respondent_id' => $interviewURL->respondent_id]);
+            Log::info('Transaction stored successfully', ['internal_code' => $interviewURL->internal_code, 'respondent_id' => $interviewURL->shell_chainid . '-' . $interviewURL->respondent_id]);
 
             Log::info('Project respondent: ' . json_encode($projectRespondent->toArray()));
             
@@ -294,21 +318,44 @@ class GotItController extends Controller
                 'sms_status' => ProjectGotItSMSTransaction::STATUS_SMS_PENDING
             ]);
 
-            $smsRequest = $this->generate_sms_request($apiObject, $voucherTransaction->voucher_link, $validatedRequest['phone_number']);
+            // $smsRequest = $this->generate_sms_request($apiObject, $voucherTransaction->voucher_link, $validatedRequest['phone_number']);
 
+            // $updateRespondentStatus = $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_DISPATCHED);
+            
+            // $responseSMSData = $apiObject->send_sms($smsRequest);
+
+            // $smsTransactionStatus = $smsTransaction->updateStatus(ProjectGotItSMSTransaction::STATUS_SMS_SUCCESS);
+            
             $updateRespondentStatus = $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_DISPATCHED);
-            
-            $responseSMSData = $apiObject->send_sms($smsRequest);
 
-            $smsTransactionStatus = $smsTransaction->updateStatus(ProjectGotItSMSTransaction::STATUS_SMS_SUCCESS);
+            $messageCard = sprintf(
+                "IPSOS tang ban phan qua. GotIt: %s, HSD: %s",
+                $voucherTransaction->voucher_link ?? 'N/A',
+                $voucherTransaction->expiry_date ?? 'N/A'
+            );
+            
+            $apiCMCObject = new APICMCObject();
 
-            $updateRespondentStatus = $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED);
-            
-            return response()->json([
-                'status_code' => Response::HTTP_OK, //200
-                'message' => ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED,
-            ]);
-            
+            $responseSMSData = $apiCMCObject->send_sms($validatedRequest['phone_number'], $messageCard);
+
+            if(intval($responseSMSData['status']) == 1){
+                $smsTransactionStatus = $smsTransaction->updateStatus(ProjectVinnetSMSTransaction::STATUS_SMS_SUCCESS);
+
+                $updateRespondentStatus = $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED);
+
+                return response()->json([
+                    'message' => ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED,
+                ], 200);
+            } else {
+                $smsTransactionStatus = $smsTransaction->updateStatus($responseSMSData['statusDescription']);
+
+                $updateRespondentStatus = $projectRespondent->updateStatus(ProjectRespondent::ERROR_SMS_SEND_FAILED);
+
+                return response()->json([
+                    'message' => ProjectRespondent::ERROR_CANNOT_STORE_RESPONDENT,
+                    'error' => $e->getMessage()
+                ], 500);
+            }
         }
         catch (GotItVoucherException $e){
             Log::error($e->getLogContext());
@@ -356,7 +403,7 @@ class GotItController extends Controller
             "expiryDate" => $expiryDate->format('Y-m-d'),
             "receiver_name" => $orderName,
             "transactionRefId" => $apiObject->getTransactionRefId(),
-            // "use_otp" => 1,
+            "use_otp" => 0,
             // "otp_type" => 1,    
             "phone" => $phone_number,
         ];
@@ -422,7 +469,7 @@ class GotItController extends Controller
             //Find the record and update the status
             $query = ProjectRespondent::query();
             $query->where('shell_chainid', $interviewURL->shell_chainid);
-            $query->where('respondent_id', $interviewURL->respondent_id);
+            $query->where('respondent_id', $interviewURL->shell_chainid . '-' . $interviewURL->respondent_id);
             $query->where('respondent_phone_number', $interviewURL->respondent_phone_number);
             $query->where('phone_number', $phone_number);
             $query->where('transaction_ref_id', $transactionRefId);
