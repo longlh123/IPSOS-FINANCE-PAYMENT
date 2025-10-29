@@ -53,6 +53,7 @@ class ProjectVinnetTransaction extends Model
     const STATUS_TRANSACTION_TEST = 'Giao dịch test đang được thực hiện';
     
     const ERROR_CODE_CONNECTION_FAILED = 'Could not resolve host';
+    const ERROR_SERVICE_NOT_ROUTED     = 'Hệ thống chưa kết nối được đến dịch vụ chuyển quà.';
 
     public function respondent()
     {

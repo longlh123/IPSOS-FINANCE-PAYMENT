@@ -17,6 +17,7 @@ class ProjectGotItVoucherTransaction extends Model
     const STATUS_SIGNATURE_INCORRECT = 'Chữ ký không hợp lệ.';
     const STATUS_API_INCORRECT = 'API không hợp lệ.';
     const STATUS_ORDER_LIMIT_EXCEEDED = 'Giới hạn đơn hàng đã hết.';
+    const STATUS_OPT_INCORRECT = 'OPT không hợp lệ.';
 
     const STATUS_TRANSACTION_FAILED = 'Giao dịch được thực hiện không qua quá trình phỏng vấn.';
     const STATUS_TRANSACTION_TEST = 'Giao dịch test đang được thực hiện';

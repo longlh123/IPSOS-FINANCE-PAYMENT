@@ -468,7 +468,7 @@ class VinnetController extends Controller
             $projectRespondent = $project->createProjectRespondents([
                 'project_id' => $project->id,
                 'shell_chainid' => $interviewURL->shell_chainid,
-                'respondent_id' => $interviewURL->respondent_id,
+                'respondent_id' => $interviewURL->shell_chainid . '-' . $interviewURL->respondent_id,
                 'employee_id' => $interviewURL->employee->id,
                 'province_id' => $interviewURL->province_id,
                 'interview_start' => $interviewURL->interview_start,
@@ -485,7 +485,7 @@ class VinnetController extends Controller
                 throw new \Exception(ProjectRespondent::ERROR_CANNOT_STORE_RESPONDENT);
             }
 
-            Log::info('Transaction stored successfully', ['internal_code' => $interviewURL->internal_code, 'respondent_id' => $interviewURL->respondent_id, 'reject_message' => $reject_message]);
+            Log::info('Transaction stored successfully', ['internal_code' => $interviewURL->internal_code, 'respondent_id' => $interviewURL->shell_chainid . '-' . $interviewURL->respondent_id, 'reject_message' => $reject_message]);
         }
         catch(\Exception $e)
         {
@@ -535,7 +535,8 @@ class VinnetController extends Controller
                 $interviewURL = new InterviewURL($splittedURL);
 
                 if($interviewURL->channel != 'vinnet'){
-                    throw new \Exception(ProjectVinnetTransaction::STATUS_TRANSACTION_FAILED);
+                    Log::error('URL Vinnet nhưng thông tin đường link là quà Got It.');
+                    throw new \Exception(ProjectRespondent::ERROR_INVALID_INTERVIEWERURL);
                 }
 
             } catch (\Exception $e){
@@ -604,53 +605,77 @@ class VinnetController extends Controller
 
             } catch(\Exception $e){
                 return response()->json([
-                    'message' => $e->getMessage(),
+                    'message' => $e->getMessage() . ' Vui lòng liên hệ Admin để biết thêm thông tin.',
                     'error' => $e->getMessage()
                 ], 409);
             }
 
-            DB::beginTransaction();
+            // Tìm thông tin của Project Respondent
+            $projectRespondent = ProjectRespondent::findProjectRespondent($project, $interviewURL);
 
-            try{
-                $projectRespondent = $project->createProjectRespondents([
-                    'project_id' => $project->id,
-                    'shell_chainid' => $interviewURL->shell_chainid,
-                    'respondent_id' => $interviewURL->respondent_id,
-                    'employee_id' => $interviewURL->employee->id,
-                    'province_id' => $interviewURL->province_id,
-                    'interview_start' => $interviewURL->interview_start,
-                    'interview_end' => $interviewURL->interview_end,
-                    'respondent_phone_number' => $interviewURL->respondent_phone_number,
-                    'phone_number' => $validatedRequest['phone_number'],
-                    'service_type' => $validatedRequest['service_type'],
-                    'service_code' => $validatedRequest['service_code'],
-                    'price_level' => $interviewURL->price_level,
-                    'channel' => $interviewURL->channel,
-                    'status' => ProjectRespondent::STATUS_RESPONDENT_PENDING
-                ]);
+            if(!$projectRespondent){
+                //Thông tin mới => Cập nhật thông tin vào hệ thống
+                DB::beginTransaction();
 
-                DB::commit();
+                try{
+                    $projectRespondent = $project->createProjectRespondents([
+                        'project_id' => $project->id,
+                        'shell_chainid' => $interviewURL->shell_chainid,
+                        'respondent_id' => $interviewURL->shell_chainid . '-' . $interviewURL->respondent_id,
+                        'employee_id' => $interviewURL->employee->id,
+                        'province_id' => $interviewURL->province_id,
+                        'interview_start' => $interviewURL->interview_start,
+                        'interview_end' => $interviewURL->interview_end,
+                        'respondent_phone_number' => $interviewURL->respondent_phone_number,
+                        'phone_number' => $validatedRequest['phone_number'],
+                        'service_type' => $validatedRequest['service_type'],
+                        'service_code' => $validatedRequest['service_code'],
+                        'price_level' => $interviewURL->price_level,
+                        'channel' => $interviewURL->channel,
+                        'status' => ProjectRespondent::STATUS_RESPONDENT_PENDING
+                    ]);
 
-            } catch(\Exception $e) {
+                    DB::commit();
 
-                DB::rollBack();
+                } catch(\Exception $e) {
 
-                Log::error('SQL Error ['.$e->getCode().']: '.$e->getMessage());
+                    DB::rollBack();
 
-                if($e->getCode() === '23000'){
+                    Log::error('SQL Error ['.$e->getCode().']: '.$e->getMessage());
+
+                    if($e->getCode() === '23000'){
+                        return response()->json([
+                            'message' => ProjectRespondent::ERROR_CANNOT_STORE_RESPONDENT,
+                            'error' => $e->getMessage()
+                        ], 409); // 409 Conflict
+                    }
+                    
                     return response()->json([
                         'message' => ProjectRespondent::ERROR_CANNOT_STORE_RESPONDENT,
                         'error' => $e->getMessage()
-                    ], 409); // 409 Conflict
+                    ], 500);
                 }
-                
-                return response()->json([
-                    'message' => ProjectRespondent::ERROR_CANNOT_STORE_RESPONDENT,
-                    'error' => $e->getMessage()
-                ], 500);
+            } else {
+                //Thông tin cũ
+                //Kiểm tra xem Project Respondent có thực hiện bất kỳ giao dịch nào chưa?
+                //Nếu chưa => xem như thông tin mới => cập nhật lại status cho Project Respondent
+
+                Log::info("Number of transactions: " . $projectRespondent->vinnetTransactions()->count());
+
+                if($projectRespondent->vinnetTransactions()->count() == 0){
+
+                    $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_PENDING);
+                } else {
+
+                    //Nếu đã thực hiện giao dịch => không cho thực hiện
+                    return response()->json([
+                        'message' => ProjectRespondent::ERROR_DUPLICATE_RESPONDENT,
+                        'error' => ProjectRespondent::ERROR_DUPLICATE_RESPONDENT . ' [Trường hợp Đáp viên đã tồn tại và đã có thực hiện giao dịch]'
+                    ], 500);
+                }
             }
             
-            Log::info('Transaction stored successfully', ['internal_code' => $interviewURL->internal_code, 'respondent_id' => $interviewURL->respondent_id]);
+            Log::info('Transaction stored successfully', ['internal_code' => $interviewURL->internal_code, 'respondent_id' => $interviewURL->shell_chainid . '-' . $interviewURL->respondent_id]);
 
             Log::info('Project respondent: ' . json_encode($projectRespondent->toArray()));
             
@@ -680,14 +705,14 @@ class VinnetController extends Controller
 
             if($serviceItemsData['code'] != 0)
             {
-                Log::error('Query Services: ' . ProjectVinnetTransaction::STATUS_ERROR . ' => ' . $serviceItemsData['message']);
+                Log::error('Query Services API Error: ' . ProjectVinnetTransaction::ERROR_SERVICE_NOT_ROUTED . ' => ' . $serviceItemsData['message']);
 
                 // Log the exception message
-                $projectRespondent->updateStatus(ProjectVinnetTransaction::STATUS_ERROR);
+                $projectRespondent->updateStatus(ProjectVinnetTransaction::ERROR_SERVICE_NOT_ROUTED . ' => ' . $serviceItemsData['message']);
 
                 return response()->json([
-                    'message' => ProjectVinnetTransaction::STATUS_ERROR,
-                    'error' => 'Query Services: ' . ProjectVinnetTransaction::STATUS_ERROR . ' => ' . $serviceItemsData['message']
+                    'message' => ProjectVinnetTransaction::ERROR_SERVICE_NOT_ROUTED . ' Vui lòng liên hệ Admin để biết thêm thông tin.',
+                    'error' => 'Query Services: ' . ProjectVinnetTransaction::ERROR_SERVICE_NOT_ROUTED . ' => ' . $serviceItemsData['message']
                 ], 404);
             }
 
