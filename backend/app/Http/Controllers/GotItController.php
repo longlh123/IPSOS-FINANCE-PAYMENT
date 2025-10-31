@@ -15,7 +15,9 @@ use App\Models\ProjectRespondent;
 use App\Models\ProjectGotItVoucherTransaction;
 use App\Models\ProjectGotItSMSTransaction;
 use App\Models\ENVObject;
+use App\Models\APICMCObject;
 use App\Exceptions\GotItVoucherException;
+use App\Constants\SMSStatus;
 
 class GotItController extends Controller
 {
@@ -35,6 +37,33 @@ class GotItController extends Controller
                 'message' => $e->getMessage(),
             ], Response::HTTP_BAD_REQUEST);
         }
+    }
+
+    private function findSubsets($nums, $target_sum) 
+    {
+        $subset = [];
+        rsort($nums); // Sort in reverse order
+    
+        function backtrack($index, $current_sum, $nums, $target_sum, &$subset) {
+            if ($current_sum == $target_sum) {
+                return;
+            }
+    
+            if ($index == count($nums) || $current_sum > $target_sum) {
+                return;
+            }
+    
+            $subset[] = $nums[$index];
+            backtrack($index, $current_sum + $nums[$index], $nums, $target_sum, $subset);
+    
+            if ($current_sum + $nums[$index] > $target_sum) {
+                array_pop($subset);
+                backtrack($index + 1, $current_sum, $nums, $target_sum, $subset);
+            }
+        }
+    
+        backtrack(0, 0, $nums, $target_sum, $subset);
+        return $subset;
     }
 
     public function reject_transaction(Request $request)
@@ -260,7 +289,43 @@ class GotItController extends Controller
             Log::info('Project respondent: ' . json_encode($projectRespondent->toArray()));
             
             //Tìm loại voucher tương ứng với mức giá quà tặng
-            $voucher_link_type = $price >= 50000 ? 'e' : 'v';
+            $priceMap = [
+                3088 => 10000,
+                3090 => 20000,
+                3555 => 30000,
+                17940 => 40000,
+                2991 => 50000,
+                80385 => 100000,
+                47617 => 200000,
+                48385 => 500000
+            ];
+
+            $prices = array();
+
+            foreach($priceMap as $price_id => $p){
+                array_push($prices, $p);
+            }
+
+            // $prices = array();
+            // $selectedPrices = array();
+
+            // foreach($priceMap as $price_id => $p){
+            //     array_push($prices, $p);
+            // }
+
+            // if(in_array($price, $prices)){
+            //     array_push($selectedPrices, $price);
+            // } else {
+            //     $selectedPrices = $this->findSubsets($prices, $price);
+            // }
+            
+            // Log::info("Mệnh giá tiền cần chuyển cho đáp viên: " . print_r($selectedPrices, true));
+
+            if(in_array($price, $prices)){
+                $voucher_link_type = 'v';
+            } else {
+                $voucher_link_type = 'e';
+            }
 
             Log::info('Call API GotIt');
             $apiObject = new APIObject();
@@ -286,13 +351,6 @@ class GotItController extends Controller
                     'voucher_status' => ProjectGotItVoucherTransaction::STATUS_PENDING_VERIFICATION
                 ]);
             } else {
-                $priceMap = [
-                    3088 => 10000,
-                    3090 => 20000,
-                    3555 => 30000,
-                    17940 => 40000
-                ];
-                
                 $amount = $priceMap[$voucherRequest['productPriceId']]
                             ?? throw new \Exception('Giá trị $productPriceId chưa được định nghĩa mức giá.');
                 
@@ -315,7 +373,7 @@ class GotItController extends Controller
             $smsTransaction = $voucherTransaction->createGotitSMSTransaction([
                 'voucher_transaction_id' => $voucherTransaction->id,
                 'transaction_ref_id' => $apiObject->getTransactionRefId(),
-                'sms_status' => ProjectGotItSMSTransaction::STATUS_SMS_PENDING
+                'sms_status' => SMSStatus::PENDING
             ]);
 
             // $smsRequest = $this->generate_sms_request($apiObject, $voucherTransaction->voucher_link, $validatedRequest['phone_number']);
@@ -324,7 +382,7 @@ class GotItController extends Controller
             
             // $responseSMSData = $apiObject->send_sms($smsRequest);
 
-            // $smsTransactionStatus = $smsTransaction->updateStatus(ProjectGotItSMSTransaction::STATUS_SMS_SUCCESS);
+            // $smsTransactionStatus = $smsTransaction->updateStatus(SMSStatus::SUCCESS);
             
             $updateRespondentStatus = $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_DISPATCHED);
 
@@ -339,7 +397,7 @@ class GotItController extends Controller
             $responseSMSData = $apiCMCObject->send_sms($validatedRequest['phone_number'], $messageCard);
 
             if(intval($responseSMSData['status']) == 1){
-                $smsTransactionStatus = $smsTransaction->updateStatus(ProjectVinnetSMSTransaction::STATUS_SMS_SUCCESS);
+                $smsTransactionStatus = $smsTransaction->updateStatus(SMSStatus::SUCCESS);
 
                 $updateRespondentStatus = $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED);
 
@@ -349,12 +407,14 @@ class GotItController extends Controller
             } else {
                 $smsTransactionStatus = $smsTransaction->updateStatus($responseSMSData['statusDescription']);
 
-                $updateRespondentStatus = $projectRespondent->updateStatus(ProjectRespondent::ERROR_SMS_SEND_FAILED);
+                $updateRespondentStatus = $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_NOT_RECEIVED);
+
+                Log::error(SMSStatus::ERROR . ' [' . $responseSMSData['statusDescription'] . ']');
 
                 return response()->json([
-                    'message' => ProjectRespondent::ERROR_CANNOT_STORE_RESPONDENT,
-                    'error' => $e->getMessage()
-                ], 500);
+                    'message' => SMSStatus::ERROR . ' [' . $responseSMSData['statusDescription'] . ']',
+                    'error' => SMSStatus::ERROR . ' [' . $responseSMSData['statusDescription'] . ']',
+                ], 400);
             }
         }
         catch (GotItVoucherException $e){
@@ -419,22 +479,22 @@ class GotItController extends Controller
             $dataRequest['quantity'] = 1;
             $dataRequest['productId'] = 1541;
 
-            switch($price)
-            {
-                case 10000:
-                    $dataRequest['productPriceId'] = 3088;
+            $priceMap = [
+                3088 => 10000,
+                3090 => 20000,
+                3555 => 30000,
+                17940 => 40000,
+                2991 => 50000,
+                80385 => 100000,
+                47617 => 200000,
+                48385 => 500000
+            ];
+
+            foreach($priceMap as $price_id => $p){
+                if($price === $p){
+                    $dataRequest['productPriceId'] = $price_id;
                     break;
-                case 20000:
-                    $dataRequest['productPriceId'] = 3090;
-                    break;
-                case 30000:
-                    $dataRequest['productPriceId'] = 3555;
-                    break;
-                case 40000:
-                    $dataRequest['productPriceId'] = 17940;
-                    break;
-                default:
-                    throw new \Exception('Giá trị $price không hợp lệ cho productPriceId');
+                }
             }
 
             $dataRequest["signature"] = $signature;

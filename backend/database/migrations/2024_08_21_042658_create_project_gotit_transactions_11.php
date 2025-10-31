@@ -41,6 +41,7 @@ return new class extends Migration
             $table->date('expiry_date')->nullable();
             $table->string('order_name')->nullable();
             $table->double('amount')->default(0.0);
+            $table->string('voucher_code')->nullable();
             $table->string('voucher_link')->nullable();
             $table->string('voucher_link_code')->nullable();
             $table->text('voucher_image_link')->nullable();

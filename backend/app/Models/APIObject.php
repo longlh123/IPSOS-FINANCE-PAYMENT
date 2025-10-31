@@ -105,6 +105,8 @@ class APIObject
                     throw new GotItVoucherException(ProjectGotItVoucherTransaction::STATUS_ORDER_LIMIT_EXCEEDED, '[GET VOUCHERS]', 405);
                 case 4006: 
                     throw new GotItVoucherException(ProjectGotItVoucherTransaction::STATUS_OPT_INCORRECT, '[GET VOUCHERS]', 400);
+                case 5006:
+                    throw new GotItVoucherException(ProjectGotItVoucherTransaction::STATUS_QUANTITY_INCORRECT, '[GET VOUCHERS]', 400);
                 default:
                     throw new GotItVoucherException('Lỗi chưa xác định.', 498);
             }
@@ -122,6 +124,11 @@ class APIObject
 
             if($voucher_link_type === 'v')
             {
+                $decryptedVoucherCode = $this->decrypt_data($voucher['voucherCode']);
+                $voucher['voucherCode'] = $decryptedVoucherCode;
+
+                Log::info('Voucher code: ' . $voucher['voucherCode']);
+
                 $decryptedVoucherLink = $this->decrypt_data($voucher['voucherLink']);
                 $voucher['voucherLink'] = $decryptedVoucherLink;
 
@@ -166,6 +173,8 @@ class APIObject
                     throw new GotItVoucherException(ProjectGotItVoucherTransaction::STATUS_ORDER_LIMIT_EXCEEDED, '[GET VOUCHERS]', 405);
                 case 4006: 
                     throw new GotItVoucherException(ProjectGotItVoucherTransaction::STATUS_OPT_INCORRECT, '[GET VOUCHERS]', 400);
+                case 5006:
+                    throw new GotItVoucherException(ProjectGotItVoucherTransaction::STATUS_QUANTITY_INCORRECT, '[GET VOUCHERS]', 400);
                 default:
                     throw new GotItVoucherException('Lỗi chưa xác định.', 498);
             }

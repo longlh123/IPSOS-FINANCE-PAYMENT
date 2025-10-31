@@ -18,6 +18,7 @@ class ProjectGotItVoucherTransaction extends Model
     const STATUS_API_INCORRECT = 'API không hợp lệ.';
     const STATUS_ORDER_LIMIT_EXCEEDED = 'Giới hạn đơn hàng đã hết.';
     const STATUS_OPT_INCORRECT = 'OPT không hợp lệ.';
+    const STATUS_QUANTITY_INCORRECT = 'Quantity không hợp lệ.';
 
     const STATUS_TRANSACTION_FAILED = 'Giao dịch được thực hiện không qua quá trình phỏng vấn.';
     const STATUS_TRANSACTION_TEST = 'Giao dịch test đang được thực hiện';
@@ -30,6 +31,7 @@ class ProjectGotItVoucherTransaction extends Model
         'expiry_date',
         'order_name',
         'amount',
+        'voucher_code',
         'voucher_link',
         'voucher_link_code',
         'voucher_image_link',
@@ -77,6 +79,8 @@ class ProjectGotItVoucherTransaction extends Model
         }
         else 
         {
+            $this->voucher_code = $voucherData['voucherCode'];
+
             $this->voucher_link = $voucherData['voucherLink'];
             $this->voucher_link_code = $voucherData['voucherLinkCode'];
             

@@ -24,6 +24,8 @@ use App\Models\ENVObject;
 use App\Models\APICMCObject;
 use App\Http\Requests\StoreProjectVinnetTokenRequest;
 use App\Http\Resources\VinnetProjectResource;
+use App\Constants\SMSStatus;
+use App\Constants\TransactionStatus;
 
 class VinnetController extends Controller
 {
@@ -666,6 +668,7 @@ class VinnetController extends Controller
 
                     $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_PENDING);
                 } else {
+                    Log::info(ProjectRespondent::ERROR_DUPLICATE_RESPONDENT . ' [Trường hợp Đáp viên đã tồn tại và đã có thực hiện giao dịch]');
 
                     //Nếu đã thực hiện giao dịch => không cho thực hiện
                     return response()->json([
@@ -687,13 +690,13 @@ class VinnetController extends Controller
 
             if($tokenData['code'] != 0)
             {
-                Log::error('Authenticate Token: ' . ProjectVinnetTransaction::STATUS_NOT_RECEIVED . ' => ' . $tokenData['message']);
+                Log::error('Authenticate Token: ' . TransactionStatus::STATUS_NOT_RECEIVED . ' => ' . $tokenData['message']);
 
-                $projectRespondent->updateStatus(ProjectVinnetTransaction::STATUS_NOT_RECEIVED);
+                $projectRespondent->updateStatus(TransactionStatus::STATUS_NOT_RECEIVED);
                 
                 return response()->json([
-                    'message' => ProjectVinnetTransaction::STATUS_NOT_RECEIVED,
-                    'error' => 'Authenticate Token: ' . ProjectVinnetTransaction::STATUS_NOT_RECEIVED . ' => ' . $tokenData['message']
+                    'message' => TransactionStatus::STATUS_NOT_RECEIVED,
+                    'error' => 'Authenticate Token: ' . TransactionStatus::STATUS_NOT_RECEIVED . ' => ' . $tokenData['message']
                 ], 404);
             }
 
@@ -705,14 +708,14 @@ class VinnetController extends Controller
 
             if($serviceItemsData['code'] != 0)
             {
-                Log::error('Query Services API Error: ' . ProjectVinnetTransaction::ERROR_SERVICE_NOT_ROUTED . ' => ' . $serviceItemsData['message']);
+                Log::error('Query Services API Error: ' . TransactionStatus::ERROR_SERVICE_NOT_ROUTED . ' => ' . $serviceItemsData['message']);
 
                 // Log the exception message
-                $projectRespondent->updateStatus(ProjectVinnetTransaction::ERROR_SERVICE_NOT_ROUTED . ' => ' . $serviceItemsData['message']);
+                $projectRespondent->updateStatus(TransactionStatus::ERROR_SERVICE_NOT_ROUTED . ' => ' . $serviceItemsData['message']);
 
                 return response()->json([
-                    'message' => ProjectVinnetTransaction::ERROR_SERVICE_NOT_ROUTED . ' Vui lòng liên hệ Admin để biết thêm thông tin.',
-                    'error' => 'Query Services: ' . ProjectVinnetTransaction::ERROR_SERVICE_NOT_ROUTED . ' => ' . $serviceItemsData['message']
+                    'message' => TransactionStatus::ERROR_SERVICE_NOT_ROUTED . ' Vui lòng liên hệ Admin để biết thêm thông tin.',
+                    'error' => 'Query Services: ' . TransactionStatus::ERROR_SERVICE_NOT_ROUTED . ' => ' . $serviceItemsData['message']
                 ], 404);
             }
 
@@ -735,7 +738,7 @@ class VinnetController extends Controller
 
             if(empty($selectedPrices)){
                 return response()->json([
-                    'message' => ProjectVinnetTransaction::STATUS_INVALID_DENOMINATION,
+                    'message' => TransactionStatus::STATUS_INVALID_DENOMINATION,
                     'error' => 'Không tìm được mệnh giá phù hợp.'
                 ], 404);
             }
@@ -743,6 +746,11 @@ class VinnetController extends Controller
             Log::info('Selected Prices: ' . implode(", ", $selectedPrices));
             
             $vinnet_token_order = 1;
+
+            $messagesToSend = [];
+            $allSuccess = true;
+            $errorMessages = [];
+            $totalSuccess = 0;
 
             foreach($selectedPrices as $selectedPrice)
             {
@@ -754,7 +762,7 @@ class VinnetController extends Controller
                     'vinnet_token_requuid' => $tokenData['reqUuid'],
                     'vinnet_token' => $tokenData['token'],
                     'vinnet_token_order' => $vinnet_token_order,
-                    'vinnet_token_status' => ProjectVinnetTransaction::STATUS_PENDING_VERIFICATION
+                    'vinnet_token_status' => TransactionStatus::STATUS_PENDING_VERIFICATION
                 ]);
 
                 $selectedServiceItem = null;
@@ -772,81 +780,118 @@ class VinnetController extends Controller
                 $step_info = "Pay Service API";
 
                 $payItemData = $this->pay_service($validatedRequest['phone_number'], $validatedRequest['service_code'], $tokenData['token'], $selectedServiceItem);
-
+                
                 if($payItemData['code'] == 0)
                 {
-                    $statusPaymentServiceResult = $vinnetTransaction->updatePaymentServiceStatus($payItemData['reqUuid'], $payItemData['pay_item'], ProjectVinnetTransaction::STATUS_VERIFIED, $payItemData['message']);
+                    $statusPaymentServiceResult = $vinnetTransaction->updatePaymentServiceStatus($payItemData['reqUuid'], $payItemData['pay_item'], TransactionStatus::STATUS_VERIFIED, $payItemData['message']);
                     
-                    $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED);
-
                     if(!empty($payItemData['pay_item']['cardItems']) && is_array($payItemData['pay_item']['cardItems'])){
-                        
+                        //TH Đáp viên chọn thẻ nạp tiền
+
+                        $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_DISPATCHED);
+
                         $smsTransaction = $vinnetTransaction->createVinnetSMSTransaction([
                             'vinnet_transaction_id' => $vinnetTransaction->id,
-                            'sms_status' => ProjectVinnetSMSTransaction::STATUS_SMS_PENDING
+                            'sms_status' => SMSStatus::PENDING
                         ]);
                         
                         $card_item = $payItemData['pay_item']['cardItems'][0];
-
-                        $this->card_serial_no = $card_item['serialNo'] ?? null;
-                        $this->card_pin_code = $card_item['pinCode'] ?? null;
-                        $this->card_expiry_date = $card_item['expiryDate'] ?? null;
-
-                        $messageCard = sprintf(
-                            "Code: %s | Seri: %s | HSD: %s",
+                        
+                        $messagesToSend[] = sprintf(
+                            "%s [C: %s | S: %s | HSD: %s]",
+                            number_format($payItemData['pay_item']['totalAmt'] / 1000, 0) . 'K',
                             $card_item['pinCode'] ?? 'N/A',
                             $card_item['serialNo'] ?? 'N/A',
                             $card_item['expiryDate'] ?? 'N/A'
                         );
-                        
-                        $apiCMCObject = new APICMCObject();
+                    } 
 
-                        $responseSMSData = $apiCMCObject->send_sms($validatedRequest['phone_number'], $messageCard);
-
-                        switch(intval($responseSMSData['status']))
-                        {
-                            case 1:
-                                $smsTransactionStatus = $smsTransaction->updateStatus(ProjectVinnetSMSTransaction::STATUS_SMS_SUCCESS);
-                                break;
-                            default:
-                                $smsTransactionStatus = $smsTransaction->updateStatus($responseSMSData['statusDescription']);
-                                break;
-                        }
-                    }
+                    $totalSuccess = $totalSuccess + $payItemData['pay_item']['totalAmt'];
                 }
                 else 
                 {
+                    $allSuccess = false;
+
                     if ($payItemData['code'] == 99)
                     {
-                        $statusPaymentServiceResult = $vinnetTransaction->updatePaymentServiceStatus($payItemData['reqUuid'], null, ProjectVinnetTransaction::STATUS_UNDETERMINED_TRANSACTION_RESULT, $payItemData['message']);
-                        $projectRespondent->updateStatus(ProjectVinnetTransaction::STATUS_ERROR);
+                        $statusPaymentServiceResult = $vinnetTransaction->updatePaymentServiceStatus($payItemData['reqUuid'], null, TransactionStatus::ERROR_C99, $payItemData['message']);
+                        $projectRespondent->updateStatus(TransactionStatus::ERROR_C99);
 
-                        return response()->json([
-                            'message' => ProjectVinnetTransaction::STATUS_ERROR,
-                            'error' => 'Giao dịch bị quá tải, PVV vui lòng chờ 3-4 phút, sau đó kiểm tra đáp viên xem đã nhận được quà tặng chưa. Nếu chưa, vui lòng liên hệ Admin để kiểm tra.'
-                        ], 404);
+                        // return response()->json([
+                        //     'message' => TransactionStatus::ERROR_C99,
+                        //     'error' => TransactionStatus::ERROR_C99
+                        // ], 404);
+
+                        $errorMessages[] = TransactionStatus::ERROR_C99;
                     } 
                     else 
                     {
-                        Log::error(ProjectVinnetTransaction::STATUS_ERROR . ' [' . $payItemData['message'] . ']');
+                        Log::error(TransactionStatus::ERROR_C98 . ' [' . $payItemData['message'] . ']');
 
-                        $statusPaymentServiceResult = $vinnetTransaction->updatePaymentServiceStatus($payItemData['reqUuid'], null, ProjectVinnetTransaction::STATUS_ERROR, $payItemData['message']);
-                        $projectRespondent->updateStatus(ProjectVinnetTransaction::STATUS_ERROR);
+                        $statusPaymentServiceResult = $vinnetTransaction->updatePaymentServiceStatus($payItemData['reqUuid'], null, TransactionStatus::ERROR_C98, $payItemData['message']);
+                        $projectRespondent->updateStatus(TransactionStatus::ERROR_C98 . ' [' . $payItemData['message'] . ']');
 
-                        return response()->json([
-                            'message' => ProjectVinnetTransaction::STATUS_ERROR . ' [' . $payItemData['message'] . ']',
-                            'error' => $payItemData['message']
-                        ], 404);
+                        // return response()->json([
+                        //     'message' => TransactionStatus::ERROR_C98 . ' [' . $payItemData['message'] . ']',
+                        //     'error' => $payItemData['message']
+                        // ], 404);
+
+                        $errorMessages[] = TransactionStatus::ERROR_C98 . ' [' . $payItemData['message'] . ']';
                     }
                 }
 
                 $vinnet_token_order++;
             }
 
-            return response()->json([
-                'message' => ProjectVinnetTransaction::SUCCESS_TRANSACTION_CONTACT_ADMIN_IF_NO_GIFT
-            ], 200);
+            //TH Đáp viên chọn thẻ nạp tiền
+            if($allSuccess){
+                if(!empty($messagesToSend)) {
+                    //TH Đáp viên chọn thẻ nạp tiền
+                    $finalMessage = implode("\n", $messagesToSend);
 
+                    $apiCMCObject = new APICMCObject();
+
+                    $responseSMSData = $apiCMCObject->send_sms($validatedRequest['phone_number'], $finalMessage);
+
+                    switch(intval($responseSMSData['status']))
+                    {
+                        case 1:
+                            $smsTransactionStatus = $smsTransaction->updateStatus(SMSStatus::SUCCESS);
+
+                            $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED);
+
+                            return response()->json([
+                                'message' => TransactionStatus::SUCCESS
+                            ], 200);
+                            break;
+                        default:
+                            $smsTransactionStatus = $smsTransaction->updateStatus($responseSMSData['statusDescription']);
+
+                            $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_NOT_RECEIVED);
+
+                            return response()->json([
+                                'message' => SMSStatus::ERROR,
+                                'error' => SMSStatus::ERROR
+                            ], 400);
+                            break;
+                    }
+                } else {
+                    //TH Đáp viên chọn nạp tiền điện thoại trực tiếp
+                    $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED);
+
+                    return response()->json([
+                        'message' => TransactionStatus::SUCCESS
+                    ], 200);
+                }
+            } else {
+                Log::info('Tổng số tiền giao dịch thành công đáp viên nhận được: ' . $totalSuccess);
+                Log::info('Thông báo lỗi giao dịch: ', $errorMessages);
+
+                return response()->json([
+                    'message' => 'Có lỗi xảy ra khi xử lý một hoặc nhiều giao dịch.',
+                    'error' => $errorMessages
+                ], 400);
+            }
         } catch(\Exception $e) {
             
             Log::error($e->getMessage());
