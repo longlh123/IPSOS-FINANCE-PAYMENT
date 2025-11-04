@@ -829,7 +829,7 @@ class VinnetController extends Controller
                         Log::error(TransactionStatus::ERROR_C98 . ' [' . $payItemData['message'] . ']');
 
                         $statusPaymentServiceResult = $vinnetTransaction->updatePaymentServiceStatus($payItemData['reqUuid'], null, TransactionStatus::ERROR_C98, $payItemData['message']);
-                        $projectRespondent->updateStatus(TransactionStatus::ERROR_C98 . ' [' . $payItemData['message'] . ']');
+                        $projectRespondent->updateStatus($payItemData['message']);
 
                         // return response()->json([
                         //     'message' => TransactionStatus::ERROR_C98 . ' [' . $payItemData['message'] . ']',
@@ -1323,7 +1323,8 @@ class VinnetController extends Controller
      */
     private function pay_service($phone_number, $service_code, $token, $service_item)
     {
-        try {
+        try 
+        {
             $envObject = new ENVObject();
             $environment = $envObject->environment;
             $merchantInfo = $envObject->merchantInfo;
@@ -1353,7 +1354,7 @@ class VinnetController extends Controller
             Log::info('Data signature: ' . str_replace('"', '', $merchantInfo['VINNET_MERCHANT_CODE']) . $uuid . $reqData);
 
             $signature = $this->generate_signature(str_replace('"', '', $merchantInfo['VINNET_MERCHANT_CODE']) . $uuid . $reqData);
-
+            
             $postData = [
                 'merchantCode' => str_replace('"', '', $merchantInfo['VINNET_MERCHANT_CODE']),
                 'reqUuid' => $uuid,
@@ -1362,7 +1363,7 @@ class VinnetController extends Controller
             ];
 
             $response = $this->post_vinnet_request(str_replace('"', '', $url) . '/payservice', $token, $postData);
-
+            
             Log::info('Pay service response: ' . $response);
 
             $decodedResponse = json_decode($response, true);
@@ -1423,4 +1424,6 @@ class VinnetController extends Controller
             throw $e;
         }
     }
+
+    
 }

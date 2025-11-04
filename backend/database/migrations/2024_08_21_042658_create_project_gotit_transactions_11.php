@@ -38,9 +38,13 @@ return new class extends Migration
             $table->id();
             $table->foreignId('project_respondent_id')->constrained('project_respondents')->onDelete('cascade');
             $table->string('transaction_ref_id')->nullable();
+            $table->integer('transaction_ref_id_order')->nullable();
             $table->date('expiry_date')->nullable();
             $table->string('order_name')->nullable();
             $table->double('amount')->default(0.0);
+            $table->string('voucher_link_group')->nullable();
+            $table->string('voucher_link_code_group')->nullable();
+            $table->string('voucher_serial_group')->nullable();
             $table->string('voucher_code')->nullable();
             $table->string('voucher_link')->nullable();
             $table->string('voucher_link_code')->nullable();
@@ -56,7 +60,7 @@ return new class extends Migration
             $table->string('invoice_comment')->nullable();
             $table->timestamps();
 
-            $table->unique(['project_respondent_id', 'transaction_ref_id'], 'unique_project_gotit_voucher_transactions_id');
+            $table->unique(['project_respondent_id', 'transaction_ref_id', 'transaction_ref_id_order'], 'unique_project_gotit_voucher_transactions_id');
         });
 
         Schema::create('project_gotit_sms_transactions', function(Blueprint $table) {
