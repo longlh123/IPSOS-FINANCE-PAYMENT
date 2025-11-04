@@ -30,31 +30,6 @@ class ProjectVinnetTransaction extends Model
         'vinnet_invoice_date'
     ];
 
-    const SUCCESS_TRANSACTION_CONTACT_ADMIN_IF_NO_GIFT = 'Chúng tôi đã gửi thành công. Vui lòng kiểm tra lại tin nhắn của bạn.';
-    const STATUS_UNDETERMINED_TRANSACTION_RESULT = 'Giao dịch chưa xác định kết quả. Vui lòng liên hệ Admin để kiểm tra. Hoặc gọi api checktransaction để truy vấn kết quả'; // Undetermined transaction result. Please contact Admin for verification or call the checktransaction API to query the result 
-    
-    const STATUS_NOT_RECEIVED = 'Không nhận được Token từ client';
-    const STATUS_NOT_VERIFIED = 'Không xác thực được Token';
-    const STATUS_EXPIRED = 'Token hết hạn';
-    const STATUS_ISSUED = 'Token đã được phát hành'; 
-    const STATUS_ACTIVE = 'Token đang hoạt động'; 
-    const STATUS_USED = 'Token đã được sử dụng';
-    const STATUS_REVOKED = 'Token đã bị thu hồi';
-    const STATUS_INVALID = 'Token không hợp lệ'; 
-    const STATUS_PENDING_VERIFICATION = 'Token đang chờ xác thực'; 
-    const STATUS_VERIFIED = 'Token đã được xác thực';
-    const STATUS_SUSPENDED = 'Token đã bị đình chỉ';
-    const STATUS_RENEWAL_PENDING = 'Token đang chờ gia hạn';
-    const STATUS_RENEWAL_COMPLETED = 'Token đã gia hạn xong'; 
-    const STATUS_ERROR = 'Lỗi Token'; 
-
-    const STATUS_INVALID_DENOMINATION = 'Mệnh giá quà không hợp lệ'; // Invalid denomination
-    const STATUS_TRANSACTION_FAILED = 'Giao dịch được thực hiện không qua quá trình phỏng vấn.';
-    const STATUS_TRANSACTION_TEST = 'Giao dịch test đang được thực hiện';
-    
-    const ERROR_CODE_CONNECTION_FAILED = 'Could not resolve host';
-    const ERROR_SERVICE_NOT_ROUTED     = 'Hệ thống chưa kết nối được đến dịch vụ chuyển quà.';
-
     public function respondent()
     {
         return $this->belongsTo(ProjectRespondent::class, 'project_respondent_id');

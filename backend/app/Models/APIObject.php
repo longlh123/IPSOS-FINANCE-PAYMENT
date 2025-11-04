@@ -50,6 +50,9 @@ class APIObject
         } else if($signature_type === 'VOUCHER V') {
 
             $this->signatureData = $this->envObject->gotitInfo['API_KEY'] . '|' . $order_name . '|' . $expiry_date . '|' . $this->transactionRefId;
+        } else if ($signature_type === 'VOUCHER G') {
+
+            $this->signatureData = $this->envObject->gotitInfo['API_KEY'] . '|' . $order_name . '|' . $expiry_date . '|' . $this->transactionRefId;
         } else {    
 
             throw new Exception('Signature is incorrect.');
@@ -105,31 +108,56 @@ class APIObject
                     throw new GotItVoucherException(ProjectGotItVoucherTransaction::STATUS_ORDER_LIMIT_EXCEEDED, '[GET VOUCHERS]', 405);
                 case 4006: 
                     throw new GotItVoucherException(ProjectGotItVoucherTransaction::STATUS_OPT_INCORRECT, '[GET VOUCHERS]', 400);
+                case 5006:
+                    throw new GotItVoucherException(ProjectGotItVoucherTransaction::STATUS_QUANTITY_INCORRECT, '[GET VOUCHERS]', 400);
                 default:
                     throw new GotItVoucherException('Lỗi chưa xác định.', 498);
             }
         }
-
+        
         $responseVouchersData = $responseData['data'];
 
-        foreach($responseVouchersData['vouchers'] as $index => &$voucher){
+        if(in_array($voucher_link_type, ['e', 'v'])){
 
-            if($voucher_link_type === 'e')
-            {
-                $decryptedVoucherLink = $this->decrypt_data($voucher['voucher_link']);
-                $voucher['voucher_link'] = $decryptedVoucherLink;
+            foreach($responseVouchersData['vouchers'] as $index => &$voucher){
+
+                if($voucher_link_type === 'e')
+                {
+                    $decryptedVoucherLink = $this->decrypt_data($voucher['voucher_link']);
+                    $voucher['voucher_link'] = $decryptedVoucherLink;
+                }
+
+                if($voucher_link_type === 'v')
+                {
+                    $decryptedVoucherCode = $this->decrypt_data($voucher['voucherCode']);
+                    $voucher['voucherCode'] = $decryptedVoucherCode;
+
+                    Log::info('Voucher code: ' . $voucher['voucherCode']);
+
+                    $decryptedVoucherLink = $this->decrypt_data($voucher['voucherLink']);
+                    $voucher['voucherLink'] = $decryptedVoucherLink;
+
+                    $decryptedVoucherLinkCode = $this->decrypt_data($voucher['voucherLinkCode']);
+                    $voucher['voucherLinkCode'] = $decryptedVoucherLinkCode;
+                }  
             }
+        } else {
+            $decryptedVoucherLinkGroup = $this->decrypt_data($responseVouchersData['groupVouchers']['voucherLink']);
+            $responseVouchersData['groupVouchers']['voucherLink'] = $decryptedVoucherLinkGroup;
 
-            if($voucher_link_type === 'v')
-            {
-                $decryptedVoucherLink = $this->decrypt_data($voucher['voucherLink']);
-                $voucher['voucherLink'] = $decryptedVoucherLink;
+            $decryptedVoucherLinkCodeGroup = $this->decrypt_data($responseVouchersData['groupVouchers']['voucherLinkCode']);
+            $responseVouchersData['groupVouchers']['voucherLinkCode'] = $decryptedVoucherLinkCodeGroup;
+            
+            foreach($responseVouchersData['vouchers'] as $index => &$voucher){
 
-                $decryptedVoucherLinkCode = $this->decrypt_data($voucher['voucherLinkCode']);
-                $voucher['voucherLinkCode'] = $decryptedVoucherLinkCode;
-            }  
+                $decryptedLink = $this->decrypt_data($voucher['link']);
+                $voucher['link'] = $decryptedLink;
+
+                $decryptedLink = $this->decrypt_data($voucher['code']);
+                $voucher['code'] = $decryptedLink;
+            }
         }
-
+        
         return $responseVouchersData;
     }
 
@@ -166,6 +194,8 @@ class APIObject
                     throw new GotItVoucherException(ProjectGotItVoucherTransaction::STATUS_ORDER_LIMIT_EXCEEDED, '[GET VOUCHERS]', 405);
                 case 4006: 
                     throw new GotItVoucherException(ProjectGotItVoucherTransaction::STATUS_OPT_INCORRECT, '[GET VOUCHERS]', 400);
+                case 5006:
+                    throw new GotItVoucherException(ProjectGotItVoucherTransaction::STATUS_QUANTITY_INCORRECT, '[GET VOUCHERS]', 400);
                 default:
                     throw new GotItVoucherException('Lỗi chưa xác định.', 498);
             }
@@ -399,7 +429,7 @@ class APIObject
             Log::info('Encoded signature: '. $encodedSignature);
 
             return $encodedSignature;
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             // Log the exception message
             Log::error('Signature generation failed: ' . $e->getMessage());
             throw $e;

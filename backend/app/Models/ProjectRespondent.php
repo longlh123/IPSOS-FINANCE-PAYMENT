@@ -15,6 +15,7 @@ class ProjectRespondent extends Model
     const STATUS_RESPONDENT_WAITING_FOR_GIFT =  'Đang đợi được phát quà.';
     const STATUS_RESPONDENT_GIFT_DISPATCHED =   'Quà đã được gửi đi (giao hàng / phát tại điểm khảo sát).';
     const STATUS_RESPONDENT_GIFT_RECEIVED =     'Đã nhận quà.';
+    const STATUS_RESPONDENT_GIFT_NOT_RECEIVED = 'Quà đã được gửi nhưng đáp viên chưa nhận được.';
     const STATUS_RESPONDENT_DISQUALIFIED =      'Không đủ điều kiện nhận quà.';
     const STATUS_RESPONDENT_DUPLICATE =         'Trùng thông tin / khảo sát đã được thực hiện trước đó.';     
     const STATUS_RESPONDENT_CANCELLED =         'Khảo sát bị hủy / không hoàn thành.'; 
@@ -121,7 +122,10 @@ class ProjectRespondent extends Model
     {
         $exists = $project->projectRespondents()
                         ->where('respondent_id', $interviewURL->shell_chainid . '-' . $interviewURL->respondent_id)
-                        ->where('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED)
+                        ->where(function($query) {
+                            $query->where('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED)
+                                ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_NOT_RECEIVED);
+                        })
                         ->exists();
             
         if($exists)
@@ -133,7 +137,10 @@ class ProjectRespondent extends Model
         //Kiểm tra shell_chainid của đáp viên đã được thực hiện giao dịch trước đó hay chưa?
         $exists = $project->projectRespondents()
                         ->where('shell_chainid', $interviewURL->shell_chainid)
-                        ->where('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED)
+                        ->where(function($query) {
+                            $query->where('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED)
+                                ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_NOT_RECEIVED);
+                        })
                         ->exists();
             
         if($exists)
@@ -145,7 +152,10 @@ class ProjectRespondent extends Model
         //Kiểm tra số điện thoại của đáp viên đã được thực hiện giao dịch trước đó hay chưa?
         $exists = $project->projectRespondents()
                     ->where('respondent_phone_number', $interviewURL->respondent_phone_number)
-                    ->where('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED)
+                    ->where(function($query) {
+                            $query->where('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED)
+                                ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_NOT_RECEIVED);
+                        })
                     ->exists();
               
         if($exists)
@@ -163,7 +173,10 @@ class ProjectRespondent extends Model
                             $query->where('respondent_phone_number', $phone_number)
                                 ->orWhere('phone_number', $phone_number);
                         })
-                        ->where('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED)
+                        ->where(function($query) {
+                            $query->where('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED)
+                                ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_NOT_RECEIVED);
+                        })
                         ->exists();
         
         if($exists)
