@@ -324,7 +324,7 @@ class GotItController extends Controller
             if(count($selectedPrices) == 1){
                 $voucher_link_type = 'v'; 
             } else {
-                if(count($selectedPrices) == 2){
+                if(count($selectedPrices) >= 2 && count($selectedPrices) <= 3){
                     $voucher_link_type = 'g'; 
                 } else {
                     $voucher_link_type = 'e';
@@ -379,7 +379,7 @@ class GotItController extends Controller
 
             } else if ($voucher_link_type === 'v') {
                 $voucherData = $responsedVoucher['vouchers'][0];
-                
+
                 $amount = $priceMap[$voucherRequest['productPriceId']]
                             ?? throw new \Exception('Giá trị ' . $voucherRequest['productPriceId'] . ' chưa được định nghĩa mức giá.');
                 
@@ -437,9 +437,10 @@ class GotItController extends Controller
                     $voucherTransaction = $projectRespondent->createGotitVoucherTransactions($voucherData);
 
                     $messagesToSend[] = sprintf(
-                        "%s: C: %s",
+                        "%s: [Ma:%s,Seri:%s]",
                         number_format($voucher['value'] / 1000, 0) . 'K',
-                        $voucher['code'] ?? 'N/A'
+                        $voucher['code'] ?? 'N/A',
+                        $voucher['serial'] ?? 'N/A'
                     );
 
                     $expiredDate = $voucher['expired_date'];
@@ -459,7 +460,7 @@ class GotItController extends Controller
             if(!empty($messagesToSend)){
             
                 $messageCard = sprintf(
-                    "IPSOS tang ban phan qua. GotIt: %s, HSD: %s",
+                    "IPSOS tang qua GotIt: %s, HSD: %s",
                     implode("\n", $messagesToSend) ?? 'N/A',
                     $expiredDate ?? 'N/A'
                 );
