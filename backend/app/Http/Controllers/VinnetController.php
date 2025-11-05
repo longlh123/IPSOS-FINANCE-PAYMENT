@@ -345,72 +345,124 @@ class VinnetController extends Controller
     private function post_vinnet_request($url, $token, $postData)
     {
         try {
-            // Log::info('Generate a POST request');
+            $maxRetries = 2; // Số lần thử lại nếu request thất bại
+            $retryDelay = 2; // Giây chờ giữa các lần thử
+            $attempt = 0;
 
-            // Initialize cURL session
-            $ch = curl_init($url);
+            do {
+                $attempt++;
+                $startTime = microtime(true); // Bắt đầu đếm thời gian
 
-            // Convert post data to JSON format
-            $jsonData = json_encode($postData);
+                try {
+                    // Initialize cURL session
+                    $ch = curl_init($url);
 
-            // Set cURL options
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                    // Convert post data to JSON format
+                    $jsonData = json_encode($postData);
 
-            $header = [
-                'Content-Type: application/json',
-                'Content-Length: ' . strlen($jsonData)
-            ];
+                    // Prepare headers
+                    $header = [
+                        'Content-Type: application/json',
+                        'Content-Length: ' . strlen($jsonData)
+                    ];
 
-            if (!is_null($token)) {
-                $header[] = 'Authorization: ' . $token;
-            }
+                    if (!is_null($token)) {
+                        $header[] = 'Authorization: ' . $token;
+                    }
 
-            Log::info('Headers: ' . implode(',', $header));
-            
-            curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonData);
+                    Log::info("POST attempt {$attempt} to URL: {$url}");
+                    Log::info('Headers: ' . implode(',', $header));
+                    Log::info('Payload: ' . $jsonData);
 
-            // Execute cURL session and get the response
-            $response = curl_exec($ch);
+                    // Set cURL options
+                    curl_setopt_array($ch, [
+                        CURLOPT_RETURNTRANSFER => true,
+                        CURLOPT_HTTPHEADER     => $header,
+                        CURLOPT_POST           => true,
+                        CURLOPT_POSTFIELDS     => $jsonData,
+                        CURLOPT_CONNECTTIMEOUT => 10, // Giây tối đa chờ kết nối
+                        CURLOPT_TIMEOUT        => 20, // Giây tối đa cho toàn request
+                    ]);
 
-            // Check if any error occurred
-            if (curl_errno($ch)) {
-                Log::error('Request Error: ' . curl_error($ch));
-                throw new Exception(ProjectVinnetTransaction::ERROR_CODE_CONNECTION_FAILED);
-            }
-            
-            // Get HTTP status code
-            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            
-            // Close cURL session
-            curl_close($ch);
+                    // Execute request
+                    $response = curl_exec($ch);
+                    $duration = round(microtime(true) - $startTime, 2); // Tính thời gian thực thi
 
-            // Handle response
-            if ($httpCode == 200) {
-                if($this->json_validator($response)){
-                    $responseData = json_decode($response, true);
-                } else {
-                    $responseData = $response;
-                }
-                
-                $verify_signature = $this->verify_signature($responseData['reqUuid'] . $responseData['resCode'] . $responseData['resMesg'] . $responseData['resData'], $responseData['sign']);
+                    if (curl_errno($ch)) {
+                        $curlError = curl_error($ch);
+                        Log::error("cURL error (attempt {$attempt}, {$duration}s): {$curlError}");
+                        curl_close($ch);
 
-                if($verify_signature){
+                        // Retry nếu là lỗi timeout hoặc lỗi kết nối
+                        if (str_contains($curlError, 'timed out') || str_contains($curlError, 'Failed to connect')) {
+                            if ($attempt < $maxRetries) {
+                                Log::warning("Retrying in {$retryDelay}s...");
+                                sleep($retryDelay);
+                                continue;
+                            }
+                        }
+                        throw new Exception("Kết nối tới máy chủ Vinnet thất bại: {$curlError}");
+                    }
+
+                    // Lấy mã HTTP
+                    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                    curl_close($ch);
+
+                    Log::info("Response received in {$duration}s (HTTP {$httpCode})");
+
+                    // Kiểm tra response rỗng
+                    if ($response === false || $response === null || trim($response) === '') {
+                        throw new Exception("Máy chủ Vinnet không phản hồi hoặc trả về dữ liệu rỗng");
+                    }
+
+                    // HTTP code khác 200
+                    if ($httpCode !== 200) {
+                        Log::error("Request failed with HTTP code {$httpCode}. Response: {$response}");
+                        throw new Exception("Request thất bại với HTTP code {$httpCode}");
+                    }
+
+                    // Kiểm tra JSON
+                    if ($this->json_validator($response)) {
+                        $responseData = json_decode($response, true);
+                    } else {
+                        Log::warning("Response không hợp lệ JSON: {$response}");
+                        throw new Exception("Response không đúng định dạng JSON");
+                    }
+
+                    // Kiểm tra trường cần thiết
+                    if (!isset($responseData['reqUuid'], $responseData['resCode'], $responseData['resMesg'], $responseData['resData'], $responseData['sign'])) {
+                        throw new Exception("Response thiếu các trường cần thiết để xác thực chữ ký");
+                    }
+
+                    // Xác thực chữ ký
+                    $verify_signature = $this->verify_signature(
+                        $responseData['reqUuid'] . $responseData['resCode'] . $responseData['resMesg'] . $responseData['resData'],
+                        $responseData['sign']
+                    );
+
+                    if (!$verify_signature) {
+                        Log::error('Request failed with invalid signature');
+                        throw new Exception('Xác thực chữ ký không hợp lệ (invalid signature)');
+                    }
+
                     Log::info('Response data: ' . json_encode($responseData));
                     return json_encode($responseData);
-                } else {
-                    Log::info('Request failed with invalid signature');
-                    throw new Exception('Request failed with invalid signature');
-                }
-            } else {
-                throw new Exception('Request failed with HTTP code ' . $httpCode);
-            }
-        } catch (Exception $e) {
-            // Log the exception message
-            //Log::error('POST request failed: ' . $e->getMessage());
+                } catch (Exception $innerEx) {
+                    Log::error("POST attempt {$attempt} failed: " . $innerEx->getMessage());
 
-            // Optionally rethrow the exception or handle it
+                    // Nếu còn lượt retry → chờ rồi thử lại
+                    if ($attempt < $maxRetries) {
+                        Log::warning("Retrying in {$retryDelay}s...");
+                        sleep($retryDelay);
+                    } else {
+                        throw $innerEx;
+                    }
+                }
+
+            } while ($attempt < $maxRetries);
+
+        } catch (Exception $e) {
+            Log::error('POST request to Vinnet failed: ' . $e->getMessage());
             throw $e;
         }
     }
@@ -686,39 +738,69 @@ class VinnetController extends Controller
             
             $step_info = "Authentication Token API";
 
-            $tokenData = $this->authenticate_token();
+            try{
+                $tokenData = $this->authenticate_token();
 
-            if($tokenData['code'] != 0)
-            {
-                Log::error('Authenticate Token: ' . TransactionStatus::STATUS_NOT_RECEIVED . ' => ' . $tokenData['message']);
+                if($tokenData['code'] != 0)
+                {
+                    Log::error('Authentication Token API Exception: ' . $tokenData['message']);
 
-                $projectRespondent->updateStatus(TransactionStatus::STATUS_NOT_RECEIVED);
-                
+                    $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_TEMPORARY_ERROR);
+                    
+                    return response()->json([
+                        'message' => ProjectRespondent::ERROR_RESPONDENT_GIFT_TEMPORARY,
+                        'error' => ProjectRespondent::ERROR_RESPONDENT_GIFT_TEMPORARY
+                    ], 404);
+                }
+            } catch (\Throwable $e) {
+                Log::error('Authentication Token API Exception: ' . $e->getMessage());
+
+                if(isset($projectRespondent)){
+                    $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_TEMPORARY_ERROR);
+                }
+
                 return response()->json([
-                    'message' => TransactionStatus::STATUS_NOT_RECEIVED,
-                    'error' => 'Authenticate Token: ' . TransactionStatus::STATUS_NOT_RECEIVED . ' => ' . $tokenData['message']
+                    'message' => ProjectRespondent::ERROR_RESPONDENT_GIFT_TEMPORARY,
+                    'error' => ProjectRespondent::ERROR_RESPONDENT_GIFT_TEMPORARY
                 ], 404);
             }
 
             $step_info = "Query Service API";
 
-            $serviceItemsData = $this->query_service($validatedRequest['phone_number'], $validatedRequest['service_code'], $tokenData['token'], null);
-            
-            Log::info('Code: ' . $serviceItemsData['code']);
+            try{
+                $serviceItemsData = $this->query_service(
+                                            $validatedRequest['phone_number'], 
+                                            $validatedRequest['service_code'], 
+                                            $tokenData['token'], 
+                                            null
+                                        );
+                                        
+                if($serviceItemsData['code'] != 0)
+                {
+                    Log::error('Query Service API Exception: ' . $serviceItemsData['message']);
 
-            if($serviceItemsData['code'] != 0)
-            {
-                Log::error('Query Services API Error: ' . TransactionStatus::ERROR_SERVICE_NOT_ROUTED . ' => ' . $serviceItemsData['message']);
+                    if(isset($projectRespondent)){
+                        $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_TEMPORARY_ERROR);
+                    }
 
-                // Log the exception message
-                $projectRespondent->updateStatus(TransactionStatus::ERROR_SERVICE_NOT_ROUTED . ' => ' . $serviceItemsData['message']);
+                    return response()->json([
+                        'message' => ProjectRespondent::ERROR_RESPONDENT_GIFT_TEMPORARY,
+                        'error' => ProjectRespondent::ERROR_RESPONDENT_GIFT_TEMPORARY
+                    ], 404);
+                }
+            } catch(\Throwable $e){
+                Log::error('Query Service API Exception: ' . $e->getMessage());
+
+                if(isset($projectRespondent)){
+                    $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_TEMPORARY_ERROR);
+                }
 
                 return response()->json([
-                    'message' => TransactionStatus::ERROR_SERVICE_NOT_ROUTED . ' Vui lòng liên hệ Admin để biết thêm thông tin.',
-                    'error' => 'Query Services: ' . TransactionStatus::ERROR_SERVICE_NOT_ROUTED . ' => ' . $serviceItemsData['message']
+                    'message' => ProjectRespondent::ERROR_RESPONDENT_GIFT_TEMPORARY,
+                    'error' => ProjectRespondent::ERROR_RESPONDENT_GIFT_TEMPORARY
                 ], 404);
             }
-
+            
             $prices = array();
 
             foreach($serviceItemsData['service_items'] as $serviceItem){
@@ -756,9 +838,13 @@ class VinnetController extends Controller
             {
                 Log::info('Transaction ' . $vinnet_token_order . ': ' . $selectedPrice);
 
+                $payServiceUuid = $this->generate_formated_uuid();
+                Log::info('Pay Service UUID: ' . $payServiceUuid);
+
                 $vinnetTransaction = $projectRespondent->createVinnetTransactions([
                     'project_respondent_id' => $projectRespondent->id,
                     'vinnet_serviceitems_requuid' => $serviceItemsData['reqUuid'],
+                    'vinnet_payservice_requuid' => $payServiceUuid,
                     'vinnet_token_requuid' => $tokenData['reqUuid'],
                     'vinnet_token' => $tokenData['token'],
                     'vinnet_token_order' => $vinnet_token_order,
@@ -779,7 +865,34 @@ class VinnetController extends Controller
 
                 $step_info = "Pay Service API";
 
-                $payItemData = $this->pay_service($validatedRequest['phone_number'], $validatedRequest['service_code'], $tokenData['token'], $selectedServiceItem);
+                try
+                {
+                    $payItemData = $this->pay_service(
+                                            $payServiceUuid, 
+                                            $validatedRequest['phone_number'], 
+                                            $validatedRequest['service_code'], 
+                                            $tokenData['token'], 
+                                            $selectedServiceItem
+                                        );
+                } catch (\Throwable $e) {
+                    Log::error("Pay Service API Exception [UUID: " . $payServiceUuid . "]: " . $e->getMessage());
+
+                    if(isset($vinnetTransaction)){
+                        $vinnetTransaction->update([
+                            'vinnet_token_status' => TransactionStatus::STATUS_ERROR,
+                            'vinnet_token_message' => $e->getMessage()
+                        ]);
+                    }
+
+                    if(isset($projectRespondent)){
+                        $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_PARTIAL);
+                    }
+
+                    return response()->json([
+                        'message' => ProjectRespondent::ERROR_RESPONDENT_GIFT_SYSTEM,
+                        'error' => ProjectRespondent::ERROR_RESPONDENT_GIFT_SYSTEM
+                    ], 400);
+                }
                 
                 if($payItemData['code'] == 0)
                 {
@@ -798,7 +911,7 @@ class VinnetController extends Controller
                         $card_item = $payItemData['pay_item']['cardItems'][0];
                         
                         $messagesToSend[] = sprintf(
-                            "%s [C: %s | S: %s | HSD: %s]",
+                            "%s [Ma:%s|Seri:%s|HSD:%s]",
                             number_format($payItemData['pay_item']['totalAmt'] / 1000, 0) . 'K',
                             $card_item['pinCode'] ?? 'N/A',
                             $card_item['serialNo'] ?? 'N/A',
@@ -811,33 +924,32 @@ class VinnetController extends Controller
                 else 
                 {
                     $allSuccess = false;
+                    
+                    $transactionErrorMessage = "";
 
-                    if ($payItemData['code'] == 99)
-                    {
-                        $statusPaymentServiceResult = $vinnetTransaction->updatePaymentServiceStatus($payItemData['reqUuid'], null, TransactionStatus::ERROR_C99, $payItemData['message']);
-                        $projectRespondent->updateStatus(TransactionStatus::ERROR_C99);
-
-                        // return response()->json([
-                        //     'message' => TransactionStatus::ERROR_C99,
-                        //     'error' => TransactionStatus::ERROR_C99
-                        // ], 404);
-
-                        $errorMessages[] = TransactionStatus::ERROR_C99;
-                    } 
-                    else 
-                    {
-                        Log::error(TransactionStatus::ERROR_C98 . ' [' . $payItemData['message'] . ']');
-
-                        $statusPaymentServiceResult = $vinnetTransaction->updatePaymentServiceStatus($payItemData['reqUuid'], null, TransactionStatus::ERROR_C98, $payItemData['message']);
-                        $projectRespondent->updateStatus($payItemData['message']);
-
-                        // return response()->json([
-                        //     'message' => TransactionStatus::ERROR_C98 . ' [' . $payItemData['message'] . ']',
-                        //     'error' => $payItemData['message']
-                        // ], 404);
-
-                        $errorMessages[] = TransactionStatus::ERROR_C98 . ' [' . $payItemData['message'] . ']';
+                    if($payItemData['code'] == 99){
+                        $transactionErrorMessage = TransactionStatus::ERROR_C99  . ' [' . $payItemData['message'] . ']';
+                    } else {
+                        $transactionErrorMessage = TransactionStatus::ERROR_C98  . ' [' . $payItemData['message'] . ']';
                     }
+
+                    Log::error("Pay Service API Exception [UUID: " . $payServiceUuid . "]: " . $transactionErrorMessage);
+
+                    if(isset($vinnetTransaction)){
+                        $vinnetTransaction->update([
+                            'vinnet_token_status' => TransactionStatus::STATUS_ERROR,
+                            'vinnet_token_message' => $transactionErrorMessage
+                        ]);
+                    }
+
+                    if(isset($projectRespondent)){
+                        $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_PARTIAL);
+                    }
+
+                    return response()->json([
+                        'message' => ProjectRespondent::ERROR_RESPONDENT_GIFT_SYSTEM,
+                        'error' => ProjectRespondent::ERROR_RESPONDENT_GIFT_SYSTEM
+                    ], 400);
                 }
 
                 $vinnet_token_order++;
@@ -847,11 +959,16 @@ class VinnetController extends Controller
             if($allSuccess){
                 if(!empty($messagesToSend)) {
                     //TH Đáp viên chọn thẻ nạp tiền
-                    $finalMessage = implode("\n", $messagesToSend);
+                    $finalMessage =  implode("\n", $messagesToSend);
 
+                    $messageCard = sprintf(
+                        "IPSOS tang qua:\n%s",
+                        implode("\n", $messagesToSend) ?? 'N/A'
+                    );
+                    
                     $apiCMCObject = new APICMCObject();
 
-                    $responseSMSData = $apiCMCObject->send_sms($validatedRequest['phone_number'], $finalMessage);
+                    $responseSMSData = $apiCMCObject->send_sms($validatedRequest['phone_number'], $messageCard);
 
                     switch(intval($responseSMSData['status']))
                     {
@@ -884,12 +1001,14 @@ class VinnetController extends Controller
                     ], 200);
                 }
             } else {
+                $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_PARTIAL);
+
                 Log::info('Tổng số tiền giao dịch thành công đáp viên nhận được: ' . $totalSuccess);
                 Log::info('Thông báo lỗi giao dịch: ', $errorMessages);
 
                 return response()->json([
-                    'message' => 'Có lỗi xảy ra khi xử lý một hoặc nhiều giao dịch.',
-                    'error' => $errorMessages
+                    'message' => ProjectRespondent::ERROR_RESPONDENT_GIFT_SYSTEM,
+                    'error' => ProjectRespondent::ERROR_RESPONDENT_GIFT_SYSTEM
                 ], 400);
             }
         } catch(\Exception $e) {
@@ -1321,7 +1440,7 @@ class VinnetController extends Controller
      * @return json
      *  
      */
-    private function pay_service($phone_number, $service_code, $token, $service_item)
+    private function pay_service($uuid, $phone_number, $service_code, $token, $service_item)
     {
         try 
         {
@@ -1339,11 +1458,6 @@ class VinnetController extends Controller
                 'serviceItem' => $service_item,
                 'quantity' => 1
             ];
-
-            Log::info($dataRequest);
-
-            $uuid = $this->generate_formated_uuid();
-            Log::info('UUID: ' . $uuid);
 
             Log::info('Data request: ' . json_encode($dataRequest));
             

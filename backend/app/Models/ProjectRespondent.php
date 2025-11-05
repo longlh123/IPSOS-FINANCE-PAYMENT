@@ -16,10 +16,13 @@ class ProjectRespondent extends Model
     const STATUS_RESPONDENT_GIFT_DISPATCHED =   'Quà đã được gửi đi (giao hàng / phát tại điểm khảo sát).';
     const STATUS_RESPONDENT_GIFT_RECEIVED =     'Đã nhận quà.';
     const STATUS_RESPONDENT_GIFT_NOT_RECEIVED = 'Quà đã được gửi nhưng đáp viên chưa nhận được.';
+    const STATUS_RESPONDENT_GIFT_PARTIAL =      'Quà tặng chưa được nhận đầy đủ để gửi cho đáp viên do lỗi từ hệ thống.';
     const STATUS_RESPONDENT_DISQUALIFIED =      'Không đủ điều kiện nhận quà.';
     const STATUS_RESPONDENT_DUPLICATE =         'Trùng thông tin / khảo sát đã được thực hiện trước đó.';     
     const STATUS_RESPONDENT_CANCELLED =         'Khảo sát bị hủy / không hoàn thành.'; 
-    const STATUS_RESPONDENT_REJECTED =          'Đáp viên từ chối nhận quà.';    
+    const STATUS_RESPONDENT_REJECTED =          'Đáp viên từ chối nhận quà.';
+    const STATUS_RESPONDENT_GIFT_TEMPORARY_ERROR = 'Hệ thống gặp sự cố tạm thời.';
+       
 
     const ERROR_CANNOT_STORE_RESPONDENT =                 'Đáp viên không thể lưu.';
     const ERROR_INVALID_RESPONDENT_STATUS_FOR_UPDATE =    'Đáp viên không hợp lệ để cập nhật trạng thái.';
@@ -29,6 +32,9 @@ class ProjectRespondent extends Model
     const ERROR_RESPONDENT_GIFT_RECEIVED =                'Đáp viên đã nhận quà, không thể thao tác lại.';
     const ERROR_SMS_SEND_FAILED =                         'Gửi tin nhắn không thành công.';
     const ERROR_INVALID_INTERVIEWERURL =                  'Liên kết phỏng vấn không hợp lệ. Vui lòng sử dụng link được hệ thống cung cấp. Nếu bạn đã chỉnh sửa hoặc thay đổi thông tin trong đường link, vui lòng truy cập lại link gốc từ hệ thống.';
+    const ERROR_RESPONDENT_GIFT_SYSTEM =                  'Hệ thống gặp sự cố khi gửi quà, quà sẽ được gửi trực tiếp đến đáp viên từ phỏng vấn viên.';
+    const ERROR_RESPONDENT_GIFT_TEMPORARY =               'Hệ thống gặp sự cố tạm thời, vui lòng kiểm tra lại thiết bị (kết nối mạng,...) và thử thực hiện lại.';
+
 
     protected $table = "project_respondents";
 
@@ -124,7 +130,8 @@ class ProjectRespondent extends Model
                         ->where('respondent_id', $interviewURL->shell_chainid . '-' . $interviewURL->respondent_id)
                         ->where(function($query) {
                             $query->where('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED)
-                                ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_NOT_RECEIVED);
+                                ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_NOT_RECEIVED)
+                                ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_PARTIAL);
                         })
                         ->exists();
             
@@ -139,7 +146,8 @@ class ProjectRespondent extends Model
                         ->where('shell_chainid', $interviewURL->shell_chainid)
                         ->where(function($query) {
                             $query->where('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED)
-                                ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_NOT_RECEIVED);
+                                ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_NOT_RECEIVED)
+                                ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_PARTIAL);
                         })
                         ->exists();
             
@@ -154,7 +162,8 @@ class ProjectRespondent extends Model
                     ->where('respondent_phone_number', $interviewURL->respondent_phone_number)
                     ->where(function($query) {
                             $query->where('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED)
-                                ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_NOT_RECEIVED);
+                                ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_NOT_RECEIVED)
+                                ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_PARTIAL);
                         })
                     ->exists();
               
@@ -175,7 +184,8 @@ class ProjectRespondent extends Model
                         })
                         ->where(function($query) {
                             $query->where('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED)
-                                ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_NOT_RECEIVED);
+                                ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_NOT_RECEIVED)
+                                ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_PARTIAL);
                         })
                         ->exists();
         
