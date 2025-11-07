@@ -324,7 +324,7 @@ class GotItController extends Controller
             if(count($selectedPrices) == 1){
                 $voucher_link_type = 'v'; 
             } else {
-                if(count($selectedPrices) >= 2 && count($selectedPrices) <= 3){
+                if(count($selectedPrices) >= 2 && count($selectedPrices) <= 4){
                     $voucher_link_type = 'g'; 
                 } else {
                     $voucher_link_type = 'e';
@@ -479,7 +479,7 @@ class GotItController extends Controller
                         'message' => ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED,
                     ], 200);
                 } else {
-                    $smsTransactionStatus = $smsTransaction->updateStatus($responseSMSData['statusDescription']);
+                    $smsTransactionStatus = $smsTransaction->updateStatus($responseSMSData['statusDescription'], 0);
 
                     $updateRespondentStatus = $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_NOT_RECEIVED);
 
