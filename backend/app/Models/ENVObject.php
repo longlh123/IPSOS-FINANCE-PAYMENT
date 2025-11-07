@@ -89,23 +89,29 @@ class ENVObject
     {
         $path = base_path('.env');
         $env = [];
-
+ 
         if (file_exists($path)) {
-            // Read the .env file content
             $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-
+ 
             foreach ($lines as $line) {
-                // Skip comments
-                if (strpos(trim($line), '#') === 0) {
+                $line = trim($line); // loại bỏ khoảng trắng dư ở đầu/cuối
+ 
+                // Bỏ qua dòng trống hoặc comment
+                if ($line === '' || strpos($line, '#') === 0) {
                     continue;
                 }
-
-                // Parse the environment variable
-                list($key, $value) = explode('=', $line, 2);
-                $env[$key] = $value;
+ 
+                // Chỉ xử lý nếu dòng có chứa dấu "="
+                if (strpos($line, '=') !== false) {
+                    list($key, $value) = explode('=', $line, 2);
+                    $env[trim($key)] = trim($value);
+                } else {
+                    // Ghi log cảnh báo dòng lỗi định dạng (giúp debug nếu có)
+                    \Log::warning("Invalid .env line (missing '='): " . $line);
+                }
             }
         }
-
+ 
         return $env;
     }
 

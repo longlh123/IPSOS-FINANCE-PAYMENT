@@ -125,7 +125,9 @@ class Project extends Model
             $property = 'price_' . $level;
         } elseif(str_starts_with($level, 'boosters')){
             $property = 'price_' . str_replace('boosters', 'boosters', $level);
-        } elseif(str_starts_with($level, 'none')) {
+        } elseif(str_starts_with($level, 'booster')){
+            $property = 'price_' . str_replace('booster', 'boosters', $level);
+        }elseif(str_starts_with($level, 'non')) {
             $property = 'price_' . $level;
         } else {
             $property = null;

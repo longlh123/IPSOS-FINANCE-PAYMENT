@@ -628,7 +628,7 @@ class VinnetController extends Controller
             Log::info('Price: ' . intval($price));
             
             if($project->projectDetails->status === Project::STATUS_IN_COMING || $project->projectDetails->status === Project::STATUS_ON_HOLD || 
-                ($project->projectDetails->status === Project::STATUS_ON_GOING && strtolower($interviewURL->location_id) === '_defaultsp')){
+                ($project->projectDetails->status === Project::STATUS_ON_GOING && !in_array(substr(strtolower($interviewURL->location_id), 0, 2), ['hn', 'sg', 'dn', 'ct']))){
                     
                     Log::info('Staging Environment: ');
                     
@@ -911,7 +911,7 @@ class VinnetController extends Controller
                         $card_item = $payItemData['pay_item']['cardItems'][0];
                         
                         $messagesToSend[] = sprintf(
-                            "%s [Ma:%s|Seri:%s|HSD:%s]",
+                            "%s:Code:%s,Seri:%s,Exp:%s",
                             number_format($payItemData['pay_item']['totalAmt'] / 1000, 0) . 'K',
                             $card_item['pinCode'] ?? 'N/A',
                             $card_item['serialNo'] ?? 'N/A',
@@ -963,7 +963,7 @@ class VinnetController extends Controller
 
                     $messageCard = sprintf(
                         "IPSOS tang qua:\n%s",
-                        implode("\n", $messagesToSend) ?? 'N/A'
+                        $finalMessage ?? 'N/A'
                     );
                     
                     $apiCMCObject = new APICMCObject();
@@ -973,7 +973,7 @@ class VinnetController extends Controller
                     switch(intval($responseSMSData['status']))
                     {
                         case 1:
-                            $smsTransactionStatus = $smsTransaction->updateStatus(SMSStatus::SUCCESS);
+                            $smsTransactionStatus = $smsTransaction->updateStatus(SMSStatus::SUCCESS, intval($responseSMSData['countSms']));
 
                             $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED);
 

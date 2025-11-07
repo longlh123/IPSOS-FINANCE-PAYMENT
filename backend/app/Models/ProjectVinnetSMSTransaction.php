@@ -21,9 +21,10 @@ class ProjectVinnetSMSTransaction extends Model
         return $this->belongsTo(ProjectVinnetTransaction::class, 'vinnet_transaction_id');
     }
 
-    public function updateStatus($status)
+    public function updateStatus($status, $count)
     {
         $this->sms_status = $status;
+        $this->sms_count = $count;
         
         $saved = $this->save();
 

@@ -184,7 +184,7 @@ class GotItController extends Controller
             Log::info('Price: ' . intval($price));
 
             if($project->projectDetails->status === Project::STATUS_IN_COMING || $project->projectDetails->status === Project::STATUS_ON_HOLD || 
-                ($project->projectDetails->status === Project::STATUS_ON_GOING && strtolower($interviewURL->location_id) === '_defaultsp')){
+                ($project->projectDetails->status === Project::STATUS_ON_GOING && !in_array(substr(strtolower($interviewURL->location_id), 0, 2), ['hn', 'sg', 'dn', 'ct']))){
                 
                     Log::info('Staging Environment: ');
                 
@@ -370,7 +370,7 @@ class GotItController extends Controller
                 ]);
 
                 $messagesToSend[] = sprintf(
-                    "%s: L: %s",
+                    "%s: Link:%s",
                     number_format($voucherData['value'] / 1000, 0) . 'K',
                     $voucherData['voucher_link'] ?? 'N/A'
                 );
@@ -401,9 +401,10 @@ class GotItController extends Controller
                 ]);
 
                 $messagesToSend[] = sprintf(
-                    "%s: C: %s",
+                    "%s: Code:%s,Seri:%s",
                     number_format($voucherData['product']['price']['priceValue'] / 1000, 0) . 'K',
-                    $voucherData['voucherCode'] ?? 'N/A'
+                    $voucherData['voucherCode'] ?? 'N/A',
+                    $voucherData['voucherSerial'] ?? 'N/A'
                 );
 
                 $expiredDate = $voucherData['expiryDate'];
@@ -437,7 +438,7 @@ class GotItController extends Controller
                     $voucherTransaction = $projectRespondent->createGotitVoucherTransactions($voucherData);
 
                     $messagesToSend[] = sprintf(
-                        "%s: [Ma:%s,Seri:%s]",
+                        "%s: Code:%s,Seri:%s",
                         number_format($voucher['value'] / 1000, 0) . 'K',
                         $voucher['code'] ?? 'N/A',
                         $voucher['serial'] ?? 'N/A'
@@ -460,8 +461,8 @@ class GotItController extends Controller
             if(!empty($messagesToSend)){
             
                 $messageCard = sprintf(
-                    "IPSOS tang qua GotIt: %s, HSD: %s",
-                    implode("\n", $messagesToSend) ?? 'N/A',
+                    "IPSOS tang qua: %s, Exp:%s",
+                    implode(". ", $messagesToSend) ?? 'N/A',
                     $expiredDate ?? 'N/A'
                 );
                 
@@ -470,7 +471,7 @@ class GotItController extends Controller
                 $responseSMSData = $apiCMCObject->send_sms($validatedRequest['phone_number'], $messageCard);
 
                 if(intval($responseSMSData['status']) == 1){
-                    $smsTransactionStatus = $smsTransaction->updateStatus(SMSStatus::SUCCESS);
+                    $smsTransactionStatus = $smsTransaction->updateStatus(SMSStatus::SUCCESS, intval($responseSMSData['countSms']));
 
                     $updateRespondentStatus = $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED);
 
