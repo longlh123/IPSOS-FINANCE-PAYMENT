@@ -139,7 +139,7 @@ const GotItRequest = () => {
 
             console.log(reqAuthenPost.data);
             
-            if(reqAuthenPost.data.status_code === 200){
+            if(reqAuthenPost.status === 200){
                 navigate('/page200?message=' + reqAuthenPost.data.message);
             } else {
                 throw new Error(reqAuthenPost.data.message);

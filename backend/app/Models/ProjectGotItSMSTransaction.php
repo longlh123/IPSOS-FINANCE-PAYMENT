@@ -22,9 +22,10 @@ class ProjectGotItSmsTransaction extends Model
         return $this->belongsTo(ProjectGotItVoucherTransaction::class, 'voucher_transaction_id');
     }
 
-    public function updateStatus($status)
+    public function updateStatus($status, $count)
     {
         $this->sms_status = $status;
+        $this->sms_count = $count;
         
         $saved = $this->save();
 
