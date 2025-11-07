@@ -970,27 +970,23 @@ class VinnetController extends Controller
 
                     $responseSMSData = $apiCMCObject->send_sms($validatedRequest['phone_number'], $messageCard);
 
-                    switch(intval($responseSMSData['status']))
-                    {
-                        case 1:
-                            $smsTransactionStatus = $smsTransaction->updateStatus(SMSStatus::SUCCESS, intval($responseSMSData['countSms']));
+                    if(intval($responseSMSData['status']) == 1){
+                        $smsTransactionStatus = $smsTransaction->updateStatus(SMSStatus::SUCCESS, intval($responseSMSData['countSms']));
 
-                            $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED);
+                        $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED);
 
-                            return response()->json([
-                                'message' => TransactionStatus::SUCCESS
-                            ], 200);
-                            break;
-                        default:
-                            $smsTransactionStatus = $smsTransaction->updateStatus($responseSMSData['statusDescription']);
+                        return response()->json([
+                            'message' => TransactionStatus::SUCCESS
+                        ], 200);
+                    } else {
+                        $smsTransactionStatus = $smsTransaction->updateStatus($responseSMSData['statusDescription'], 0);
 
-                            $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_NOT_RECEIVED);
+                        $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_NOT_RECEIVED);
 
-                            return response()->json([
-                                'message' => SMSStatus::ERROR,
-                                'error' => SMSStatus::ERROR
-                            ], 400);
-                            break;
+                        return response()->json([
+                            'message' => SMSStatus::ERROR,
+                            'error' => SMSStatus::ERROR
+                        ], 400);
                     }
                 } else {
                     //TH Đáp viên chọn nạp tiền điện thoại trực tiếp
