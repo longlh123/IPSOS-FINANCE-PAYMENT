@@ -513,33 +513,135 @@ class VinnetController extends Controller
             $reject_message = $request->input('reject_message');
 
             $decodedURL = base64_decode($url);
+
+            if (!$decodedURL || !str_contains($decodedURL, '/')) {
+                return response()->json([
+                    'message' => 'URL không hợp lệ.',
+                    'error' => 'INVALID_URL'
+                ], 400);
+            }
+
             $splittedURL = explode("/", $decodedURL);
 
-            $interviewURL = new InterviewURL($splittedURL);
+            Log::info('URL Splitted: ' . json_encode($splittedURL));
+            
+            try{
 
+                $interviewURL = new InterviewURL($splittedURL);
+
+                if(!in_array($interviewURL->channel, ['gotit', 'vinnet'])){
+                    Log::error('URL Vinnet nhưng thông tin đường link là quà Got It.');
+                    throw new \Exception(ProjectRespondent::ERROR_INVALID_INTERVIEWERURL);
+                }
+
+            } catch (\Exception $e){
+                return response()->json([
+                    'message' => $e->getMessage(),
+                    'error' => $e->getMessage()
+                ], 404);
+            }
+
+            //Tìm thông tin dự án dựa trên dữ liệu từ Interview URL
             $project = Project::findByInterviewURL($interviewURL);
 
-            $projectRespondent = $project->createProjectRespondents([
-                'project_id' => $project->id,
-                'shell_chainid' => $interviewURL->shell_chainid,
-                'respondent_id' => $interviewURL->shell_chainid . '-' . $interviewURL->respondent_id,
-                'employee_id' => $interviewURL->employee->id,
-                'province_id' => $interviewURL->province_id,
-                'interview_start' => $interviewURL->interview_start,
-                'interview_end' => $interviewURL->interview_end,
-                'respondent_phone_number' => $interviewURL->respondent_phone_number,
-                'phone_number' => $interviewURL->respondent_phone_number,
-                'price_level' => $interviewURL->price_level,
-                'channel' => $interviewURL->channel,
-                'status' => ProjectRespondent::STATUS_RESPONDENT_REJECTED,
-                'reject_message' => $reject_message
-            ]);
+            if (!$project->projectDetails) {
+                return response()->json([
+                    'message' => Project::ERROR_PROJECT_DETAILS_NOT_CONFIGURED . ' Vui lòng liên hệ Admin để biết thêm thông tin.',
+                    'error' => Project::ERROR_PROJECT_DETAILS_NOT_CONFIGURED
+                ], 404);
+            }
+
+            try
+            {
+                //Kiểm tra đáp viên đã thực hiện giao dịch nhận quà trước đó hay chưa?
+                ProjectRespondent::checkIfRespondentProcessed($project, $interviewURL);
+
+            } catch(\Exception $e){
+                return response()->json([
+                    'message' => $e->getMessage() . ' Vui lòng liên hệ Admin để biết thêm thông tin.',
+                    'error' => $e->getMessage()
+                ], 409);
+            }
+
+            // Tìm thông tin của Project Respondent
+            $projectRespondent = ProjectRespondent::findProjectRespondent($project, $interviewURL);
+
+            if(!$projectRespondent){
+                //Thông tin mới => Cập nhật thông tin vào hệ thống
+                DB::beginTransaction();
+
+                try{
+                    $projectRespondent = $project->createProjectRespondents([
+                        'project_id' => $project->id,
+                        'shell_chainid' => $interviewURL->shell_chainid,
+                        'respondent_id' => $interviewURL->shell_chainid . '-' . $interviewURL->respondent_id,
+                        'employee_id' => $interviewURL->employee->id,
+                        'province_id' => $interviewURL->province_id,
+                        'interview_start' => $interviewURL->interview_start,
+                        'interview_end' => $interviewURL->interview_end,
+                        'respondent_phone_number' => $interviewURL->respondent_phone_number,
+                        'phone_number' => $interviewURL->respondent_phone_number,
+                        'price_level' => $interviewURL->price_level,
+                        'channel' => $interviewURL->channel,
+                        'service_code' => '',
+                        'status' => ProjectRespondent::STATUS_RESPONDENT_PENDING
+                    ]);
+
+                    DB::commit();
+
+                } catch(\Exception $e) {
+
+                    DB::rollBack();
+
+                    Log::error('SQL Error ['.$e->getCode().']: '.$e->getMessage());
+
+                    if($e->getCode() === '23000'){
+                        return response()->json([
+                            'message' => ProjectRespondent::ERROR_CANNOT_STORE_RESPONDENT,
+                            'error' => $e->getMessage()
+                        ], 409); // 409 Conflict
+                    }
+                    
+                    return response()->json([
+                        'message' => ProjectRespondent::ERROR_CANNOT_STORE_RESPONDENT,
+                        'error' => $e->getMessage()
+                    ], 500);
+                }
+            } else {
+                //Thông tin cũ
+                //Kiểm tra xem Project Respondent có thực hiện bất kỳ giao dịch nào chưa?
+                //Nếu chưa => xem như thông tin mới => cập nhật lại status cho Project Respondent
+
+                Log::info("Number of transactions: " . $projectRespondent->vinnetTransactions()->count());
+
+                if($projectRespondent->vinnetTransactions()->count() == 0){
+
+                    $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_PENDING);
+                } else {
+                    Log::info(ProjectRespondent::ERROR_DUPLICATE_RESPONDENT . ' [Trường hợp Đáp viên đã tồn tại và đã có thực hiện giao dịch]');
+
+                    //Nếu đã thực hiện giao dịch => không cho thực hiện
+                    return response()->json([
+                        'message' => ProjectRespondent::ERROR_DUPLICATE_RESPONDENT,
+                        'error' => ProjectRespondent::ERROR_DUPLICATE_RESPONDENT . ' [Trường hợp Đáp viên đã tồn tại và đã có thực hiện giao dịch]'
+                    ], 500);
+                }
+            }
 
             if (!$projectRespondent) {
                 throw new \Exception(ProjectRespondent::ERROR_CANNOT_STORE_RESPONDENT);
             }
 
+            $projectRespondent->update([
+                'reject_message' => $reject_message,
+                'status' => ProjectRespondent::STATUS_RESPONDENT_REJECTED
+            ]);
+
             Log::info('Transaction stored successfully', ['internal_code' => $interviewURL->internal_code, 'respondent_id' => $interviewURL->shell_chainid . '-' . $interviewURL->respondent_id, 'reject_message' => $reject_message]);
+            
+            return response()->json([
+                'message' => 'Cảm ơn bạn đã chia sẻ lý do!'
+            ], 200);
         }
         catch(\Exception $e)
         {
@@ -962,7 +1064,7 @@ class VinnetController extends Controller
                     $finalMessage =  implode("\n", $messagesToSend);
 
                     $messageCard = sprintf(
-                        "IPSOS tang qua:\n%s",
+                        "Cam on ban da tham gia. IPSOS tang ban:\n%s",
                         $finalMessage ?? 'N/A'
                     );
                     

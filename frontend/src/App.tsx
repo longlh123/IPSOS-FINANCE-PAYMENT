@@ -20,6 +20,7 @@ import Page200 from "./pages/Page200/Page200";
 import TechcombankLayout from "./Layouts/TechcombankLayout";
 import { TechcombankRoutes } from "./routes/TechcombankRoutes";
 import GotItRequest from "./pages/GotItAPI/GotItRequest";
+import GiftRejectionRequest from "./pages/VinnetAPI/GiftRejectionRequest";
 
 // Fetch the CSRF token from the meta tag
 const csrfToken = document
@@ -39,6 +40,7 @@ const App: React.FC = () => {
             <Route path="/login" element={<Login />} />
             <Route path="/vinnet-management/project/:serviceType/:url" element={<SubmitPhoneNumber/>} />
             <Route path="/got-it-management/project/:url" element={<GotItRequest/>} />
+            <Route path="/gift-management/rejection/:url" element={<GiftRejectionRequest/>} />
             <Route path="/page200" element={< Page200 messageSuccess="" />} />
             <Route path="/error" element={<ErrorPage />} />
 

@@ -295,9 +295,9 @@ class GotItController extends Controller
                 3555 => 30000,
                 17940 => 40000,
                 2991 => 50000,
-                80385 => 100000,
-                47617 => 200000,
-                48385 => 500000
+                2992 => 100000,
+                2993 => 200000,
+                2994 => 500000
             ];
 
             $prices = array();
@@ -461,8 +461,8 @@ class GotItController extends Controller
             if(!empty($messagesToSend)){
             
                 $messageCard = sprintf(
-                    "IPSOS tang qua: %s, Exp:%s",
-                    implode(". ", $messagesToSend) ?? 'N/A',
+                    "Cam on ban da tham gia. IPSOS tang ban:\n%s\nExp:%s",
+                    implode("\n", $messagesToSend) ?? 'N/A',
                     $expiredDate ?? 'N/A'
                 );
                 
@@ -476,7 +476,7 @@ class GotItController extends Controller
                     $updateRespondentStatus = $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED);
 
                     return response()->json([
-                        'message' => ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED,
+                        'message' => TransactionStatus::SUCCESS
                     ], 200);
                 } else {
                     $smsTransactionStatus = $smsTransaction->updateStatus($responseSMSData['statusDescription'], 0);
@@ -548,9 +548,9 @@ class GotItController extends Controller
             3555 => 30000,
             17940 => 40000,
             2991 => 50000,
-            80385 => 100000,
-            47617 => 200000,
-            48385 => 500000
+            2992 => 100000,
+            2993 => 200000,
+            2994 => 500000
         ];
 
         if($voucher_link_type === 'e' || $voucher_link_type === 'v'){
