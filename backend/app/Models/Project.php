@@ -58,7 +58,7 @@ class Project extends Model
 
     public function employees()
     {
-        return $this->belongsToMany(Employee::class, 'project_employees');
+        return $this->belongsToMany(Employee::class, 'project_employees', 'project_id', 'employee_id');
     }
 
     public function projectPermissions()

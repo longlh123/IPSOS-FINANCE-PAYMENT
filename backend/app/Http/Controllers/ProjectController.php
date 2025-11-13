@@ -540,8 +540,9 @@ class ProjectController extends Controller
     {
         try
         {
-            $project = Project::with($project_id);
-            $employees = $project->employees();
+            $project = Project::find($project_id);
+
+            $employees = $project->employees;
 
             return response()->json([
                 'status_code' => Response::HTTP_OK, //200
