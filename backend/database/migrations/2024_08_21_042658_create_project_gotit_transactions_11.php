@@ -26,7 +26,7 @@ return new class extends Migration
             $table->string('service_code');
             $table->text('reject_message')->nullable();
             $table->enum('channel', ['gotit', 'vinnet']);
-            $table->enum('price_level', ['main','main_1','main_2','main_3','main_4','main_5','booster','booster_1','booster_2','booster_3','booster_4','booster_5']);
+            $table->enum('price_level', ['main','main_1','main_2','main_3','main_4','main_5','booster','booster_1','booster_2','booster_3','booster_4','booster_5','boosters','boosters_1','boosters_2','boosters_3','boosters_4','boosters_5']);
             $table->text('status');
             $table->timestamps();
 

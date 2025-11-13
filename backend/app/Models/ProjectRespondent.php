@@ -131,7 +131,8 @@ class ProjectRespondent extends Model
                         ->where(function($query) {
                             $query->where('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED)
                                 ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_NOT_RECEIVED)
-                                ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_PARTIAL);
+                                ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_PARTIAL)
+                                ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_REJECTED);
                         })
                         ->exists();
             
@@ -147,7 +148,8 @@ class ProjectRespondent extends Model
                         ->where(function($query) {
                             $query->where('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED)
                                 ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_NOT_RECEIVED)
-                                ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_PARTIAL);
+                                ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_PARTIAL)
+                                ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_REJECTED);
                         })
                         ->exists();
             
@@ -163,7 +165,8 @@ class ProjectRespondent extends Model
                     ->where(function($query) {
                             $query->where('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED)
                                 ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_NOT_RECEIVED)
-                                ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_PARTIAL);
+                                ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_PARTIAL)
+                                ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_REJECTED);
                         })
                     ->exists();
               
@@ -185,7 +188,8 @@ class ProjectRespondent extends Model
                         ->where(function($query) {
                             $query->where('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED)
                                 ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_NOT_RECEIVED)
-                                ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_PARTIAL);
+                                ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_PARTIAL)
+                                ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_REJECTED);
                         })
                         ->exists();
         

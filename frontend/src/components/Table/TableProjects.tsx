@@ -40,6 +40,7 @@ import axios from "axios";
 import useDialog from "../../hook/useDialog";
 import AlertDialog from "../AlertDialog/AlertDialog";
 import { title } from "process";
+import SearchTextBox from "../SearchTextBox";
 
 const TableProjects = () => {
   const navigate = useNavigate();
@@ -122,6 +123,9 @@ const TableProjects = () => {
       case 'edit_project':
         navigate(`/project-management/projects/${selectedProject.id}/settings`);
         break;
+      case 'parttime-employees':
+        navigate(`/project-management/projects/${selectedProject.id}/parttime-employees`);
+        break;
       case 'delete':
         setOpenModalConfirm(true);
         break;
@@ -196,17 +200,30 @@ const TableProjects = () => {
     }
   }
 
+  const [ searchTerm, setSearchTerm ] = useState("");
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value.toLocaleLowerCase());
+  }
+
+  const filteredProjects = projects.filter((project: any) => {
+    const nameMatch = project.project_name?.toLowerCase().includes(searchTerm);
+    const codeMatch = project.internal_code?.toLowerCase().includes(searchTerm);
+    return nameMatch || codeMatch;
+  })
+
   return (
     <>
       <Box className="box-table">
         <div className="filter">
-          <h2>List</h2>
-          <div className="">
+          <h2 className="filter-title">Projects</h2>
+          <div className="filter-actions">
             {canView("projects.functions.visible_add_new_project") && (
               <Button className="btnAdd" onClick={() => setOpenModalAdd(true)}>
                 Add New Project
               </Button>
             )}
+            <SearchTextBox placeholder="Search project name, internal code,..." onSearchChange={handleSearchChange} />
           </div>
         </div>
         
@@ -246,7 +263,7 @@ const TableProjects = () => {
                 </TableHead>
   
                 <TableBody>
-                  {projects
+                  {filteredProjects
                     .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                     .map((project: any) => (
                       <TableRow key={project.id} className="table-row" hover={true}>
@@ -353,6 +370,15 @@ const TableProjects = () => {
                                 <MenuItem onClick={() => handleAction('gift_management')}>
                                   <div className="actions-menu-item" style={{color: "var(--text-fifth-color)"}}>
                                     <GiftIcon fontSize="small" /><span className="text">Gift Management</span>
+                                  </div>
+                                </MenuItem>
+                              )
+                            }
+                            {
+                              canView("projects.functions.visible_view_parttime_employees") && (
+                                <MenuItem onClick={() => handleAction('parttime-employees')}>
+                                  <div className="actions-menu-item" style={{color: "var(--text-fifth-color)"}}>
+                                    <GiftIcon fontSize="small" /><span className="text">Parttime Employees</span>
                                   </div>
                                 </MenuItem>
                               )

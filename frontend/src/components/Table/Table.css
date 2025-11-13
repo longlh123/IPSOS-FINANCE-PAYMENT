@@ -17,12 +17,25 @@
 }
 
 .filter {
-  height: 40px;
-  margin-bottom: 10px;
   display: flex;
   justify-content: space-between;
-  margin: 15px 10px;
+  align-items: flex-start;
+  margin: 1rem 0.625rem;
   font-family: var(--main-font);
+}
+
+.filter-title{
+  font-size: 1.5rem;
+  font-weight: 400;
+  margin: 0;
+}
+
+.filter-actions{
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+  width: 18.75rem;
 }
 
 .filter .btnAdd {
@@ -30,9 +43,10 @@
   background-color: var(--main-color);
   color: #fff;
   text-transform: none;
-  padding: 7px 10px;
-  font-size: 12px;
-  border-radius: 6px;
+  align-self: flex-end;
+  font-size: 0.875rem;
+  padding: 0.5rem 1rem; 
+  border-radius: 0.5rem; 
 }
 
 .filter .btnAdd:hover {

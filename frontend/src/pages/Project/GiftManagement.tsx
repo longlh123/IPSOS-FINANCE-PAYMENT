@@ -24,7 +24,7 @@ const GiftManagement: React.FC = () => {
   
   return (
     <>
-      <SearchTextBox/>
+      
     </>
   )
 }
