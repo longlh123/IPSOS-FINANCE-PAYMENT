@@ -10,6 +10,7 @@ export const BaseVisibility = {
       visible_change_status_of_project: false,
       visible_edit_project: false,
       visible_view_gift_manager: false,
+      visible_view_parttime_employees: false
     }
   },
   transactions: {
@@ -37,6 +38,7 @@ export const VisibilityConfig = {
           visible_change_status_of_project: true,
           visible_edit_project: true,
           visible_view_gift_manager: true,
+          visible_view_parttime_employees: true
         }
       },
       transactions: {
@@ -73,6 +75,7 @@ export const VisibilityConfig = {
           visible_change_status_of_project: true,
           visible_edit_project: true,
           visible_view_gift_manager: false,
+          visible_view_parttime_employees: true
         }
       },
     }
