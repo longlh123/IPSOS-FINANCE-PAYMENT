@@ -535,4 +535,26 @@ class ProjectController extends Controller
             ]);
         }
     }
+
+    public function showEmployees($project_id)
+    {
+        try
+        {
+            $project = Project::with($project_id);
+            $employees = $project->employees();
+
+            return response()->json([
+                'status_code' => Response::HTTP_OK, //200
+                'data' => $employees
+            ]);
+        }
+        catch(\Exception $e)
+        {
+            Log::error($e->getMessage());
+            return response()->json([
+                'status_code' => Response::HTTP_BAD_REQUEST, //400
+                'message' => $e->getMessage(),
+            ]);
+        }
+    }
 }

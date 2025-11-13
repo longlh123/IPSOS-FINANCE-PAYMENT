@@ -18,6 +18,7 @@ use App\Models\ENVObject;
 use App\Models\APICMCObject;
 use App\Exceptions\GotItVoucherException;
 use App\Constants\SMSStatus;
+use App\Constants\TransactionStatus;
 
 class GotItController extends Controller
 {

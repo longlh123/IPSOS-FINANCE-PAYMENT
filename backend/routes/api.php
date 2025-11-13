@@ -50,6 +50,7 @@ Route::middleware(['auth:sanctum'])->group(function(){
 
     Route::delete('/project-management/projects/{projectId}/provinces/{provinceId}/remove', [ProjectController::class, 'removeProvinceFromProject'])->middleware('ensureUserHasRole:admin');
 
+    Route::get('/project-management/{projectId}/employees/view', [ProjectController::class, 'showEmployees'])->middleware('ensureUserHasRole:admin,Finance'); 
     Route::get('/project-management/{projectId}/transactions/view', [ProjectController::class, 'showTransactions'])->middleware('ensureUserHasRole:admin,Finance');
 
     Route::get('/project-management/projects/{projectId}/respondents/show', [RespondentController::class, 'show'])->middleware('ensureUserHasRole:admin');

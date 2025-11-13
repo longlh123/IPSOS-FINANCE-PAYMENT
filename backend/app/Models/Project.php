@@ -56,9 +56,9 @@ class Project extends Model
         return $this->hasMany(ProjectProvince::class, 'project_id');
     }
 
-    public function projectEmployees()
+    public function employees()
     {
-        return $this->hasMany(ProjectEmployee::class);
+        return $this->belongsToMany(Employee::class, 'project_employees');
     }
 
     public function projectPermissions()
