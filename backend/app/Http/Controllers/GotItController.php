@@ -301,6 +301,10 @@ class GotItController extends Controller
                 3555 => 30000,
                 17940 => 40000,
                 2991 => 50000,
+                6832 => 60000,
+                9369 => 70000,
+                9343 => 80000,
+                6546 => 90000,
                 2992 => 100000,
                 2993 => 200000,
                 2994 => 500000
@@ -422,7 +426,7 @@ class GotItController extends Controller
                     
                     $voucherData = [
                         'project_respondent_id' => $projectRespondent->id,
-                        'transaction_ref_id' => $responsedVoucher['orderId'],
+                        'transaction_ref_id' => $apiObject->getTransactionRefId(),
                         'transaction_ref_id_order' => $index + 1,
                         'expiry_date' => $voucherRequest['expiryDate'],
                         'order_name' => $voucherRequest['orderName'],
@@ -554,6 +558,10 @@ class GotItController extends Controller
             3555 => 30000,
             17940 => 40000,
             2991 => 50000,
+            6832 => 60000,
+            9369 => 70000,
+            9343 => 80000,
+            6546 => 90000,
             2992 => 100000,
             2993 => 200000,
             2994 => 500000
