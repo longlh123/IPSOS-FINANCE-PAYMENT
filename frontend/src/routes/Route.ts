@@ -4,7 +4,7 @@ import ProjectSettings from "../pages/Project/ProjectSettings";
 import EditProject from "../pages/Project/ProjectSettings";
 import VinnetManagement from "../pages/VinnetAPI/VinnetManagement";
 import GiftManagement from "../pages/Project/GiftManagement";
-import TableParttimeEmployees from "../components/Table/TableParttimeEmployees";
+import ParttimeEmployees from "../pages/Project/ParttimeEmployees";
 
 export const DefaultRoute = [
   {
@@ -27,7 +27,7 @@ export const DefaultRoute = [
   },
   {
     path: "project-management/projects/:id/parttime-employees",
-    component: TableParttimeEmployees,
+    component: ParttimeEmployees,
   },
   {
     path: "/vinnet-management/index",
