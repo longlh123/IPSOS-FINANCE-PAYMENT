@@ -278,7 +278,7 @@ class GotItController extends Controller
                         'phone_number' => $validatedRequest['phone_number'],
                         'service_code' => $validatedRequest['service_code'],
                     ]);
-                    
+
                     $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_PENDING);
                 } else {
 
@@ -301,6 +301,10 @@ class GotItController extends Controller
                 3555 => 30000,
                 17940 => 40000,
                 2991 => 50000,
+                6832 => 60000,
+                9369 => 70000,
+                9343 => 80000,
+                6546 => 90000,
                 2992 => 100000,
                 2993 => 200000,
                 2994 => 500000
@@ -554,6 +558,10 @@ class GotItController extends Controller
             3555 => 30000,
             17940 => 40000,
             2991 => 50000,
+            6832 => 60000,
+            9369 => 70000,
+            9343 => 80000,
+            6546 => 90000,
             2992 => 100000,
             2993 => 200000,
             2994 => 500000
