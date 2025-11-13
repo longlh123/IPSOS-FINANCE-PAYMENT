@@ -820,6 +820,11 @@ class VinnetController extends Controller
 
                 if($projectRespondent->vinnetTransactions()->count() == 0){
 
+                    $projectRespondent->update([
+                        'phone_number' => $validatedRequest['phone_number'],
+                        'service_code' => $validatedRequest['service_code'],
+                    ]);
+
                     $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_PENDING);
                 } else {
                     Log::info(ProjectRespondent::ERROR_DUPLICATE_RESPONDENT . ' [Trường hợp Đáp viên đã tồn tại và đã có thực hiện giao dịch]');

@@ -274,6 +274,11 @@ class GotItController extends Controller
                 
                 if($projectRespondent->gotitVoucherTransactions()->count() == 0){
 
+                    $projectRespondent->update([
+                        'phone_number' => $validatedRequest['phone_number'],
+                        'service_code' => $validatedRequest['service_code'],
+                    ]);
+                    
                     $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_PENDING);
                 } else {
 
