@@ -22,6 +22,7 @@ class EmployeeResource extends JsonResource
             'employee_id' => $this->employee_id,
             'first_name' => $this->first_name,
             'last_name' => $this->last_name,
+            'full_name' => $this->last_name . " " . $this->first_name,
             'date_of_birth' => $this->date_of_birth,
             'address' => $this->address,
             'province' => Province::where('id', $this->province_id)->pluck('name')[0],
