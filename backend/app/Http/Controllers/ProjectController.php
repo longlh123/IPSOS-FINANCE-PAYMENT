@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use App\Http\Resources\ProjectResource;
+use App\Http\Resources\EmployeeResource;
 use App\Models\User;
 use App\Models\Project;
 use App\Models\ProjectType;
@@ -546,7 +547,7 @@ class ProjectController extends Controller
 
             return response()->json([
                 'status_code' => Response::HTTP_OK, //200
-                'data' => $employees
+                'data' => EmployeeResource::collection($employees)
             ]);
         }
         catch(\Exception $e)
