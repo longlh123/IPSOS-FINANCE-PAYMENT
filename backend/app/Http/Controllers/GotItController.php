@@ -307,6 +307,8 @@ class GotItController extends Controller
                 6546 => 90000,
                 2992 => 100000,
                 2993 => 200000,
+                6440 => 300000,
+                6960 => 400000,
                 2994 => 500000
             ];
 
@@ -471,7 +473,7 @@ class GotItController extends Controller
             if(!empty($messagesToSend)){
             
                 $messageCard = sprintf(
-                    "Cam on ban da tham gia. IPSOS tang ban:\n%s\nExp:%s",
+                    "Cam on ban. IPSOS tang qua GotIt:\n%s\nExp:%s",
                     implode("\n", $messagesToSend) ?? 'N/A',
                     $expiredDate ?? 'N/A'
                 );
@@ -564,6 +566,8 @@ class GotItController extends Controller
             6546 => 90000,
             2992 => 100000,
             2993 => 200000,
+            6440 => 300000,
+            6960 => 400000,
             2994 => 500000
         ];
 

@@ -106,7 +106,23 @@ export function useProjects() {
         });
 
         return response.data.data;
-    }, [])
+    }, []);
+
+    const getEmployees = useCallback(async (id: number) => {
+        const token = localStorage.getItem("authToken");
+
+        const url = `${ApiConfig.project.viewEmployees.replace("{projectId}", id.toString())}`;
+
+        const response = await axios.get(url, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+        });
+
+        return response.data.data;
+    }, []);
 
     useEffect(() => {
         fetchProjects();
@@ -120,6 +136,7 @@ export function useProjects() {
         getProject,
         addProject,
         updateProjectStatus,
-        getTransactions
+        getTransactions,
+        getEmployees
     };
 }
