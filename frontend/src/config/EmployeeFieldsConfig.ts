@@ -6,23 +6,19 @@ export interface EmployeeData {
   employee_id: string,
   first_name: string,
   last_name: string,
+  full_name: string,
   role: string
 };
 
 export const TableParttimeEmployeesConfig: GridColDef[] = [
     {
-        field: "ID",
-        headerName: "employee_id",
+        field: "employee_id",
+        headerName: "ID",
         flex: 1
     },
     {
-        field: "First Name",
-        headerName: "first_name",
-        flex: 1
-    },
-    {
-        field: "Last Name",
-        headerName: "last_name",
+        field: "full_name",
+        headerName: "Full Name",
         flex: 1.5
     }
 ];
