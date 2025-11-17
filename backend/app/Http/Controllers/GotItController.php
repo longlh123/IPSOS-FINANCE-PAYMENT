@@ -190,7 +190,7 @@ class GotItController extends Controller
                     Log::info('Staging Environment: ');
                 
                     return response()->json([
-                        'message' => ProjectGotItVoucherTransaction::STATUS_TRANSACTION_TEST . ' [Giá trị quà tặng: ' . $price . ']'
+                        'message' => TransactionStatus::STATUS_TRANSACTION_TEST . ' [Giá trị quà tặng: ' . $price . ']'
                     ], Response::HTTP_OK);
             } 
             
