@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Support\Facades\Log;
 use App\Models\ProjectGotItVoucherTransaction;
 use App\Models\ProjectVinnetTransaction;
+use App\Constants\TransactionStatus;
 
 class InterviewURL
 {
@@ -71,13 +72,13 @@ class InterviewURL
         foreach ($properties as $key => $value) {
             if (empty($value)) {
                 Log::info("The property '{$key}' is either null or has a length of 0.");
-                throw new \Exception(ProjectVinnetTransaction::STATUS_TRANSACTION_FAILED);
+                throw new \Exception(TransactionStatus::STATUS_TRANSACTION_FAILED);
             }
             if ($key === 'shell_chainid' || $key === 'respondent_id' || $key === 'interviewer_id') {
                 
                 if (strtolower($value) === 'null'){
                     Log::info("The property '{$key}' is either null or has a length of 0.");
-                    throw new \Exception(ProjectVinnetTransaction::STATUS_TRANSACTION_FAILED);
+                    throw new \Exception(TransactionStatus::STATUS_TRANSACTION_FAILED);
                 }
             }
         }
@@ -106,7 +107,7 @@ class InterviewURL
         if (strlen($dateString) !== 14) {
 
             Log::info('Invalid date string length.');
-            throw new \Exception(ProjectVinnetTransaction::STATUS_TRANSACTION_FAILED);
+            throw new \Exception(TransactionStatus::STATUS_TRANSACTION_FAILED);
         }
     
         // Extract date and time components
@@ -126,7 +127,7 @@ class InterviewURL
             return $date;
         } catch (\Exception $e) {
             Log::info('Invalid date format.');
-            throw new \Exception(ProjectVinnetTransaction::STATUS_TRANSACTION_FAILED);
+            throw new \Exception(TransactionStatus::STATUS_TRANSACTION_FAILED);
         }
     }
 

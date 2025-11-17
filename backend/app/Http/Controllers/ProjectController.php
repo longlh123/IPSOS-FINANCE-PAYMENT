@@ -541,13 +541,56 @@ class ProjectController extends Controller
     {
         try
         {
-            $project = Project::find($project_id);
+            $sql = "
+                SELECT
+                    ep.id,
+                    ep.employee_id,
+                    ep.first_name,
+                    ep.last_name,
+                    concat(ep.last_name, ' ', ep.first_name) AS full_name,
+                    COALESCE(gotit.total_gotit, 0) AS gotit_count,
+                    COALESCE(vinnet.total_vinnet, 0) AS vinnet_count,
+                    COALESCE(gotit.total_gotit, 0) + COALESCE(vinnet.total_vinnet, 0) AS transaction_count
+                FROM project_employees AS epj
+                INNER JOIN employees AS ep
+                    ON ep.id = epj.employee_id
+                LEFT JOIN (
+                    SELECT pr.employee_id, COUNT(*) AS total_gotit
+                    FROM project_respondents AS pr
+                    INNER JOIN project_gotit_voucher_transactions AS pgt
+                        ON pr.id = pgt.project_respondent_id
+                    WHERE pr.project_id = :projectIdGotit
+                        AND pr.status IN (
+                            'Đã nhận quà.'
+                        )
+                    GROUP BY pr.employee_id
+                ) AS gotit
+                    ON ep.id = gotit.employee_id
+                LEFT JOIN (
+                    SELECT pr.employee_id, COUNT(*) AS total_vinnet
+                    FROM project_respondents AS pr
+                    INNER JOIN project_vinnet_transactions AS pvt
+                        ON pr.id = pvt.project_respondent_id
+                    WHERE pr.project_id = :projectIdVinnet
+                        AND pr.status IN (
+                            'Đã nhận quà.'
+                        )
+                    GROUP BY pr.employee_id
+                ) AS vinnet
+                    ON ep.id = vinnet.employee_id
+                WHERE epj.project_id = :projectIdMain
+                ORDER BY ep.employee_id;
+            ";
 
-            $employees = $project->employees;
+            $employees = DB::select($sql, [
+                'projectIdGotit' => $project_id,
+                'projectIdVinnet' => $project_id,
+                'projectIdMain' => $project_id    
+            ]);
 
             return response()->json([
                 'status_code' => Response::HTTP_OK, //200
-                'data' => EmployeeResource::collection($employees)
+                'data' => $employees
             ]);
         }
         catch(\Exception $e)
@@ -558,5 +601,29 @@ class ProjectController extends Controller
                 'message' => $e->getMessage(),
             ]);
         }
+    }
+
+    public function bulkAddEmployees(Request $request, $project_id){
+        $employee_ids = $request->employee_ids;
+
+        $employees = Employee::whereIn('employee_id', $employee_ids)->get();
+
+        if($employees->isEmpty()){
+            return response()->json([
+                'status_code' => Response::HTTP_BAD_REQUEST, //400,
+                'message' => 'No employees matched.'
+            ]);
+        }
+
+        foreach($employees as $employee){
+            ProjectEmployee::firstOrCreate([
+                'project_id' => $project_id,
+                'employee_id' => $employee->id
+            ]);
+        }
+
+        return response()->json([
+            'status_code' => Response::HTTP_OK, //200
+        ]);
     }
 }
