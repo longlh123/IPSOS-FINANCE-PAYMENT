@@ -13,6 +13,12 @@ export const BaseVisibility = {
       visible_view_parttime_employees: false
     }
   },
+  employees: {
+    visible_employee_table: true,
+    functions: {
+      visible_import_employees: true
+    }
+  },
   transactions: {
     components: {
       visible_deposited: false,
@@ -39,6 +45,12 @@ export const VisibilityConfig = {
           visible_edit_project: true,
           visible_view_gift_manager: true,
           visible_view_parttime_employees: true
+        }
+      },
+      employees: {
+        visible_employee_table: true,
+        functions: {
+          visible_import_employees: true
         }
       },
       transactions: {
@@ -76,6 +88,12 @@ export const VisibilityConfig = {
           visible_edit_project: true,
           visible_view_gift_manager: false,
           visible_view_parttime_employees: true
+        }
+      },
+      employees: {
+        visible_employee_table: true,
+        functions: {
+          visible_import_employees: true
         }
       },
     }
