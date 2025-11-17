@@ -529,7 +529,7 @@ class VinnetController extends Controller
 
                 $interviewURL = new InterviewURL($splittedURL);
 
-                if(!in_array($interviewURL->channel, ['gotit', 'vinnet'])){
+                if(!in_array($interviewURL->channel, ['gotit','vinnet','other'])){
                     Log::error('URL Vinnet nhưng thông tin đường link là quà Got It.');
                     throw new \Exception(ProjectRespondent::ERROR_INVALID_INTERVIEWERURL);
                 }
@@ -550,6 +550,18 @@ class VinnetController extends Controller
                     'error' => Project::ERROR_PROJECT_DETAILS_NOT_CONFIGURED
                 ], 404);
             }
+
+            if($project->projectDetails->status === Project::STATUS_IN_COMING || $project->projectDetails->status === Project::STATUS_ON_HOLD || 
+                ($project->projectDetails->status === Project::STATUS_ON_GOING && !in_array(substr(strtolower($interviewURL->location_id), 0, 2), ['hn', 'sg', 'dn', 'ct']))){
+                    
+                    Log::info('Staging Environment: ');
+                    
+                    return response()->json([
+                        'message' => TransactionStatus::STATUS_TRANSACTION_TEST . ' [Ghi nhận lý do từ chối của đáp viên]'
+                    ], Response::HTTP_OK);
+            } 
+
+            Log::info('Live Environment:');
 
             try
             {
@@ -735,7 +747,7 @@ class VinnetController extends Controller
                     Log::info('Staging Environment: ');
                     
                     return response()->json([
-                        'message' => ProjectVinnetTransaction::STATUS_TRANSACTION_TEST . ' [Giá trị quà tặng: ' . $price . ']'
+                        'message' => TransactionStatus::STATUS_TRANSACTION_TEST . ' [Giá trị quà tặng: ' . $price . ']'
                     ], Response::HTTP_OK);
             } 
 
