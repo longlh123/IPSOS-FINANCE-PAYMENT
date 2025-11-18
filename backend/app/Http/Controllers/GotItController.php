@@ -367,7 +367,7 @@ class GotItController extends Controller
                         'expiry_date'              => $voucherRequest['expiryDate'],
                         'order_name'               => $voucherRequest['orderName'],
                         'amount'                   => $voucherRequest['amount'],
-                        'voucher_status'           => ProjectRespondent::STATUS_API_FAILED . '[' . $e->getMessage() . ']'
+                        'voucher_status'           => TransactionStatus::STATUS_ERROR . '[' . $e->getMessage() . ']'
                     ]);
                     
                     $projectRespondent->updateStatus(ProjectRespondent::STATUS_API_FAILED);
@@ -506,7 +506,27 @@ class GotItController extends Controller
                 
                 $apiCMCObject = new APICMCObject();
 
-                $responseSMSData = $apiCMCObject->send_sms($validatedRequest['phone_number'], $messageCard);
+                try{
+                    $responseSMSData = $apiCMCObject->send_sms($validatedRequest['phone_number'], $messageCard);
+                } catch(\Exception $e){
+
+                    Log::error("CMC Telecom API Error: " . $e->getMessage());
+                    
+                    if(isset($smsTransaction)){
+                        $smsTransaction->update([
+                            'sms_status' => $e->getMessage()
+                        ]);
+                    }
+
+                    if(isset($projectRespondent)){
+                        $projectRespondent->updateStatus(ProjectRespondent::STATUS_API_FAILED);
+                    }
+
+                    return response()->json([
+                        'message' => ProjectRespondent::ERROR_RESPONDENT_GIFT_SYSTEM,
+                        'error' => ProjectRespondent::ERROR_RESPONDENT_GIFT_SYSTEM
+                    ], 404);
+                }
 
                 if(intval($responseSMSData['status']) == 1){
                     $smsTransactionStatus = $smsTransaction->updateStatus(SMSStatus::SUCCESS, intval($responseSMSData['countSms']));
