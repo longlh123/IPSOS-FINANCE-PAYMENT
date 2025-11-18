@@ -31,7 +31,8 @@ export const ApiConfig = {
   },
   gotit: {
     performTransaction: `${host}/api/project-management/got-it/transaction`,
-    rejectTransaction: `${host}/api/project-management/got-it/reject-transaction`
+    rejectTransaction: `${host}/api/project-management/got-it/reject-transaction`,
+    checkTransaction: `${host}/api/project-management/got-it/check-transaction-refid`
   },
   techcombank_panel: {
     viewTechcombankPanel: `${host}/api/techcombank-panel/users`,

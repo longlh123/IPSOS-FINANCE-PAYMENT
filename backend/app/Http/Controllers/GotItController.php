@@ -351,7 +351,33 @@ class GotItController extends Controller
             
             $voucherRequest = $this->generate_voucher_request($apiObject, $voucher_link_type, $interviewURL, $validatedRequest['phone_number'], $selectedPrices);
             
-            $responsedVoucher = $apiObject->get_vouchers($voucher_link_type, $voucherRequest);
+            try{
+                
+                $responsedVoucher = $apiObject->get_vouchers($voucher_link_type, $voucherRequest);
+            }catch(\Exception $e){
+
+                Log::error("GotIt API Error: " . $e->getMessage());
+                
+                if(isset($projectRespondent)){
+
+                    $failedVoucherTransaction = $projectRespondent->createGotitVoucherTransactions([
+                        'project_respondent_id'    => $projectRespondent->id,
+                        'transaction_ref_id'       => $voucherRequest['transactionRefId'],
+                        'transaction_ref_id_order' => 1,
+                        'expiry_date'              => $voucherRequest['expiryDate'],
+                        'order_name'               => $voucherRequest['orderName'],
+                        'amount'                   => $voucherRequest['amount'],
+                        'voucher_status'           => ProjectRespondent::STATUS_API_FAILED . '[' . $e->getMessage() . ']'
+                    ]);
+                    
+                    $projectRespondent->updateStatus(ProjectRespondent::STATUS_API_FAILED);
+                }
+
+                return response()->json([
+                    'message' => ProjectRespondent::ERROR_RESPONDENT_GIFT_SYSTEM,
+                    'error' => ProjectRespondent::ERROR_RESPONDENT_GIFT_SYSTEM
+                ], 404);
+            }
 
             Log::info('Responsed Voucher: ' . json_encode($responsedVoucher));
             
@@ -653,6 +679,33 @@ class GotItController extends Controller
         Log::info('SMS Request: ' . json_encode($dataRequest));
 
         return $dataRequest;
+    }
+
+    public function check_transaction(Request $request, $transactionRefId){
+
+        try{
+            Log::info("Check Transaction RefId: " . $transactionRefId);
+
+            $apiObject = new APIObject();
+
+            $signature = $apiObject->generate_signature("CHECK_REFID", null, null);
+
+            $dataRequest = [
+                "signature" => $signature
+            ];
+
+            $responsedVoucher = $apiObject->check_transaction_refid($transactionRefId, $dataRequest);
+
+            Log::info("Check Transaction: " . json_encode($responsedVoucher));
+            
+        } catch (\Exception $e) {
+            Log::error($e->getMessage());
+            
+            return response()->json([
+                'status_code' => Response::HTTP_BAD_REQUEST, //400
+                'message' => $e->getMessage(),
+            ]);
+        }
     }
 
     private function update_gotit_voucher_link_v($interviewURL, $phone_number, $transactionRefId, $voucherData)

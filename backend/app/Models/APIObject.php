@@ -44,6 +44,9 @@ class APIObject
         if($signature_type === 'SMS'){
 
             $this->signatureData = $this->envObject->gotitInfo['API_KEY'] . '|||';
+        } else if($signature_type === 'CHECK_REFID'){
+
+            $this->signatureData = $this->envObject->gotitInfo['API_KEY'] . '|' . $this->transactionRefId;
         } else if($signature_type === 'VOUCHER E') {
             
             $this->signatureData = $this->envObject->gotitInfo['API_KEY'] . '|' . $this->transactionRefId;
@@ -71,6 +74,17 @@ class APIObject
         $url = $this->envObject->gotitUrl . '/categories';
 
         $responseData = $this->get_request($url);
+
+        return $responseData;
+    }
+
+    public function check_transaction_refid($refid, $postData){
+        
+        $url = $this->envObject->gotitUrl . '/vouchers/multiple/status/' . $refid;
+
+        Log::info('URL Request: ' . $url);
+
+        $responseData = $this->get_request_with_body($url, $postData);
 
         return $responseData;
     }
@@ -253,6 +267,47 @@ class APIObject
             throw $e;
         }
     }
+
+    private function get_request_with_body($url, $body)
+    {
+        try {
+            $ch = curl_init($url);
+
+            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "GET"); // ép GET
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+            // Gửi body JSON
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($body));
+
+            // Header
+            $header = $this->header = [
+                'X-GI-Authorization: ' . $this->envObject->gotitInfo['API_KEY'],
+                'Content-Type: application/json'
+            ];
+            
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
+
+            // --- LOG trước khi gửi ---
+            Log::info('GotIt API Request URL: ' . $url);
+            Log::info('GotIt API Request Body: ' . json_encode($body));
+            Log::info('GotIt API Request Header: ' . json_encode($header));
+
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+            curl_close($ch);
+
+            if ($httpCode == 200) {
+                return json_decode($response, true);
+            }
+
+            throw new \Exception("Request failed with HTTP code $httpCode");
+        } catch (\Exception $e) {
+            Log::error($e->getMessage());
+            throw $e;
+        }
+    }
+
 
     private function post_request($url, $postData)
     {
