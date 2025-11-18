@@ -22,7 +22,7 @@ class ProjectRespondent extends Model
     const STATUS_RESPONDENT_CANCELLED =         'Khảo sát bị hủy / không hoàn thành.'; 
     const STATUS_RESPONDENT_REJECTED =          'Đáp viên từ chối nhận quà.';
     const STATUS_RESPONDENT_GIFT_TEMPORARY_ERROR = 'Hệ thống gặp sự cố tạm thời.';
-       
+    const STATUS_API_FAILED                       = 'Call API thất bại.';
 
     const ERROR_CANNOT_STORE_RESPONDENT =                 'Đáp viên không thể lưu.';
     const ERROR_INVALID_RESPONDENT_STATUS_FOR_UPDATE =    'Đáp viên không hợp lệ để cập nhật trạng thái.';
@@ -32,9 +32,8 @@ class ProjectRespondent extends Model
     const ERROR_RESPONDENT_GIFT_RECEIVED =                'Đáp viên đã nhận quà, không thể thao tác lại.';
     const ERROR_SMS_SEND_FAILED =                         'Gửi tin nhắn không thành công.';
     const ERROR_INVALID_INTERVIEWERURL =                  'Liên kết phỏng vấn không hợp lệ. Vui lòng sử dụng link được hệ thống cung cấp. Nếu bạn đã chỉnh sửa hoặc thay đổi thông tin trong đường link, vui lòng truy cập lại link gốc từ hệ thống.';
-    const ERROR_RESPONDENT_GIFT_SYSTEM =                  'Hệ thống gặp sự cố khi gửi quà, quà sẽ được gửi trực tiếp đến đáp viên từ phỏng vấn viên.';
+    const ERROR_RESPONDENT_GIFT_SYSTEM =                  'Chúng tôi gặp sự cố kỹ thuật khi gửi quà. Sau khi kiểm tra hệ thống, quà sẽ được gửi lại tới bạn.';
     const ERROR_RESPONDENT_GIFT_TEMPORARY =               'Hệ thống gặp sự cố tạm thời, vui lòng kiểm tra lại thiết bị (kết nối mạng,...) và thử thực hiện lại.';
-
 
     protected $table = "project_respondents";
 
@@ -132,7 +131,8 @@ class ProjectRespondent extends Model
                             $query->where('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED)
                                 ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_NOT_RECEIVED)
                                 ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_PARTIAL)
-                                ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_REJECTED);
+                                ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_REJECTED)
+                                ->orWhere('status', ProjectRespondent::STATUS_API_FAILED);
                         })
                         ->exists();
             
@@ -149,7 +149,8 @@ class ProjectRespondent extends Model
                             $query->where('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED)
                                 ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_NOT_RECEIVED)
                                 ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_PARTIAL)
-                                ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_REJECTED);
+                                ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_REJECTED)
+                                ->orWhere('status', ProjectRespondent::STATUS_API_FAILED);
                         })
                         ->exists();
             
@@ -166,7 +167,8 @@ class ProjectRespondent extends Model
                             $query->where('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED)
                                 ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_NOT_RECEIVED)
                                 ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_PARTIAL)
-                                ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_REJECTED);
+                                ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_REJECTED)
+                                ->orWhere('status', ProjectRespondent::STATUS_API_FAILED);
                         })
                     ->exists();
               
@@ -189,7 +191,8 @@ class ProjectRespondent extends Model
                             $query->where('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED)
                                 ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_NOT_RECEIVED)
                                 ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_PARTIAL)
-                                ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_REJECTED);
+                                ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_REJECTED)
+                                ->orWhere('status', ProjectRespondent::STATUS_API_FAILED);
                         })
                         ->exists();
         

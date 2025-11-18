@@ -1004,7 +1004,7 @@ class VinnetController extends Controller
                     }
 
                     if(isset($projectRespondent)){
-                        $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_PARTIAL);
+                        $projectRespondent->updateStatus(ProjectRespondent::STATUS_API_FAILED);
                     }
 
                     return response()->json([
