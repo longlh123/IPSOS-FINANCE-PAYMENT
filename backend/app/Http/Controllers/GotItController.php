@@ -366,7 +366,7 @@ class GotItController extends Controller
                         'transaction_ref_id_order' => 1,
                         'expiry_date'              => $voucherRequest['expiryDate'],
                         'order_name'               => $voucherRequest['orderName'],
-                        'amount'                   => $voucherRequest['amount'],
+                        'amount'                   => $price,
                         'voucher_status'           => TransactionStatus::STATUS_ERROR . '[' . $e->getMessage() . ']'
                     ]);
                     

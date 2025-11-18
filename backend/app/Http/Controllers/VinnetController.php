@@ -1086,9 +1086,28 @@ class VinnetController extends Controller
                     );
                     
                     $apiCMCObject = new APICMCObject();
+                    
+                    try{
+                        $responseSMSData = $apiCMCObject->send_sms($validatedRequest['phone_number'], $messageCard);
+                    } catch(\Exception $e){
+                        Log::error("CMC Telecom API Error: " . $e->getMessage());
+                    
+                        if(isset($smsTransaction)){
+                            $smsTransaction->update([
+                                'sms_status' => $e->getMessage()
+                            ]);
+                        }
 
-                    $responseSMSData = $apiCMCObject->send_sms($validatedRequest['phone_number'], $messageCard);
+                        if(isset($projectRespondent)){
+                            $projectRespondent->updateStatus(ProjectRespondent::STATUS_API_FAILED);
+                        }
 
+                        return response()->json([
+                            'message' => ProjectRespondent::ERROR_RESPONDENT_GIFT_SYSTEM,
+                            'error' => ProjectRespondent::ERROR_RESPONDENT_GIFT_SYSTEM
+                        ], 404);
+                    }
+                    
                     if(intval($responseSMSData['status']) == 1){
                         $smsTransactionStatus = $smsTransaction->updateStatus(SMSStatus::SUCCESS, intval($responseSMSData['countSms']));
 
