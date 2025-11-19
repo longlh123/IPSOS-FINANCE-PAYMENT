@@ -78,13 +78,22 @@ class APIObject
         return $responseData;
     }
 
-    public function check_transaction_refid($refid, $postData){
+    public function check_transaction_refid($refid){
         
+        $this->setTransactionRefId();
+        $this->signatureData = $this->envObject->gotitInfo['API_KEY'] . '|' . $refid;
+
+        $signature = $this->generate_signature();
+
         $url = $this->envObject->gotitUrl . '/vouchers/multiple/status/' . $refid;
 
         Log::info('URL Request: ' . $url);
 
-        $responseData = $this->get_request_with_body($url, $postData);
+        $dataRequest = [
+            "signature" => $signature
+        ];
+
+        $responseData = $this->get_request_with_body($url, $dataRequest);
 
         return $responseData;
     }
@@ -440,12 +449,9 @@ class APIObject
         return $uuid;
     }
 
-    public function generate_signature($signature_type, $order_name, $expiry_date)
+    public function generate_signature()
     {
         try {
-            $this->setTransactionRefId();
-            $this->setSignatureData($signature_type, $order_name, $expiry_date);
-
             Log::info('Data to generate Signature: ' . $this->signatureData);
             
             // Load the public key from the file
