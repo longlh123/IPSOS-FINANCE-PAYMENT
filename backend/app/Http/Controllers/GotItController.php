@@ -598,7 +598,10 @@ class GotItController extends Controller
         $expiryDate =  new \DateTime("{$year}-{$month}-01");
         $orderName = 'IPSOS Promotion - ' . date("M Y");
 
-        $signature = $apiObject->generate_signature("VOUCHER " . strtoupper($voucher_link_type), $orderName, $expiryDate->format('Y-m-d'));
+        $apiObject->setTransactionRefId();
+        $apiObject->setSignatureData("VOUCHER " . strtoupper($voucher_link_type), $orderName, $expiryDate->format('Y-m-d'));
+
+        $signature = $apiObject->generate_signature();
 
         $priceMap = [
             3088 => 10000,
@@ -686,7 +689,10 @@ class GotItController extends Controller
     
     private function generate_sms_request($apiObject, $voucher_link, $phone_number)
     {
-        $signature = $apiObject->generate_signature('SMS', null, null);
+        $apiObject->setTransactionRefId();
+        $apiObject->setSignatureData('SMS', null, null);
+
+        $signature = $apiObject->generate_signature();
 
         $dataRequest = [
             "voucherLinkCode" => substr($voucher_link, -8),
@@ -708,15 +714,15 @@ class GotItController extends Controller
 
             $apiObject = new APIObject();
 
-            $signature = $apiObject->generate_signature("CHECK_REFID", null, null);
-
-            $dataRequest = [
-                "signature" => $signature
-            ];
-
-            $responsedVoucher = $apiObject->check_transaction_refid($transactionRefId, $dataRequest);
+            $responsedVoucher = $apiObject->check_transaction_refid($transactionRefId);
 
             Log::info("Check Transaction: " . json_encode($responsedVoucher));
+
+            return response()->json([
+                'status_code' => Response::HTTP_OK, //200
+                'message' => 'Successful request.',
+                'data' => $responsedVoucher
+            ]);
             
         } catch (\Exception $e) {
             Log::error($e->getMessage());
