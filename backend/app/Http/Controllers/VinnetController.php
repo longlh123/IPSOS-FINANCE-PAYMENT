@@ -1081,7 +1081,7 @@ class VinnetController extends Controller
                     $finalMessage =  implode("\n", $messagesToSend);
 
                     $messageCard = sprintf(
-                        "Cam on ban da tham gia. IPSOS tang ban:\n%s",
+                        "IPSOS cam on ban. Tang ban ma dien thoai:\n%s",
                         $finalMessage ?? 'N/A'
                     );
                     

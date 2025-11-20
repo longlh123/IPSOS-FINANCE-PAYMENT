@@ -499,7 +499,7 @@ class GotItController extends Controller
             if(!empty($messagesToSend)){
             
                 $messageCard = sprintf(
-                    "Cam on ban. IPSOS tang qua GotIt:\n%s\nExp:%s",
+                    "IPSOS cam on ban. Tang ban qua GotIt:\n%s\nExp:%s",
                     implode("\n", $messagesToSend) ?? 'N/A',
                     $expiredDate ?? 'N/A'
                 );
