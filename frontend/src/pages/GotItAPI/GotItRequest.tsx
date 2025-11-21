@@ -89,7 +89,17 @@ const GotItRequest = () => {
 
         const serviceCode = getServiceCode(value);
 
+        const mobiFoneServiceCodes = ["S0003", "S0012"];
+        
         if (serviceCode) {
+            if(mobiFoneServiceCodes.includes(serviceCode)){
+                setStatusMessage("Nhà mạng MobiFone đang gặp sự cố, vui lòng dùng số điện thoại khác nếu có hoặc PVV có thể gửi quà trực tiếp cho bạn.");
+                setIsError(true);
+                setSelectedProvider("");   // reset provider
+                setSelectedServiceCode(""); // reset service
+                return;
+            }   
+            
             const provider = providers.find((p) => p.serviceCode === serviceCode);
             if (provider) {
                 setSelectedProvider(provider.label);
