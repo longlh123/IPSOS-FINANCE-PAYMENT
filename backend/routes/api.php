@@ -67,6 +67,7 @@ Route::get('/project-management/project/verify-vinnet-token/{internal_code}/{pro
 // Route::post('/project-management/vinnet/change-key', [VinnetController::class, 'change_key']);
 Route::post('/project-management/vinnet/transactions', [VinnetController::class, 'perform_multiple_transactions']);
 Route::post('/project-management/vinnet/reject-transaction', [VinnetController::class, 'reject_transaction']); //API update status lý do đáp viên không nhận quà qua tin nhắn
+Route::post('/project-management/vinnet/check-transaction/{refReqUuid}', [VinnetController::class, 'check_transaction']);
 
 Route::post('/project-management/got-it/transaction', [GotItController::class, 'perform_transaction']);
 Route::post('/project-management/got-it/reject-transaction', [GotItController::class, 'reject_transaction']); //API update status lý do đáp viên không nhận quà qua tin nhắn
