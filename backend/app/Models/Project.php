@@ -56,9 +56,9 @@ class Project extends Model
         return $this->hasMany(ProjectProvince::class, 'project_id');
     }
 
-    public function employees()
+    public function projectEmployees()
     {
-        return $this->belongsToMany(Employee::class, 'project_employees', 'project_id', 'employee_id');
+        return $this->hasMany(ProjectEmployee::class, 'project_id');
     }
 
     public function projectPermissions()
@@ -84,6 +84,10 @@ class Project extends Model
     public function createProjectRespondents(array $data)
     {
         return $this->projectRespondents()->create($data);
+    }
+
+    public function createProjectEmployees(array $data) {
+        return $this->employees()->create($data);
     }
 
     public static function findByInterviewURL($interviewURL): self

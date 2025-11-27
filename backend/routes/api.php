@@ -37,9 +37,11 @@ Route::middleware(['auth:sanctum'])->group(function(){
     Route::get('/users', [UserController::class, 'index'])->middleware('ensureUserHasRole:admin');
     Route::post('/logout', [LoginController::class, 'logout']);
 
+    //View Projects
     Route::get('/project-management/projects', [ProjectController::class, 'index'])
         ->middleware('ensureUserHasRole:Admin,Scripter');
 
+    //View Project
     Route::get('/project-management/projects/{projectId}/show', [ProjectController::class, 'show'])
         ->middleware('ensureUserHasRole:Admin,Scripter');
 
@@ -56,6 +58,7 @@ Route::middleware(['auth:sanctum'])->group(function(){
     Route::get('/project-management/projects/{projectId}/respondents/show', [RespondentController::class, 'show'])->middleware('ensureUserHasRole:admin');
 
     Route::get('/project-management/projects/{projectId}/employees/show', [EmployeeController::class, 'show'])->middleware('ensureUserHasRole:admin,Field Manager,Finance');
+    Route::post('/project-management/projects/{projectId}/employees/store', [ProjectController::class, 'bulkAddEmployees'])->middleware('ensureUserHasRole:admin');
 
     Route::get('/project-management/vinnet/merchant/view', [VinnetController::class, 'get_merchant_info'])->middleware('ensureUserHasRole:admin,Finance');
     Route::post('/project-management/vinnet/change-key', [VinnetController::class, 'change_key'])->middleware('ensureUserHasRole:admin,Finance');
