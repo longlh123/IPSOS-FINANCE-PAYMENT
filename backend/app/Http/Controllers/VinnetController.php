@@ -1673,5 +1673,127 @@ class VinnetController extends Controller
         }
     }
 
+    public function check_transaction(Request $request, $refReqUuid){
+        try 
+        {
+            $step_info = "Authentication Token API";
+
+            try{
+                $tokenData = $this->authenticate_token();
+
+                Log::info('Token data: ' . json_encode($tokenData));
+
+                if($tokenData['code'] != 0)
+                {
+                    Log::error('Authentication Token API Exception: ' . $tokenData['message']);
+
+                    $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_TEMPORARY_ERROR);
+                    
+                    return response()->json([
+                        'message' => ProjectRespondent::ERROR_RESPONDENT_GIFT_TEMPORARY,
+                        'error' => ProjectRespondent::ERROR_RESPONDENT_GIFT_TEMPORARY
+                    ], 404);
+                }
+            } catch (\Throwable $e) {
+                Log::error('Authentication Token API Exception: ' . $e->getMessage());
+
+                if(isset($projectRespondent)){
+                    $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_TEMPORARY_ERROR);
+                }
+
+                return response()->json([
+                    'message' => ProjectRespondent::ERROR_RESPONDENT_GIFT_TEMPORARY,
+                    'error' => ProjectRespondent::ERROR_RESPONDENT_GIFT_TEMPORARY
+                ], 404);
+            }
+
+            $envObject = new ENVObject();
+            $environment = $envObject->environment;
+            $merchantInfo = $envObject->merchantInfo;
+            $url = $envObject->url;
+
+            $checkTransactionUuid = $this->generate_formated_uuid();
+            Log::info('Check Transaction UUID: ' . $checkTransactionUuid);
+            
+            //$encodedServiceItem = json_decode($service_item, true);
+            
+            $dataRequest = [
+                'refReqUuid' => $refReqUuid
+            ];
+
+            $reqData = $this->encrypt_data(json_encode($dataRequest));
+
+            Log::info('Encrypted data: ' . $reqData);
+
+            Log::info('Data signature: ' . str_replace('"', '', $merchantInfo['VINNET_MERCHANT_CODE']) . $checkTransactionUuid . $reqData);
+
+            $signature = $this->generate_signature(str_replace('"', '', $merchantInfo['VINNET_MERCHANT_CODE']) . $checkTransactionUuid . $reqData);
+
+            $postData = [
+                'merchantCode' => str_replace('"', '', $merchantInfo['VINNET_MERCHANT_CODE']),
+                'reqUuid' => $checkTransactionUuid,
+                'reqData' => $reqData,
+                'sign' => $signature
+            ];
+
+            $response = $this->post_vinnet_request(str_replace('"', '', $url) . '/checktransaction', $tokenData['token'], $postData);
+
+            Log::info('Pay service response: ' . $response);
+
+            $decodedResponse = json_decode($response, true);
+            
+            if ($decodedResponse === null && json_last_error() !== JSON_ERROR_NONE) {
+                Log::error('JSON Decode Error: ' . json_last_error_msg());
+                throw new \Exception('JSON Decode Error: ' . json_last_error_msg());
+            }
+            
+            if (!is_array($decodedResponse)) {
+                throw new \Exception('Decoded services data is not an array');
+            }
+
+            if($decodedResponse['resCode'] == '00')
+            {
+                $decryptedData = $this->decrypt_data($decodedResponse['resData']);
+
+                Log::info('Decrypted pay service data: ' . $decryptedData);
+                
+                $decodedData = json_decode($decryptedData, true);
+
+                if ($decodedData === null && json_last_error() !== JSON_ERROR_NONE) {
+                    Log::error('JSON Decode Error: ' . json_last_error_msg());
+                    throw new \Exception('JSON Decode Error: ' . json_last_error_msg());
+                }
+
+                $decodedData = json_decode($decodedData, true);
+
+                if (!is_array($decodedData)) {
+                    Log::error('Decoded services data is not an array');
+                    throw new \Exception('Decoded services data is not an array');
+                }
+
+                Log::info('Pay item array: ' . print_r($decodedData, true));
+
+                return [
+                    'reqUuid' => $refReqUuid,
+                    'pay_item' => $decodedData,
+                    'code' => (int)$decodedResponse['resCode'],
+                    'message' => $decodedResponse['resMesg']
+                ];
+            } else {
+                //throw new \Exception($decodedResponse['resMesg']);
+                return [
+                    'reqUuid' => $refReqUuid,
+                    'code' => (int)$decodedResponse['resCode'],
+                    'message' => $decodedResponse['resMesg']
+                ];
+            }
+        } catch (\Exception $e) {
+            // Log the exception message
+            Log::error('Check transaction failed: ' . $e->getMessage());
+
+            // Optionally rethrow the exception or handle it
+            throw $e;
+        }
+    }
     
 }

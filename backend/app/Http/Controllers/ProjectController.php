@@ -19,6 +19,8 @@ use App\Models\Team;
 use App\Models\Province;
 use App\Models\ProjectVinnetToken;
 use App\Models\ProjectUUID;
+use App\Models\Employee;
+use App\Models\ProjectEmployee;
 use App\Http\Requests\StoreProjectVinnetTokenRequest;
 use App\Http\Requests\StoreProjectRequest;
 use App\Http\Requests\UpdateProjectRequest;
@@ -76,9 +78,12 @@ class ProjectController extends Controller
             //Log::info(Auth::user()->userDetails->role->name);
 
             if(in_array(Auth::user()->userDetails->role->name, ['Admin', 'Finance'])){
-                $query = Project::with(['projectDetails.createdBy']);
+                $query = Project::with([
+                    'projectDetails.createdBy'
+                ])->withCount('projectRespondents as total_respondents');
             } else {
                 $query = Project::with(['projectDetails.createdBy'])
+                    ->withCount('projectRespondents as total_respondents')
                     ->whereHas('projectPermissions', function($q) use ($logged_in_user) {
                         $q->where('user_id', $logged_in_user);
                     });
@@ -602,28 +607,78 @@ class ProjectController extends Controller
             ]);
         }
     }
+    
+    public function bulkAddEmployees(Request $request, $projectId){
+        try{
+            $logged_in_user = Auth::user()->id;
 
-    public function bulkAddEmployees(Request $request, $project_id){
-        $employee_ids = $request->employee_ids;
+            try{
+                if(in_array(Auth::user()->userDetails->role->name, ['Admin', 'Scripter'])){
+                
+                    $project = Project::findOrFail($projectId);
+                }
+            } catch(\Exception $e){
+                Log::error('The project not found: ' . $e->getMessage());
 
-        $employees = Employee::whereIn('employee_id', $employee_ids)->get();
+                return response()->json([
+                    'status_code' => Response::HTTP_NOT_FOUND, //404
+                    'message' => Project::STATUS_PROJECT_NOT_FOUND
+                ]);
+            }
 
-        if($employees->isEmpty()){
+            if($project){
+                $employee_ids = explode(',', $request->employee_ids);
+
+                $employeeIds = Employee::whereIn('employee_id', $employee_ids)->pluck('id');
+
+                $employees = $project->projectEmployees()
+                                        ->whereIn('employee_id', $employeeIds)
+                                        ->get();
+
+                Log::info('Request Data A: ' . json_encode( $employees));
+
+                $employees = Employee::whereIn('employee_id', $employee_ids)->get();
+
+                Log::info('Request Data: ' . json_encode( $employees));
+                
+                if($employees->isEmpty()){
+                    return response()->json([
+                        'status_code' => 400,
+                        'message' => 'No employees matched'
+                    ]);
+                }
+
+                DB::beginTransaction();
+                
+                $countSuccess = 0;
+
+                foreach($employees as $employee){
+                    ProjectEmployee::create([
+                        'project_id' => $projectId,
+                        'employee_id' => $employee->id
+                    ]);
+
+                    $countSuccess++;
+                }
+
+                DB::commit();
+
+                return response()->json([
+                    'status_code' => 200,
+                    'success_count' => $countSuccess,
+                    'message' => 'The employees stored successfully.'
+                ]);
+            }
+
+        } catch(\Exception $e)
+        {
+            DB::rollBack();
+            Log::error('Unexpected error: ' . $e->getMessage());
+
             return response()->json([
-                'status_code' => Response::HTTP_BAD_REQUEST, //400,
-                'message' => 'No employees matched.'
-            ]);
+                'message' => 'Unexpected error occurred while adding employees into project.',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        foreach($employees as $employee){
-            ProjectEmployee::firstOrCreate([
-                'project_id' => $project_id,
-                'employee_id' => $employee->id
-            ]);
-        }
-
-        return response()->json([
-            'status_code' => Response::HTTP_OK, //200
-        ]);
     }
 }

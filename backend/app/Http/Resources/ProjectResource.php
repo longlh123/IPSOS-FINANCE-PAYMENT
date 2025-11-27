@@ -36,10 +36,6 @@ class ProjectResource extends JsonResource
             'planned_field_end' => $this->projectDetails->planned_field_end ?? null,
             'actual_field_start' => $this->projectDetails->actual_field_start ?? null,
             'actual_field_end' => $this->projectDetails->actual_field_end ?? null,
-            'remember_token' => $this->projectDetails->remember_token ?? null,
-            'remember_uuid' => $this->projectDetails->remember_uuid ?? null,
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
             'created_user_id' => $this->projectDetails->createdBy->userDetails,
             'project_types' => $this->projectTypes->map(function($projectType){
                 return $projectType->name;
@@ -60,6 +56,7 @@ class ProjectResource extends JsonResource
                     'price_boosters' => $item->price_boosters
                 ];
             })->values(),
+            'total_respondents' => $this->total_respondents
         ];
     }
 }
