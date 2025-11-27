@@ -24,7 +24,6 @@ import ModalAddProject from "../Modals/Project/ModalAddProject";
 import SdCardAlertOutlinedIcon from '@mui/icons-material/SdCardAlertOutlined';
 import { TableCellConfig } from "../../config/TableProjectConfig";
 import ModalReport from "../Modals/Report/ModalReport";
-import ModalConfirmDelete from "../Modals/Confirm/ModalConfirmDelete";
 import { useNavigate } from "react-router-dom";
 import { formatDate } from "../../utils/DateUtils";
 import logo from "../../assets/img/Ipsos logo.svg";
@@ -254,6 +253,12 @@ const TableProjects = () => {
                     <TableCell sx={{
                       width: '50px',
                       textAlign: 'center'
+                    }}> 
+                      Sample Size
+                    </TableCell>
+                    <TableCell sx={{
+                      width: '50px',
+                      textAlign: 'center'
                     }}>Status</TableCell>
                     <TableCell sx={{
                       width: '50px',
@@ -285,6 +290,20 @@ const TableProjects = () => {
                             }
                           </TableCell>
                         ))}
+                        <TableCell
+                          className="table-cell"
+                          width={50}
+                          align="center"
+                        > 
+                          {
+                            (project.total_respondents || 0)
+                          } /
+                          {
+                            project.provinces.reduce((sum: number, p: any) => {
+                              return sum + (p.sample_size_main || 0) + (p.sample_size_booters || 0);
+                            }, 0)
+                          }
+                        </TableCell>
                         <TableCell
                           className="table-cell"
                           width={50}
@@ -428,10 +447,6 @@ const TableProjects = () => {
         openModal={openModalReport}
         onClose={handleCloseModal}
         reportValue={selectedProject}
-      />
-      <ModalConfirmDelete
-        onClose={handleCloseModal}
-        openModal={openModalConfirm}
       />
     </>
   );

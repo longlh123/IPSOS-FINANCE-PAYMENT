@@ -8,6 +8,12 @@ export const TableCellConfig: ColumnFormat[] = [
     width: 10
   },
   {
+    label: "Symphony",
+    name: "symphony",
+    type: "string",
+    width: 100
+  },
+  {
     label: "Internal Code",
     name: "internal_code",
     type: "string",
