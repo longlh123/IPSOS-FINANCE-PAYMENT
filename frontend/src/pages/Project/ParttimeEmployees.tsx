@@ -1,4 +1,4 @@
-import { Box, Button, Paper } from "@mui/material";
+import { Alert, Box, Button, Paper, Snackbar } from "@mui/material";
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import { useParams } from "react-router-dom";
 import { useProjects } from "../../hook/useProjects";
@@ -9,16 +9,21 @@ import UniversalInputDialog from "../../components/Dialogs/UniversalInputDialog"
 import AlertDialog from "../../components/AlertDialog/AlertDialog";
 import { useVisibility } from "../../hook/useVisibility";
 import SearchTextBox from "../../components/SearchTextBox";
+import axios from "axios";
 
 const ParttimeEmployees = () => {
     const { id } = useParams<{id: string}>();
     const { canView } = useVisibility();
-    const { getEmployees } = useProjects();
+    const { getEmployees, addEmployees } = useProjects();
     const [ employees, setEmployees ] = useState<EmployeeData[]>([]);
     const [ formFieldsConfig, setFormFieldsConfig] = useState(TableParttimeEmployeesConfig);
     const { open, title, message, showConfirmButton, openDialog, closeDialog, confirmDialog } = useDialog();
     const [ selectedEmployee, setSelectedEmployee ] = useState<EmployeeData | null>(null);
     
+    const [ snackbarOpen, setSnackbarOpen ] = useState<boolean>(false);
+    const [ snackbarMessage, setSnackbarMessage ] = useState<string>("");
+    const [ isError, setIsError ] = useState<boolean>(false);
+
     const handleRemoveClick = (employee: EmployeeData) => {
         setSelectedEmployee(employee);
         openDialog({
@@ -52,13 +57,35 @@ const ParttimeEmployees = () => {
         setOpenImportEmployeesDialog(false);
     }
 
-    const handleImportEmployees = (value: string) => {
+    const handleImportEmployees = async (value: string) => {
         try{
-            const employee_ids = value.split("\n").map(x => x.trim()).filter(Boolean);
+            const employee_ids = value.split("\n").map(x => x.trim().replace(/[^a-zA-Z0-9]/g, "")).filter(Boolean);
 
-            console.log(employee_ids);
+            if (!id) {
+                console.error("Project ID is undefined");
+                setSnackbarMessage("Project ID is undefined");
+                return;
+            }
+
+            const es = await addEmployees(parseInt(id), employee_ids.join(','));
+
+            if(es.status_code == 400){
+                setIsError(true);
+                setSnackbarOpen(true);
+                setSnackbarMessage(es.message);
+            } else {
+                setIsError(false);
+                setEmployees(es); 
+            }
         }catch(error){
+            setIsError(true);
+            setSnackbarOpen(true);
 
+            if(axios.isAxiosError(error) && error.response?.status === 403){
+                setSnackbarMessage(error.message);
+            } else {
+                setSnackbarMessage("Có lỗi xảy ra khi cập nhật danh sách phỏng vấn viên. Vui lòng thử lại.");
+            }
         }finally{
             setOpenImportEmployeesDialog(false);
         }
@@ -119,19 +146,31 @@ const ParttimeEmployees = () => {
                 <SearchTextBox placeholder="Search id, name,..." onSearchChange={handleSearchChange} />
                 </div>
             </div>
+            <Snackbar
+                open={snackbarOpen}
+                autoHideDuration={10000}
+                onClose={() => setSnackbarOpen(false)}
+                anchorOrigin={{ vertical: "top", horizontal: "center" }}
+                sx={{ zIndex: 9999 }}
+            >
+                <Alert severity= {isError ? "error" : "success"} onClose={() => setSnackbarOpen(false)}>
+                    {snackbarMessage}
+                </Alert>
+                
+            </Snackbar>
             <Paper sx={{ height: 500, width: '100%', p: 2 }}>
                 <DataGrid
-                rows={employees}
-                columns={columns}
-                pageSizeOptions={[10, 20, 50]}
-                initialState={{
-                    pagination: { paginationModel: { pageSize: 10, page: 0 } },
-                }}
-                checkboxSelection
-                sx={{
-                    border: 0,
-                    '& .MuiDataGrid-columnHeaders': { backgroundColor: '#f5f5f5' },
-                }}
+                    rows={employees}
+                    columns={columns}
+                    pageSizeOptions={[10, 20, 50]}
+                    initialState={{
+                        pagination: { paginationModel: { pageSize: 10, page: 0 } },
+                    }}
+                    checkboxSelection
+                    sx={{
+                        border: 0,
+                        '& .MuiDataGrid-columnHeaders': { backgroundColor: '#f5f5f5' },
+                    }}
                 />
             </Paper>
 

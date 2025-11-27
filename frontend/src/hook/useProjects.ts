@@ -122,8 +122,27 @@ export function useProjects() {
         });
 
         return response.data.data;
-    }, []);
+    }, []); 
 
+    const addEmployees = useCallback(async (id: number, employee_ids: string) => {
+        const token = localStorage.getItem("authToken");
+
+        const url = `${ApiConfig.project.addEmployees.replace("{projectId}", id.toString())}`;
+
+        const response = await axios.post(url, {
+            employee_ids
+        }, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+        });
+        
+        await getEmployees(id);
+        return response.data;
+    }, [getEmployees]);
+    
     useEffect(() => {
         fetchProjects();
     }, [fetchProjects]);
@@ -137,6 +156,7 @@ export function useProjects() {
         addProject,
         updateProjectStatus,
         getTransactions,
-        getEmployees
+        getEmployees,
+        addEmployees
     };
 }

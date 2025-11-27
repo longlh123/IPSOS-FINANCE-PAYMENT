@@ -13,6 +13,7 @@ export const ApiConfig = {
     getTeams: `${host}/api/project-management/{department_id}/teams`,
     viewTransactions: `${host}/api/project-management/{projectId}/transactions/view`,
     viewEmployees: `${host}/api/project-management/{projectId}/employees/view`,
+    addEmployees: `${host}/api/project-management/projects/{projectId}/employees/store`,
   },
   respondent: {
     viewRespondents: `${host}/api/project-management/projects/{projectId}/respondents/show`,
