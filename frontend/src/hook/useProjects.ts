@@ -9,7 +9,13 @@ export function useProjects() {
     const [ loading, setLoading ] = useState(false);
     const [ error, setError ] = useState<string | null>(null);
 
-    const fetchProjects = useCallback(async () => {
+    const [ page, setPage ] = useState(0);
+    const [ rowsPerPage, setRowsPerPage ] = useState(10);
+    
+    const [ meta, setMeta ] = useState<any>(null);
+    const [ total, setTotal ] = useState(0); //Tổng số projects từ backend
+
+    const fetchProjects = useCallback(async (page = 0, rowsPerPage = 0) => {
         try{
             setLoading(true);
             setError(null);
@@ -23,9 +29,15 @@ export function useProjects() {
                     'Authorization': `Bearer ${token}`,
                     'Show-Only-Enabled': '1',
                 },
+                params: {
+                    page: page + 1,        // Laravel dùng page = 1,2,3...
+                    per_page: rowsPerPage
+                },
             });
 
             setProjects(response.data.data);
+            setMeta(response.data.meta);
+            setTotal(response.data.meta.total);
 
         }catch(error: any){
             setError(error.message || "Failed to fetch Projects");
@@ -33,7 +45,7 @@ export function useProjects() {
             setLoading(false);
         }
 
-    }, []);
+    }, [page, rowsPerPage]);
 
     const addProject = useCallback(async (payload: Partial<ProjectData>) => {
         try{
@@ -144,11 +156,17 @@ export function useProjects() {
     }, [getEmployees]);
     
     useEffect(() => {
-        fetchProjects();
-    }, [fetchProjects]);
+        fetchProjects(page, rowsPerPage);
+    }, [page, rowsPerPage]);
 
     return {
         projects,
+        meta,
+        total,
+        page,
+        setPage,
+        rowsPerPage,
+        setRowsPerPage,
         loading,
         error,
         fetchProjects,

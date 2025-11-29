@@ -56,7 +56,8 @@ class ProjectResource extends JsonResource
                     'price_boosters' => $item->price_boosters
                 ];
             })->values(),
-            'total_respondents' => $this->total_respondents
+            'count_respondents' => $this->count_respondents,
+            'count_employees' => $this->count_employees
         ];
     }
 }

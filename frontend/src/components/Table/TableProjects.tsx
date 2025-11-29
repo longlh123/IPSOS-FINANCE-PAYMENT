@@ -51,8 +51,8 @@ const TableProjects = () => {
   const { open, title, message, showConfirmButton, openDialog, closeDialog, confirmDialog } = useDialog();
 
   //Chọn số trang (pagination)
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  // const [page, setPage] = useState(0);
+  // const [rowsPerPage, setRowsPerPage] = useState(10);
 
     // Define color mapping for each status
   const statusColors: { [key: string]: string } = {
@@ -82,7 +82,7 @@ const TableProjects = () => {
   const idStatusOfProject = opendStatusOfProject ? "simple-popover" : undefined;
 
 
-  const { projects, updateProjectStatus, loading: projectsLoading, error: projectError } = useProjects();
+  const { projects, page, rowsPerPage, total, setPage, setRowsPerPage, updateProjectStatus, loading: projectsLoading, error: projectError } = useProjects();
   const { metadata, loading: metadataLoading, error: metadataError } = useMetadata();
 
   const handleChangePage = (event: any, newPage: number) => {
@@ -133,14 +133,23 @@ const TableProjects = () => {
     }
   };
 
-  const handleUpdateStatus = async (projectId: number, status: string) => {
+  const handleUpdateStatus = async (project: any, status: string) => {
+    if(project.count_employees == 0 && status === 'on going'){
+      openDialog({
+        title: "Update Status",
+        message: 'Vui lòng cập nhật danh sách phỏng vấn viên trước khi "on going" dự án!',
+        showConfirmButton: false
+      });
+      return;
+    }
+    
     openDialog({
       title: "Update Status",
       message: `Bạn có chắc chắn muốn thay đổi trạng thái dự án sang "${status}" không?`,
       showConfirmButton: true,
       onConfirm: async () => {
         try{
-          await updateProjectStatus(projectId, status);
+          await updateProjectStatus(project.id, status);
           console.log("Cập nhật status thành công.");
         } catch(error){
           console.log("Update status failed:", error);
@@ -269,7 +278,6 @@ const TableProjects = () => {
   
                 <TableBody>
                   {filteredProjects
-                    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                     .map((project: any) => (
                       <TableRow key={project.id} className="table-row" hover={true}>
                         {TableCellConfig.map((item, index) => (
@@ -337,7 +345,7 @@ const TableProjects = () => {
                                 <ListItem 
                                   button 
                                   key={status_index}
-                                  onClick= { () => handleUpdateStatus(selectedProject.id, status_item) }
+                                  onClick= { () => handleUpdateStatus(selectedProject, status_item) }
                                 >
                                   <ListItemText primary= {
                                     <div className="box-status-popover">
@@ -409,9 +417,9 @@ const TableProjects = () => {
                 </TableBody>
               </Table>
               <TablePagination
-                rowsPerPageOptions={[10, 20, 50]}
+                rowsPerPageOptions={[5, 10, 20, 50]}
                 component="div"
-                count={projects.length}
+                count={total}
                 rowsPerPage={rowsPerPage}
                 page={page}
                 onPageChange={handleChangePage}

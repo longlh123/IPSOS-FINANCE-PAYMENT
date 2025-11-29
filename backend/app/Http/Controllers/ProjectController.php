@@ -75,12 +75,15 @@ class ProjectController extends Controller
             
             $logged_in_user = Auth::user()->id;
             
-            //Log::info(Auth::user()->userDetails->role->name);
+            //page = số trang | per_page = số dòng mỗi trang
+            $perPage = $request->input('per_page', 5);
 
             if(in_array(Auth::user()->userDetails->role->name, ['Admin', 'Finance'])){
                 $query = Project::with([
                     'projectDetails.createdBy'
-                ])->withCount('projectRespondents as total_respondents');
+                ])
+                ->withCount('projectRespondents as count_respondents')
+                ->withCount('projectEmployees as count_employees');
             } else {
                 $query = Project::with(['projectDetails.createdBy'])
                     ->withCount('projectRespondents as total_respondents')
@@ -106,12 +109,20 @@ class ProjectController extends Controller
                 });
             });
             
-            $projects = $query->get();
-            
+            //$projects = $query->get();
+            // Laravel paginator
+            $projects = $query->paginate($perPage);
+
             return response()->json([
                 'status_code' => Response::HTTP_OK,
                 'message' => 'List of projects requested successfully',
-                'data' => ProjectResource::collection($projects) 
+                'data' => ProjectResource::collection($projects),
+                'meta' => [
+                    'current_page' => $projects->currentPage(),
+                    'per_page' => $projects->perPage(),
+                    'total' => $projects->total(),
+                    'last_page' => $projects->lastPage(),
+                ] 
             ], Response::HTTP_OK)
             ->header('Content-Type', 'application/json');
         } catch(\Exception $e){
