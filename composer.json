@@ -3,6 +3,7 @@
         "laravel/breeze": "^2.0"
     },
     "require": {
-        "laravel/sanctum": "^4.0"
+        "laravel/sanctum": "^4.0",
+        "simplesoftwareio/simple-qrcode": "^4.2"
     }
 }

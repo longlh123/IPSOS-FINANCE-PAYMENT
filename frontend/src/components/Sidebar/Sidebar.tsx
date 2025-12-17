@@ -62,7 +62,7 @@ const Sidebar: React.FC<SideBarProps> = ({ isOpen, toggleSidebar }) => {
               </NavLink>
             </li>
           )}
-
+          
           {canView("sidebar.visible_transactions") && (
             <li className="nav-link">
               <NavLink
@@ -75,6 +75,21 @@ const Sidebar: React.FC<SideBarProps> = ({ isOpen, toggleSidebar }) => {
                   <GridViewIcon style={{ fontSize: "18px" }} />
                 </i>
                 <span className="text nav-text">Transactions</span>
+              </NavLink>
+            </li>
+          )}
+          {canView("sidebar.visible_transactions") && (
+            <li className="nav-link">
+              <NavLink
+                to="/project-management/transactions"
+                onClick={() => {
+                  if (isSmallScreen) toggleSidebar();
+                }}
+              >
+                <i className="icon">
+                  <GridViewIcon style={{ fontSize: "18px" }} />
+                </i>
+                <span className="text nav-text">Transactions (New)</span>
               </NavLink>
             </li>
           )}

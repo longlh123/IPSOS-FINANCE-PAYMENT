@@ -26,6 +26,8 @@ use App\Http\Requests\StoreProjectRequest;
 use App\Http\Requests\UpdateProjectRequest;
 use App\Http\Requests\UpdateProjectStatusRequest;
 use App\Http\Requests\UpdateProjectDisabledRequest;
+use App\Http\Requests\ImportEmployeesRequest;
+use Carbon\Carbon;
 
 class ProjectController extends Controller
 {
@@ -76,7 +78,11 @@ class ProjectController extends Controller
             $logged_in_user = Auth::user()->id;
             
             //page = số trang | per_page = số dòng mỗi trang
-            $perPage = $request->input('per_page', 5);
+            $perPage = $request->input('perPage', 10);
+
+            $search = $request->input('searchTerm');
+            $searchFromDate = Carbon::parse($request->input('searchFromDate'));
+            $searchToDate = Carbon::parse($request->input('searchToDate'));
 
             if(in_array(Auth::user()->userDetails->role->name, ['Admin', 'Finance'])){
                 $query = Project::with([
@@ -87,6 +93,7 @@ class ProjectController extends Controller
             } else {
                 $query = Project::with(['projectDetails.createdBy'])
                     ->withCount('projectRespondents as total_respondents')
+                    ->withCount('projectEmployees as count_employees')
                     ->whereHas('projectPermissions', function($q) use ($logged_in_user) {
                         $q->where('user_id', $logged_in_user);
                     });
@@ -108,6 +115,44 @@ class ProjectController extends Controller
                     $query->where('platform', $status);
                 });
             });
+
+            Log::info('search: ' . $search);
+
+            if($search){
+                Log::info('search: ' . $search);
+
+                $query->where(function($q) use ($search){
+                    $q->where('project_name', 'LIKE', "%$search%")
+                        ->orWhere('internal_code', 'LIKE', "%$search%")
+                        ->orWhereHas('projectDetails', function(Builder $qd) use ($search){
+                            $qd->where('symphony', 'LIKE', "%$search%");
+                        });  
+                });
+            }
+
+            $query->when($searchFromDate && $searchToDate, function($q) use ($searchFromDate, $searchToDate){
+                return $q->whereHas('projectDetails', function(Builder $sub) use ($searchFromDate, $searchToDate){
+                    $sub->whereBetween('planned_field_start', [
+                        $searchFromDate,
+                        $searchToDate
+                    ]);
+                });
+            });
+
+            // $query->when($searchMonth && $searchYear, function ($q) use ($searchMonth, $searchYear) {
+            //     return $q->whereHas('projectDetails', function (Builder $sub) use ($searchMonth, $searchYear) {
+            //         $sub->whereMonth('planned_field_start', $searchMonth)
+            //             ->whereYear('planned_field_start', $searchYear);
+            //     });
+            // });
+
+            // $query->when(!$searchMonth && $searchYear, function ($q) use ($searchYear) {
+            //     return $q->whereHas('projectDetails', function (Builder $sub) use ($searchYear) {
+            //         $sub->whereYear('planned_field_start', $searchYear);
+            //     });
+            // });
+
+            $query->orderBy('id', 'asc');
             
             //$projects = $query->get();
             // Laravel paginator
@@ -502,184 +547,101 @@ class ProjectController extends Controller
         }
     }
     
-    public function showTransactions($project_id)
-    {
-        try
-        {
-            $results = DB::table('project_respondents as pr')
-            ->select([
-                'p.internal_code',
-                'p.project_name',
-                'pr.shell_chainid',
-                'ep.employee_id',
-                'ep.first_name',
-                'ep.last_name',
-                'provinces.name AS province_name',
-                'pr.interview_start',
-                'pr.interview_end',
-                'pr.phone_number',
-                DB::raw('COALESCE(pvt.vinnet_token_requuid, pgt.transaction_ref_id) AS transaction_id'),
-                DB::raw('COALESCE(pvt.total_amt, pgt.voucher_value) AS amount'),
-                'pvt.discount',
-                'pvt.payment_amt',
-                DB::raw('COALESCE(pvt.created_at, pgt.created_at) AS created_at'),
-                DB::raw('COALESCE(pvt.updated_at, pgt.updated_at) AS updated_at'),
-                'pr.channel',
-                'pr.service_code',
-                DB::raw('COALESCE(pvt.vinnet_invoice_date, pgt.invoice_date) AS invoice_date'),
-            ])
-            ->leftJoin('project_vinnet_transactions as pvt', 'pr.id', '=', 'pvt.project_respondent_id')
-            ->leftJoin('project_gotit_voucher_transactions as pgt', 'pr.id', '=', 'pgt.project_respondent_id')
-            ->join('projects as p', 'p.id', '=', 'pr.project_id')
-            ->join('provinces', 'provinces.id', '=', 'pr.province_id')
-            ->join('employees as ep', 'ep.id', '=', 'pr.employee_id')
-            ->where('pr.status', 'LIKE', 'Đã nhận quà.')
-            ->where('p.id', $project_id)
-            ->get();
-
-            return response()->json([
-                'status_code' => Response::HTTP_OK, //200
-                'message' => 'Successful request.',
-                'data' => $results
-            ]);
-        }
-        catch(\Exception $e)
-        {
-            Log::error($e->getMessage());
-            return response()->json([
-                'status_code' => Response::HTTP_BAD_REQUEST, //400
-                'message' => $e->getMessage(),
-            ]);
-        }
-    }
-
-    public function showEmployees($project_id)
-    {
-        try
-        {
-            $sql = "
-                SELECT
-                    ep.id,
-                    ep.employee_id,
-                    ep.first_name,
-                    ep.last_name,
-                    concat(ep.last_name, ' ', ep.first_name) AS full_name,
-                    COALESCE(gotit.total_gotit, 0) AS gotit_count,
-                    COALESCE(vinnet.total_vinnet, 0) AS vinnet_count,
-                    COALESCE(gotit.total_gotit, 0) + COALESCE(vinnet.total_vinnet, 0) AS transaction_count
-                FROM project_employees AS epj
-                INNER JOIN employees AS ep
-                    ON ep.id = epj.employee_id
-                LEFT JOIN (
-                    SELECT pr.employee_id, COUNT(*) AS total_gotit
-                    FROM project_respondents AS pr
-                    INNER JOIN project_gotit_voucher_transactions AS pgt
-                        ON pr.id = pgt.project_respondent_id
-                    WHERE pr.project_id = :projectIdGotit
-                        AND pr.status IN (
-                            'Đã nhận quà.'
-                        )
-                    GROUP BY pr.employee_id
-                ) AS gotit
-                    ON ep.id = gotit.employee_id
-                LEFT JOIN (
-                    SELECT pr.employee_id, COUNT(*) AS total_vinnet
-                    FROM project_respondents AS pr
-                    INNER JOIN project_vinnet_transactions AS pvt
-                        ON pr.id = pvt.project_respondent_id
-                    WHERE pr.project_id = :projectIdVinnet
-                        AND pr.status IN (
-                            'Đã nhận quà.'
-                        )
-                    GROUP BY pr.employee_id
-                ) AS vinnet
-                    ON ep.id = vinnet.employee_id
-                WHERE epj.project_id = :projectIdMain
-                ORDER BY ep.employee_id;
-            ";
-
-            $employees = DB::select($sql, [
-                'projectIdGotit' => $project_id,
-                'projectIdVinnet' => $project_id,
-                'projectIdMain' => $project_id    
-            ]);
-
-            return response()->json([
-                'status_code' => Response::HTTP_OK, //200
-                'data' => $employees
-            ]);
-        }
-        catch(\Exception $e)
-        {
-            Log::error($e->getMessage());
-            return response()->json([
-                'status_code' => Response::HTTP_BAD_REQUEST, //400
-                'message' => $e->getMessage(),
-            ]);
-        }
-    }
-    
-    public function bulkAddEmployees(Request $request, $projectId){
+    public function bulkAddEmployees(ImportEmployeesRequest $request, $projectId){
         try{
             $logged_in_user = Auth::user()->id;
 
-            try{
-                if(in_array(Auth::user()->userDetails->role->name, ['Admin', 'Scripter'])){
+            if(!in_array(Auth::user()->userDetails->role->name, ['Admin', 'Scripter'])){
                 
-                    $project = Project::findOrFail($projectId);
-                }
+                return response()->json([
+                    'status_code' => 403,
+                    'message' => 'You do not have permission.'
+                ]);
+            }
+            
+            try{
+                $project = Project::findOrFail($projectId);
             } catch(\Exception $e){
                 Log::error('The project not found: ' . $e->getMessage());
 
                 return response()->json([
-                    'status_code' => Response::HTTP_NOT_FOUND, //404
+                    'status_code' => 404,
                     'message' => Project::STATUS_PROJECT_NOT_FOUND
                 ]);
             }
 
-            if($project){
-                $employee_ids = explode(',', $request->employee_ids);
+            $employeeIdsRaw = explode(',', $request->employee_ids);
 
-                $employeeIds = Employee::whereIn('employee_id', $employee_ids)->pluck('id');
+            $validIds = [];
+            $invalidEmployeeIds = [];
+            $existedEmployeeIds = [];
+            $messages = [];
 
-                $employees = $project->projectEmployees()
-                                        ->whereIn('employee_id', $employeeIds)
-                                        ->get();
+            foreach ($employeeIdsRaw as $item){
+                $clear = trim($item);
 
-                Log::info('Request Data A: ' . json_encode( $employees));
+                if($clear === '') continue;
 
-                $employees = Employee::whereIn('employee_id', $employee_ids)->get();
-
-                Log::info('Request Data: ' . json_encode( $employees));
-                
-                if($employees->isEmpty()){
-                    return response()->json([
-                        'status_code' => 400,
-                        'message' => 'No employees matched'
-                    ]);
+                if(!preg_match('/^(([a-zA-Z]{2}))((\d{2,7}))$/', $clear)){
+                    $invalidEmployeeIds[] = $clear;
+                    continue;
                 }
 
+                $id = Employee::where('employee_id', $clear)->value('id');
+
+                if(!$id){
+                    $invalidEmployeeIds[] = $clear;
+                    continue;
+                }
+
+                $existsInProject = $project->projectEmployees()
+                                    ->where('employee_id', $id)
+                                    ->exists();
+
+                if($existsInProject){
+                    $existedEmployeeIds[] = $clear;
+                    continue;
+                }
+
+                $validIds[] = $id;
+            }
+
+            $countSuccess = 0;
+
+            if(!empty($validIds)){
                 DB::beginTransaction();
                 
-                $countSuccess = 0;
-
-                foreach($employees as $employee){
+                foreach($validIds as $validId){
                     ProjectEmployee::create([
                         'project_id' => $projectId,
-                        'employee_id' => $employee->id
+                        'employee_id' => $validId
                     ]);
 
                     $countSuccess++;
                 }
 
                 DB::commit();
-
-                return response()->json([
-                    'status_code' => 200,
-                    'success_count' => $countSuccess,
-                    'message' => 'The employees stored successfully.'
-                ]);
             }
+
+            if ($countSuccess > 0) {
+                $messages[] = "$countSuccess employees added successfully.";
+            }
+
+            if (!empty($invalidEmployeeIds)) {
+                $messages[] = "Invalid IDs: " . implode(', ', $invalidEmployeeIds);
+            }
+
+            if (!empty($existedEmployeeIds)) {
+                $messages[] = "Already existed: " . implode(', ', $existedEmployeeIds);
+            }
+
+            return response()->json([
+                'status_code' => 200,
+                'message' => implode("<br/>", $messages),
+                'validIds' => $countSuccess,
+                'invalidEmployeeIds' => $invalidEmployeeIds,
+                'existedEmployeeIds' => $existedEmployeeIds
+            ]);
 
         } catch(\Exception $e)
         {

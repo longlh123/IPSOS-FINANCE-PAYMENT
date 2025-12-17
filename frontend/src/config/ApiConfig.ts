@@ -11,8 +11,8 @@ export const ApiConfig = {
     getProjectTypes: `${host}/api/project-management/project-types`,
     getDepartments: `${host}/api/project-management/departments`,
     getTeams: `${host}/api/project-management/{department_id}/teams`,
-    viewTransactions: `${host}/api/project-management/{projectId}/transactions/view`,
-    viewEmployees: `${host}/api/project-management/{projectId}/employees/view`,
+    viewTransactions: `${host}/api/project-management/projects/{projectId}/transactions/show`,
+    viewEmployees: `${host}/api/project-management/{projectId}/employees`,
     addEmployees: `${host}/api/project-management/projects/{projectId}/employees/store`,
   },
   respondent: {

@@ -1,17 +1,102 @@
-.tabel-wrapper {
-    background-color: var(--background-color);
-    padding: 10px;
-    border-radius: 13px;
-}
 .table-container {
-    overflow-x: auto !important;
-    box-shadow: none !important;
-    background-color: var(--background-color) !important;
+  overflow-x: auto !important;
+  box-shadow: none !important;
+  background-color: var(--background-color) !important;
+}
+.box-table {
+  background-color: var(--background-color);
+  padding: 10px;
+  border-radius: 13px;
 }
 .table-cell {
-    white-space: nowrap !important;
-    height: 50px !important;
-    /* padding: 0 !important; */
-    font-size: 14px !important;
-    color: var(--text-color) !important;
+  white-space: nowrap !important;
+  height: 50px !important;
+  /* padding: 0 !important; */
+  font-size: 14px !important;
+  color: var(--text-color) !important;
+}
+
+.filter {
+  display: flex;
+  justify-content: space-between; /* Add left | Right */
+  align-items: center;
+  padding: 0.75rem 0; /* ~12px top-bottom */
+}
+
+.filter-left {
+  display: flex;
+  align-items: center;
+}
+
+.filter-right {
+  display: flex;
+  gap: 0.75rem; /* 12px */
+  align-items: center;
+}
+
+.filter-item {
+  display: flex;
+  align-items: center;
+}
+
+.input-search-table .MuiInputBase-root {
+  height: 30px !important;
+}
+.input-search-table span {
+  color: var(--text-color);
+}
+.search-table-input {
+  color: var(--text-color) !important;
+}
+
+.search-table-input
+  .MuiOutlinedInput-root.Mui-focused
+  .MuiOutlinedInput-notchedOutline {
+  border-color: var(--body-color) !important;
+}
+
+.search-table-input .MuiFormLabel-root.Mui-focused {
+  color: var(--body-color) !important;
+  color: var(--text-color) !important;
+}
+/* .MuiTableRow-root.table-row .table-cell {
+  font-size: 14px;
+  padding: 0 auto !important;
+} */
+
+.MuiTableCell-head {
+  /* background-color: var(--main-color); */
+  /* color: #fff !important; */
+  height: 20px !important;
+  padding: 10px 5px 10px 10px !important;
+  font-weight: 450 !important;
+  font-size: 15px !important;
+  color: var(--text-color) !important;
+}
+.MuiTableRow-root {
+  height: 10px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+.MuiTableCell-body {
+  height: 10px !important;
+  padding: 10px 5px 10px 10px !important;
+}
+.MuiTableBody-root .MuiTableRow-root:nth-child(even) {
+  background-color: var(--body-color);
+}
+
+.icon-status {
+  position: relative;
+}
+
+.MuiPopover-paper {
+  box-shadow: none !important;
+}
+
+.box-status-popover {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
 }

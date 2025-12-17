@@ -30,6 +30,7 @@
 
 .btn{
     padding: 0.5rem 1.375rem !important;
+    background-color: var(--main-color) !important;
     color: #fff !important;
     border: 0 !important;
     font-size: 0.9375rem !important;
@@ -39,6 +40,18 @@
         0 0.1875rem 0.0625rem -0.125rem rgba(0, 0, 0, 0.2),
         0 0.125rem 0.125rem 0 rgba(0, 0, 0, 0.14),
         0 0.0625rem 0.3125rem 0 rgba(0, 0, 0, 0.12);
+}
+
+
+.btn:hover {
+  background-color: var(--main-color);
+  color: #fff;
+  filter: brightness(110%);
+  transition: var(--transition-02);
+}
+
+.btn:disabled{
+    opacity: 0.5;
 }
 
 .bg-primary { background-color: var(--main-color) !important; }
@@ -271,22 +284,6 @@ h4 span {
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.2s;
-}
-
-/* =========================
-   Table
-========================= */
-.table-container {
-    overflow-x: auto !important;
-    box-shadow: none !important;
-    background-color: var(--background-color) !important;
-}
-
-.table-cell {
-    white-space: nowrap !important;
-    height: 3.125rem !important; 
-    font-size: 0.875rem !important;
-    color: var(--text-color) !important;
 }
 
 /* =========================

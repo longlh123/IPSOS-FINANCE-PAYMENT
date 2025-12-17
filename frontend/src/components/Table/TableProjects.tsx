@@ -1,6 +1,5 @@
 import { useState } from "react";
 import TablePagination from "@mui/material/TablePagination";
-import "./Table.css";
 import {
   IconButton,
   TableCell,
@@ -22,8 +21,6 @@ import {
 } from "@mui/material";
 import ModalAddProject from "../Modals/Project/ModalAddProject";
 import SdCardAlertOutlinedIcon from '@mui/icons-material/SdCardAlertOutlined';
-import { TableCellConfig } from "../../config/TableProjectConfig";
-import ModalReport from "../Modals/Report/ModalReport";
 import { useNavigate } from "react-router-dom";
 import { formatDate } from "../../utils/DateUtils";
 import logo from "../../assets/img/Ipsos logo.svg";
@@ -38,8 +35,10 @@ import { useVisibility } from "../../hook/useVisibility";
 import axios from "axios";
 import useDialog from "../../hook/useDialog";
 import AlertDialog from "../AlertDialog/AlertDialog";
-import { title } from "process";
 import SearchTextBox from "../SearchTextBox";
+import dayjs, { Dayjs } from 'dayjs';
+import SearchDatePickerFromTo from "../SearchDatePickerFromTo";
+import { TableCellConfig } from "../../config/ProjectFieldsConfig";
 
 const TableProjects = () => {
   const navigate = useNavigate();
@@ -50,11 +49,7 @@ const TableProjects = () => {
   const { canView } = useVisibility();
   const { open, title, message, showConfirmButton, openDialog, closeDialog, confirmDialog } = useDialog();
 
-  //Chọn số trang (pagination)
-  // const [page, setPage] = useState(0);
-  // const [rowsPerPage, setRowsPerPage] = useState(10);
-
-    // Define color mapping for each status
+  // Define color mapping for each status
   const statusColors: { [key: string]: string } = {
     'planned': '#FFA500', // Orange
     'in coming': '#FFD700', // Gold
@@ -82,7 +77,7 @@ const TableProjects = () => {
   const idStatusOfProject = opendStatusOfProject ? "simple-popover" : undefined;
 
 
-  const { projects, page, rowsPerPage, total, setPage, setRowsPerPage, updateProjectStatus, loading: projectsLoading, error: projectError } = useProjects();
+  const { projects, page, rowsPerPage, total, setPage, setRowsPerPage, searchTerm, setSearchTerm, searchFromDate, setSearchFromDate, searchToDate, setSearchToDate, updateProjectStatus, loading: projectsLoading, error: projectError } = useProjects();
   const { metadata, loading: metadataLoading, error: metadataError } = useMetadata();
 
   const handleChangePage = (event: any, newPage: number) => {
@@ -93,6 +88,10 @@ const TableProjects = () => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value.toLocaleLowerCase());
+  }
 
   const handleMenuStatusClose = () => {
     setAnchorElStatus(null);
@@ -208,30 +207,42 @@ const TableProjects = () => {
     }
   }
 
-  const [ searchTerm, setSearchTerm ] = useState("");
+  const handleDateChange = (from: Dayjs | null, to: Dayjs | null) => {
+    if (!from || !to) return;
 
-  const handleSearchChange = (value: string) => {
-    setSearchTerm(value.toLocaleLowerCase());
-  }
-
-  const filteredProjects = projects.filter((project: any) => {
-    const nameMatch = project.project_name?.toLowerCase().includes(searchTerm);
-    const codeMatch = project.internal_code?.toLowerCase().includes(searchTerm);
-    return nameMatch || codeMatch;
-  })
+    if (from && to) {
+        setSearchFromDate(from);
+        setSearchToDate(to);
+    }
+  };
 
   return (
     <>
       <Box className="box-table">
         <div className="filter">
-          <h2 className="filter-title">Projects</h2>
-          <div className="filter-actions">
+          <div className="filter-left">
+            <h2 className="filter-title">Projects</h2>
+          </div>
+          <div className="filter-right">
             {canView("projects.functions.visible_add_new_project") && (
-              <Button className="btnAdd" onClick={() => setOpenModalAdd(true)}>
+              <Button className="btn btn-primary" onClick={() => setOpenModalAdd(true)}>
                 Add New Project
               </Button>
             )}
-            <SearchTextBox placeholder="Search project name, internal code,..." onSearchChange={handleSearchChange} />
+          </div>
+        </div>
+        <div className="filter">
+          {/* LEFT: Add button */}
+          <div className="filter-left">
+            <SearchDatePickerFromTo fromValue={searchFromDate} toValue={searchToDate} onSearchChange={handleDateChange}/>
+          </div>
+
+          {/* RIGHT: Search + Date filter */}
+          <div className="filter-right">
+            <SearchTextBox
+              placeholder="Search project name, internal code,..."
+              onSearchChange={handleSearchChange}
+            />
           </div>
         </div>
         
@@ -277,7 +288,7 @@ const TableProjects = () => {
                 </TableHead>
   
                 <TableBody>
-                  {filteredProjects
+                  {projects
                     .map((project: any) => (
                       <TableRow key={project.id} className="table-row" hover={true}>
                         {TableCellConfig.map((item, index) => (
@@ -417,7 +428,7 @@ const TableProjects = () => {
                 </TableBody>
               </Table>
               <TablePagination
-                rowsPerPageOptions={[5, 10, 20, 50]}
+                rowsPerPageOptions={[10, 20, 50]}
                 component="div"
                 count={total}
                 rowsPerPage={rowsPerPage}
@@ -448,13 +459,6 @@ const TableProjects = () => {
         openModal={openModalAdd} 
         onClose={handleCloseModal} 
         metadata={metadata}
-      />
-      
-      {/* show Modal report */}
-      <ModalReport
-        openModal={openModalReport}
-        onClose={handleCloseModal}
-        reportValue={selectedProject}
       />
     </>
   );
