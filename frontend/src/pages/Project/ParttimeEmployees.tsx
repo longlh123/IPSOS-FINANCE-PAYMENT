@@ -1,22 +1,27 @@
-import { Alert, Box, Button, Paper, Snackbar } from "@mui/material";
-import { DataGrid, GridColDef } from '@mui/x-data-grid';
+import { Alert, Box, Button, IconButton, Paper, Snackbar } from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
 import { useParams } from "react-router-dom";
-import { useProjects } from "../../hook/useProjects";
 import { useEffect, useState } from "react";
-import { EmployeeData, TableParttimeEmployeesConfig } from "../../config/EmployeeFieldsConfig";
+import { EmployeeCellConfig, EmployeeData } from "../../config/EmployeeFieldsConfig";
 import useDialog from "../../hook/useDialog";
 import UniversalInputDialog from "../../components/Dialogs/UniversalInputDialog";
 import AlertDialog from "../../components/AlertDialog/AlertDialog";
 import { useVisibility } from "../../hook/useVisibility";
 import SearchTextBox from "../../components/SearchTextBox";
 import axios from "axios";
+import { useEmployees } from "../../hook/useEmployees";
+import ReusableTable from "../../components/Table/ReusableTable";
+import { ColumnFormat } from "../../config/ColumnConfig";
 
 const ParttimeEmployees = () => {
     const { id } = useParams<{id: string}>();
+    const projectId = Number(id) || 0;
+
+    const { employees, meta, total, page, setPage, rowsPerPage, setRowsPerPage, searchTerm, setSearchTerm, loading, error, message: messageEmployees, addEmployees } = useEmployees(projectId);
+
     const { canView } = useVisibility();
-    const { getEmployees, addEmployees } = useProjects();
-    const [ employees, setEmployees ] = useState<EmployeeData[]>([]);
-    const [ formFieldsConfig, setFormFieldsConfig] = useState(TableParttimeEmployeesConfig);
+    
+    const [ employeeCellConfig, setEmployeeCellConfig ] = useState(EmployeeCellConfig)
     const { open, title, message, showConfirmButton, openDialog, closeDialog, confirmDialog } = useDialog();
     const [ selectedEmployee, setSelectedEmployee ] = useState<EmployeeData | null>(null);
     
@@ -42,7 +47,7 @@ const ParttimeEmployees = () => {
         if(!selectedEmployee || !id) return
 
         try{
-            setEmployees(prev => prev.filter(emp => emp.employee_id !== selectedEmployee.employee_id));
+            // setEmployees(prev => prev.filter(emp => emp.employee_id !== selectedEmployee.employee_id));
         } catch(error){
             console.error('Failed to remove employee', error);
         }finally{
@@ -58,123 +63,114 @@ const ParttimeEmployees = () => {
     }
 
     const handleImportEmployees = async (value: string) => {
-        try{
-            const employee_ids = value.split("\n").map(x => x.trim().replace(/[^a-zA-Z0-9]/g, "")).filter(Boolean);
+        
+        if (!id) return;
 
-            if (!id) {
-                console.error("Project ID is undefined");
-                setSnackbarMessage("Project ID is undefined");
-                return;
-            }
+        setPage(0);
 
-            const es = await addEmployees(parseInt(id), employee_ids.join(','));
+        const employee_ids = value.split("\n").map(x => x.trim().replace(/[^a-zA-Z0-9]/g, "")).filter(Boolean);
+        
+        await addEmployees(parseInt(id), employee_ids.join(','));
 
-            if(es.status_code == 400){
-                setIsError(true);
-                setSnackbarOpen(true);
-                setSnackbarMessage(es.message);
-            } else {
-                setIsError(false);
-                setEmployees(es); 
-            }
-        }catch(error){
-            setIsError(true);
-            setSnackbarOpen(true);
-
-            if(axios.isAxiosError(error) && error.response?.status === 403){
-                setSnackbarMessage(error.message);
-            } else {
-                setSnackbarMessage("Có lỗi xảy ra khi cập nhật danh sách phỏng vấn viên. Vui lòng thử lại.");
-            }
-        }finally{
-            setOpenImportEmployeesDialog(false);
-        }
+        setSnackbarOpen(error);
+        setSnackbarMessage(messageEmployees);
+        closeDialog();
     }
 
-    const handleSearchChange = () => {
-
+    const handleSearchChange = (value: string) => {
+        setSearchTerm(value.toLocaleLowerCase());
     }
 
-    const columns = [
-        ...formFieldsConfig,
+    const columns: ColumnFormat[] = [
+        ...employeeCellConfig,
         {
-            field: 'actions',
-            headerName: 'Actions',
-            width: 150,
-            sortable: false,
-            filterable: false,
-            renderCell: (params: any) => {
-                const disabled = params.row.transaction_count < 0;
+            label: "Transactions",
+            name: "transactions",
+            type: "string",
+            align: "center",
+            flex: 1,
+            renderHeader: () => (
+                <div style={{ whiteSpace: "normal", lineHeight: 1.2, textAlign: "center" }}>
+                    Transactions <br />
+                    (Vinnet / Gotit / Refuse / Total)
+                </div>
+            ),
+            renderCell: (row : any) => {
+                return `${row.vinnet_total ?? 0} / ${row.gotit_total ?? 0} / ${row.other_total ?? 0} / ${row.transaction_total ?? 0}`;
+            }
+        },
+        {
+            label: "Actions",
+            name: "actions",
+            type: "menu",
+            align: "center",
+            flex: 1,
+            renderAction: (row: any) => {
+                const disabled = false;
 
                 return (
-                    <Button
-                        variant="outlined"
+                    <IconButton
                         color="error"
                         size="small"
                         disabled={disabled}
-                        onClick={() => handleRemoveClick(params.row)}
+                        onClick={() => handleRemoveClick(row)}
                     >
-                    Remove
-                    </Button>
+                        <DeleteIcon />
+                    </IconButton>
                 )
-            }   
+            }
         }
     ];
+    
+    const handleChangePage = (event: any, newPage: number) => {
+        setPage(newPage)
+    }
 
-    useEffect(() => {
-        const fetchEmployees = async () => {
-    
-          if(id){
-            const p = await getEmployees(parseInt(id));
-            setEmployees(p);
-          }
-        }
-    
-        fetchEmployees()
-    }, [id])
-    
+    const handleChangeRowsPerPage = (event: any) => {
+        setRowsPerPage(parseInt(event.target.value, 10));
+        setPage(0);
+    };
+
     return (
         <Box className="box-table">
             <div className="filter">
-                <h2 className="filter-title">Projects</h2>
-                <div className="filter-actions">
+                <div className="filter-left">
+                <h2 className="filter-title">Employees</h2>
+                </div>
+                <div className="filter-right">
                 {canView("employees.functions.visible_import_employees") && (
-                    <Button className="btnAdd" onClick={() => setOpenImportEmployeesDialog(true)}>
+                    <Button className="btn btn-primary" onClick={() => setOpenImportEmployeesDialog(true)}>
                         Import New Employees
                     </Button>
                 )}
-                <SearchTextBox placeholder="Search id, name,..." onSearchChange={handleSearchChange} />
                 </div>
             </div>
-            <Snackbar
-                open={snackbarOpen}
-                autoHideDuration={10000}
-                onClose={() => setSnackbarOpen(false)}
-                anchorOrigin={{ vertical: "top", horizontal: "center" }}
-                sx={{ zIndex: 9999 }}
-            >
-                <Alert severity= {isError ? "error" : "success"} onClose={() => setSnackbarOpen(false)}>
-                    {snackbarMessage}
-                </Alert>
-                
-            </Snackbar>
-            <Paper sx={{ height: 500, width: '100%', p: 2 }}>
-                <DataGrid
-                    rows={employees}
-                    columns={columns}
-                    pageSizeOptions={[10, 20, 50]}
-                    initialState={{
-                        pagination: { paginationModel: { pageSize: 10, page: 0 } },
-                    }}
-                    checkboxSelection
-                    sx={{
-                        border: 0,
-                        '& .MuiDataGrid-columnHeaders': { backgroundColor: '#f5f5f5' },
-                    }}
-                />
-            </Paper>
+            <div className="filter">
+                {/* LEFT: Add button */}
+                <div className="filter-left">
+                    
+                </div>
+    
+                {/* RIGHT: Search + Date filter */}
+                <div className="filter-right">
+                    <SearchTextBox placeholder="Search id, name,..." onSearchChange={handleSearchChange} />
+                </div>
+            </div>
+           
+            <ReusableTable
+                title="Employees"
+                columns={columns}
+                data={employees}
+                loading={loading}
+                error={error}
+                message={message}
+                page = {page}
+                rowsPerPage = {rowsPerPage}
+                total = {total}
+                onPageChange={handleChangePage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+            ></ReusableTable>
 
-            {/* Show ConfirmDialog */}
             <AlertDialog
                 open={open}
                 onClose={handleCancel}

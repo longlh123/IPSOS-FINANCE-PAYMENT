@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Facades\DB;
+use App\Models\Project;
 use App\Models\Employee;
 use App\Models\Department;
 use App\Models\Role;
@@ -15,33 +16,73 @@ use App\Http\Resources\EmployeeResource;
 
 class EmployeeController extends Controller
 {
-    public function show($project_id)
+    public function index(Request $request, $projectId)
     {
         try
         {
-            $employeeCounts = DB::table('project_vinnet_tokens as pvt')
-            ->join('employees as e', 'e.id', '=', 'pvt.employee_id')
-            ->join('projects as p', 'p.id', '=', 'pvt.project_id')
-            ->select(
-                'e.id', 
-                'e.employee_id', 
-                'e.first_name', 
-                'e.last_name',
-                DB::raw('(SELECT COUNT(*) FROM project_vinnet_tokens AS pvt_2 WHERE pvt.employee_id = pvt_2.employee_id AND pvt_2.project_id = ' . $project_id . ') AS number_of_transaction'),
-                DB::raw('(SELECT COUNT(*) FROM project_vinnet_tokens AS pvt_2 WHERE pvt.employee_id = pvt_2.employee_id AND pvt_2.project_id = ' . $project_id . ' AND status LIKE "Token verified") AS number_of_transaction_succesfully'),
-                DB::raw('(SELECT COUNT(*) FROM project_vinnet_tokens AS pvt_2 WHERE pvt.employee_id = pvt_2.employee_id AND pvt_2.project_id = ' . $project_id . ' AND status LIKE "Token verified" AND pvt_2.phone_number <> pvt_2.respondent_phone_number) AS number_of_phone'),
-                DB::raw('(SELECT GROUP_CONCAT(pvt_2.reject_message ORDER BY pvt_2.reject_message SEPARATOR ", ") FROM project_vinnet_tokens AS pvt_2 WHERE pvt.employee_id = pvt_2.employee_id AND pvt_2.project_id = ' . $project_id . ' AND pvt_2.vinnet_token_status LIKE "Từ chối nhập số điện thoại để nhận quà.") AS reject_message')
-            )
-            ->where('pvt.project_id', '=', $project_id)
-            ->groupBy('e.id', 'e.employee_id', 'e.first_name', 'e.last_name')
-            ->get();
+            $perPage = $request->input('perPage', 10);
+            $search = $request->input('searchTerm');
 
+            try{
+                $project = Project::findOrFail($projectId);
+            } catch (\Exception $e){
+                Log::error('The project not found: ' . $e->getMessage());
+                return response()->json([
+                    'status_code' => 404,
+                    'message' => 'The project not found' 
+                ]);
+            }
+
+            $query = Employee::query()
+                                ->select(
+                                    'employees.id',
+                                    'employees.employee_id',
+                                    'employees.first_name',
+                                    'employees.last_name',
+                                    DB::raw("COUNT(project_respondents.id) as transaction_total"),
+                                    DB::raw("SUM(CASE WHEN project_respondents.channel = 'vinnet' THEN 1 ELSE 0 END) as vinnet_total"),
+                                    DB::raw("SUM(CASE WHEN project_respondents.channel = 'gotit' THEN 1 ELSE 0 END) as gotit_total"),
+                                    DB::raw("SUM(CASE WHEN project_respondents.channel = 'other' THEN 1 ELSE 0 END) as other_total")
+                                )
+                                ->join('project_employees', 'project_employees.employee_id', '=', 'employees.id')
+                                ->leftJoin('project_respondents', function($join) use ($projectId){
+                                    $join->on('project_respondents.employee_id', '=', 'employees.id')
+                                            ->where('project_respondents.project_id', '=', $projectId);
+                                })
+                                ->where('project_employees.project_id', $projectId)
+                                ->groupBy(
+                                    'employees.id',
+                                    'employees.employee_id',
+                                    'employees.first_name',
+                                    'employees.last_name'
+                                );
+            
+            if($search){
+                $query->where(function($q) use ($search){
+                    $q->where('employees.first_name', 'LIKE', "%{$search}%")
+                        ->orWhere('employees.last_name', 'LIKE', "%{$search}%")
+                        ->orWhere('employees.employee_id', 'LIKE', "%{$search}%");
+                });
+            }
+            
+            $employees = $query->paginate($perPage);
+
+            Log::info('Employee Query Debug: ', [
+                'sql' => $query->toSql(),
+                'bindings' => $query->getBindings()
+            ]);
 
             return response()->json([
                 'status_code' => Response::HTTP_OK,
                 'message' => 'List of employees requested successfully',
-                'data' => $employeeCounts
-            ], Response::HTTP_OK);
+                'data' => EmployeeResource::collection($employees),
+                'meta' => [
+                    'current_page' => $employees->currentPage(),
+                    'per_page' => $employees->perPage(),
+                    'total' => $employees->total(),
+                    'last_page' => $employees->lastPage(),
+                ] 
+            ]);
         }
         catch(\Exception $e)
         {

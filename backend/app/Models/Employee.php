@@ -43,6 +43,6 @@ class Employee extends Model
 
     public function projectEmployees()
     {
-        return $this->hasMany(ProjectEmployee::class, 'employee_id');
+        return $this->hasMany(ProjectEmployee::class, 'employee_id', 'id');
     }
 }

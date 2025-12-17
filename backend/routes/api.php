@@ -17,6 +17,8 @@ use App\Http\Controllers\RespondentController;
 use App\Http\Controllers\TechcombankPanelController;
 use App\Http\Controllers\TechcombankSurveysController;
 use App\Http\Controllers\GotItController;
+use App\Http\Controllers\QrCodeController;
+use App\Http\Controllers\TransactionController;
 use App\Http\Middleware\EnsureUserHasRole;
 
 Route::post('/login', [LoginController::class, 'login'])
@@ -52,13 +54,12 @@ Route::middleware(['auth:sanctum'])->group(function(){
 
     Route::delete('/project-management/projects/{projectId}/provinces/{provinceId}/remove', [ProjectController::class, 'removeProvinceFromProject'])->middleware('ensureUserHasRole:admin');
 
-    Route::get('/project-management/{projectId}/employees/view', [ProjectController::class, 'showEmployees'])->middleware('ensureUserHasRole:admin,Finance'); 
-    Route::get('/project-management/{projectId}/transactions/view', [ProjectController::class, 'showTransactions'])->middleware('ensureUserHasRole:admin,Finance');
+    Route::get('project-management/projects/{projectId}/transactions/show', [TransactionController::class, 'show'])->middleware('ensureUserHasRole:Admin,Scripter');
 
     Route::get('/project-management/projects/{projectId}/respondents/show', [RespondentController::class, 'show'])->middleware('ensureUserHasRole:admin');
 
-    Route::get('/project-management/projects/{projectId}/employees/show', [EmployeeController::class, 'show'])->middleware('ensureUserHasRole:admin,Field Manager,Finance');
-    Route::post('/project-management/projects/{projectId}/employees/store', [ProjectController::class, 'bulkAddEmployees'])->middleware('ensureUserHasRole:admin');
+    Route::get('/project-management/projects/{projectId}/employees/show', [EmployeeController::class, 'index'])->middleware('ensureUserHasRole:admin,Field Manager,Finance');
+    Route::post('/project-management/projects/{projectId}/employees/store', [ProjectController::class, 'bulkAddEmployees'])->middleware('ensureUserHasRole:Admin');
 
     Route::get('/project-management/vinnet/merchant/view', [VinnetController::class, 'get_merchant_info'])->middleware('ensureUserHasRole:admin,Finance');
     Route::post('/project-management/vinnet/change-key', [VinnetController::class, 'change_key'])->middleware('ensureUserHasRole:admin,Finance');
@@ -101,5 +102,5 @@ Route::post('/cmc-telecom/sendsms', [VinnetController::class, 'cmc_telecom_send_
 
 
 
-
+Route::get('/generate-qr', [QrCodeController::class, 'generate']);
 
