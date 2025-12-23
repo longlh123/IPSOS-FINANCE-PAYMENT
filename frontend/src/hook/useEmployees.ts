@@ -68,11 +68,31 @@ export function useEmployees(projectId: number) {
         
         await fetchEmployees(page, rowsPerPage, searchTerm);
         
-        setError(response.data.invalidEmployeeIds || response.data.existedEmployeeIds);
+        setError(response.data.invalidEmployeeIds.length > 0 || response.data.existedEmployeeIds.length > 0);
         setMessage(response.data.message);
 
     }, [fetchEmployees, page, rowsPerPage, searchTerm]);
     
+    const removeEmployee = useCallback(async (project_id: number, employee_id: number) => {
+        const token = localStorage.getItem("authToken");
+
+        const url = `${ApiConfig.project.removeEmployee.replace("{projectId}", project_id.toString()).replace("{employeeId}", employee_id.toString())}`;
+
+        const response = await axios.delete(url, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+        });
+
+        await fetchEmployees(page, rowsPerPage, searchTerm);
+
+        setError(!response.data.success);
+        setMessage(response.data.message);
+
+    }, [fetchEmployees, page, rowsPerPage, searchTerm]);
+
     useEffect(() => {
         fetchEmployees(page, rowsPerPage, searchTerm)
     }, [projectId, page, rowsPerPage, searchTerm]);
@@ -91,6 +111,7 @@ export function useEmployees(projectId: number) {
         error,
         message,
         fetchEmployees,
-        addEmployees
+        addEmployees,
+        removeEmployee
     }
 }

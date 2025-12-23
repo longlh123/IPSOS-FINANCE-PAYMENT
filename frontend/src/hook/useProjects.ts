@@ -106,10 +106,9 @@ export function useProjects() {
           },
         });
 
-        await fetchProjects();
         return response.data.data;
 
-    }, [fetchProjects]);
+    }, []);
 
     const getTransactions = useCallback(async (id: number) => {
 

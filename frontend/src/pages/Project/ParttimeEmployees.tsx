@@ -12,12 +12,21 @@ import axios from "axios";
 import { useEmployees } from "../../hook/useEmployees";
 import ReusableTable from "../../components/Table/ReusableTable";
 import { ColumnFormat } from "../../config/ColumnConfig";
+import { useProjects } from "../../hook/useProjects";
 
 const ParttimeEmployees = () => {
     const { id } = useParams<{id: string}>();
     const projectId = Number(id) || 0;
+    //const [project, setProject] = useState<any>(null);
 
-    const { employees, meta, total, page, setPage, rowsPerPage, setRowsPerPage, searchTerm, setSearchTerm, loading, error, message: messageEmployees, addEmployees } = useEmployees(projectId);
+    const { employees, meta, total, page, setPage, rowsPerPage, setRowsPerPage, searchTerm, setSearchTerm, loading, error: errorEmployees, message: messageEmployees, addEmployees, removeEmployee } = useEmployees(projectId);
+    //const { getProject } = useProjects();
+
+    // useEffect(() => {
+    //     //if(!projectId) return;
+
+    //     //getProject(projectId).then(setProject);
+    // }, [projectId, getProject]);
 
     const { canView } = useVisibility();
     
@@ -25,10 +34,6 @@ const ParttimeEmployees = () => {
     const { open, title, message, showConfirmButton, openDialog, closeDialog, confirmDialog } = useDialog();
     const [ selectedEmployee, setSelectedEmployee ] = useState<EmployeeData | null>(null);
     
-    const [ snackbarOpen, setSnackbarOpen ] = useState<boolean>(false);
-    const [ snackbarMessage, setSnackbarMessage ] = useState<string>("");
-    const [ isError, setIsError ] = useState<boolean>(false);
-
     const handleRemoveClick = (employee: EmployeeData) => {
         setSelectedEmployee(employee);
         openDialog({
@@ -43,11 +48,11 @@ const ParttimeEmployees = () => {
         setSelectedEmployee(null);
     }
 
-    const handleConfirm = () => {
+    const handleConfirm = async () => {
         if(!selectedEmployee || !id) return
 
         try{
-            // setEmployees(prev => prev.filter(emp => emp.employee_id !== selectedEmployee.employee_id));
+            await removeEmployee(parseInt(id), selectedEmployee.id);
         } catch(error){
             console.error('Failed to remove employee', error);
         }finally{
@@ -64,17 +69,18 @@ const ParttimeEmployees = () => {
 
     const handleImportEmployees = async (value: string) => {
         
-        if (!id) return;
-
+        if (!id || !value){
+            setOpenImportEmployeesDialog(false);
+            return;
+        } 
+        
         setPage(0);
 
         const employee_ids = value.split("\n").map(x => x.trim().replace(/[^a-zA-Z0-9]/g, "")).filter(Boolean);
         
         await addEmployees(parseInt(id), employee_ids.join(','));
 
-        setSnackbarOpen(error);
-        setSnackbarMessage(messageEmployees);
-        closeDialog();
+        setOpenImportEmployeesDialog(false);
     }
 
     const handleSearchChange = (value: string) => {
@@ -106,7 +112,7 @@ const ParttimeEmployees = () => {
             align: "center",
             flex: 1,
             renderAction: (row: any) => {
-                const disabled = false;
+                const disabled = loading || row.transaction_total > 0;
 
                 return (
                     <IconButton
@@ -162,8 +168,8 @@ const ParttimeEmployees = () => {
                 columns={columns}
                 data={employees}
                 loading={loading}
-                error={error}
-                message={message}
+                error={errorEmployees}
+                message={messageEmployees}
                 page = {page}
                 rowsPerPage = {rowsPerPage}
                 total = {total}

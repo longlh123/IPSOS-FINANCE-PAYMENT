@@ -60,6 +60,7 @@ Route::middleware(['auth:sanctum'])->group(function(){
 
     Route::get('/project-management/projects/{projectId}/employees/show', [EmployeeController::class, 'index'])->middleware('ensureUserHasRole:admin,Field Manager,Finance');
     Route::post('/project-management/projects/{projectId}/employees/store', [ProjectController::class, 'bulkAddEmployees'])->middleware('ensureUserHasRole:Admin');
+    Route::delete('/project-management/projects/{projectId}/employees/{employeeId}/destroy', [ProjectController::class, 'bulkRemoveEmployee'])->middleware('ensureUserHasRole:Admin');
 
     Route::get('/project-management/vinnet/merchant/view', [VinnetController::class, 'get_merchant_info'])->middleware('ensureUserHasRole:admin,Finance');
     Route::post('/project-management/vinnet/change-key', [VinnetController::class, 'change_key'])->middleware('ensureUserHasRole:admin,Finance');
@@ -103,4 +104,5 @@ Route::post('/cmc-telecom/sendsms', [VinnetController::class, 'cmc_telecom_send_
 
 
 Route::get('/generate-qr', [QrCodeController::class, 'generate']);
+Route::get('/test_sms', [VinnetController::class, 'test_sms']);
 

@@ -139,19 +139,6 @@ class ProjectController extends Controller
                 });
             });
 
-            // $query->when($searchMonth && $searchYear, function ($q) use ($searchMonth, $searchYear) {
-            //     return $q->whereHas('projectDetails', function (Builder $sub) use ($searchMonth, $searchYear) {
-            //         $sub->whereMonth('planned_field_start', $searchMonth)
-            //             ->whereYear('planned_field_start', $searchYear);
-            //     });
-            // });
-
-            // $query->when(!$searchMonth && $searchYear, function ($q) use ($searchYear) {
-            //     return $q->whereHas('projectDetails', function (Builder $sub) use ($searchYear) {
-            //         $sub->whereYear('planned_field_start', $searchYear);
-            //     });
-            // });
-
             $query->orderBy('id', 'asc');
             
             //$projects = $query->get();
@@ -650,6 +637,59 @@ class ProjectController extends Controller
 
             return response()->json([
                 'message' => 'Unexpected error occurred while adding employees into project.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function bulkRemoveEmployee(Request $request, $projectId, $employeeId){
+        try{
+            $logged_in_user = Auth::user()->id;
+
+            if(!in_array(Auth::user()->userDetails->role->name, ['Admin', 'Scripter'])){
+                
+                return response()->json([
+                    'status_code' => 403,
+                    'message' => 'You do not have permission.'
+                ]);
+            }
+            
+            try{
+                $project = Project::findOrFail($projectId);
+            } catch(\Exception $e){
+                Log::error('The project not found: ' . $e->getMessage());
+
+                return response()->json([
+                    'status_code' => 404,
+                    'message' => Project::STATUS_PROJECT_NOT_FOUND
+                ]);
+            }
+
+            $deleted = DB::table('project_employees')
+                        ->where('project_id', $projectId)
+                        ->where('employee_id', $employeeId)
+                        ->delete();
+                        
+            if ($deleted === 0) {
+                return response()->json([
+                    'status_code' => 200,
+                    'success' => false,
+                    'message' => 'Employee not found in this project'
+                ], 404);
+            }
+
+            return response()->json([
+                'status_code' => 200,
+                'success' => true,
+                'message' => 'Employee removed successfully'
+            ]);
+
+        } catch(\Exception $e){
+            DB::rollBack();
+            Log::error('Unexpected error: ' . $e->getMessage());
+
+            return response()->json([
+                'message' => 'Unexpected error occurred while removing employee into project.',
                 'error' => $e->getMessage()
             ], 500);
         }
