@@ -150,6 +150,12 @@ class GotItController extends Controller
                     throw new \Exception(ProjectRespondent::ERROR_INVALID_INTERVIEWERURL);
                 }
 
+                if((intval($interviewURL->province_id) === 3 && in_array($validatedRequest['service_code'], ['S0003','S0012','S0029','S0013','S0031','S0015'])) ||
+                    (intval($interviewURL->province_id) !== 3 && in_array($validatedRequest['service_code'], ['S0029','S0013','S0031','S0015']))){
+                    Log::error(ProjectRespondent::ERROR_MOBILE_NETWORK_NOT_SUPPORTED);
+                    throw new \Exception(ProjectRespondent::ERROR_MOBILE_NETWORK_NOT_SUPPORTED . ' Vui lòng dùng số điện thoại khác nếu có hoặc PVV có thể gửi quà trực tiếp cho bạn.');
+                }
+
             } catch (\Exception $e){
                 return response()->json([
                     'message' => $e->getMessage(),

@@ -1,7 +1,7 @@
-import React, { ReactNode } from "react";
+import React, { ReactNode, useEffect, useState } from "react";
 import { ColumnFormat } from "../../config/ColumnConfig";
-import { Alert, Box, CircularProgress, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow } from "@mui/material";
-import SdCardAlertOutlinedIcon from '@mui/icons-material/SdCardAlertOutlined';
+import CloseIcon from "@mui/icons-material/Close";
+import { Alert, Box, CircularProgress, IconButton, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow } from "@mui/material";
 
 interface ReusableTableProps {
     title: string;
@@ -34,10 +34,29 @@ const ReusableTable: React.FC<ReusableTableProps> = ({
     filters,
     actions
 }) => {
+    const [ openAlert, setOpenAlert] = useState(false);
+
+    useEffect(() => {
+        if(error || message) setOpenAlert(true);
+    }, [error, message])
+
     return (
         <Box className="box-table">
-            {error && (
-                <Alert severity= {error ? "error" : "success"} sx={{ width: "100%", alignItems: "center", mb: 2 }}>
+            {openAlert  && (
+                <Alert 
+                    severity= {error ? "error" : "success"} 
+                    sx={{ width: "100%", alignItems: "center", mb: 2 }}
+                    action={
+                        <IconButton
+                            aria-label="close"
+                            color="inherit"
+                            size="small"
+                            onClick={() => setOpenAlert(false)}
+                        >
+                            <CloseIcon fontSize="inherit" />
+                        </IconButton>
+                    }
+                >
                     <span 
                         dangerouslySetInnerHTML={{ __html: message ?? "" }}
                     ></span>

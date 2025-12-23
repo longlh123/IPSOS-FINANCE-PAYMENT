@@ -682,9 +682,6 @@ class VinnetController extends Controller
         {
             $validatedRequest = $request->validated();
 
-            // Log::info('URL: ' . $validatedRequest['url']);
-            // Log::info('URL Decoded: ' . base64_decode($validatedRequest['url']));
-
             $decodedURL = base64_decode($validatedRequest['url']);
 
             if (!$decodedURL || !str_contains($decodedURL, '/')) {
@@ -705,6 +702,12 @@ class VinnetController extends Controller
                 if($interviewURL->channel != 'vinnet'){
                     Log::error('URL Vinnet nhưng thông tin đường link là quà Got It.');
                     throw new \Exception(ProjectRespondent::ERROR_INVALID_INTERVIEWERURL);
+                }
+
+                if((intval($interviewURL->province_id) === 3 && in_array($validatedRequest['service_code'], ['S0003','S0012','S0029','S0013','S0031','S0015'])) ||
+                    (intval($interviewURL->province_id) !== 3 && in_array($validatedRequest['service_code'], ['S0029','S0013','S0031','S0015']))){
+                    Log::error(ProjectRespondent::ERROR_MOBILE_NETWORK_NOT_SUPPORTED);
+                    throw new \Exception(ProjectRespondent::ERROR_MOBILE_NETWORK_NOT_SUPPORTED . ' Vui lòng dùng số điện thoại khác nếu có hoặc PVV có thể gửi quà trực tiếp cho bạn.');
                 }
 
             } catch (\Exception $e){
@@ -1794,6 +1797,15 @@ class VinnetController extends Controller
             // Optionally rethrow the exception or handle it
             throw $e;
         }
+    }
+
+    public function test_sms(Request $request){
+        $apiCMCObject = new APICMCObject();
+
+        $phone_number = '0972231445';
+        $messageCard = "Noi dung tin nhan test.";
+                    
+        $responseSMSData = $apiCMCObject->send_sms($phone_number, $messageCard);
     }
     
 }
