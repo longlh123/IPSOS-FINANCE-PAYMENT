@@ -14,14 +14,13 @@ import axios from "axios";
 import DefaultLayout from "./Layouts/DefaultLayout";
 
 import ProtectedRoute from "./routes/ProtectedRoute";
-import SubmitPhoneNumber from "./pages/VinnetAPI/SubmitPhoneNumber";
+import VinnetRequest from "./pages/VinnetAPI/VinnetRequest";
 import ErrorPage from "./pages/ErrorPage/ErrorPage";
 import Page200 from "./pages/Page200/Page200";
 import TechcombankLayout from "./Layouts/TechcombankLayout";
 import { TechcombankRoutes } from "./routes/TechcombankRoutes";
 import GotItRequest from "./pages/GotItAPI/GotItRequest";
 import GiftRejectionRequest from "./pages/VinnetAPI/GiftRejectionRequest";
-import GiftRequest from "./pages/VinnetAPI/GiftRequest";
 
 // Fetch the CSRF token from the meta tag
 const csrfToken = document
@@ -39,9 +38,8 @@ const App: React.FC = () => {
             {/* ✅ Public routes (không yêu cầu đăng nhập) */}
             <Route path="/" element={<Login />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/vinnet-management/project/:serviceType/:url" element={<SubmitPhoneNumber/>} />
+            <Route path="/vinnet-management/project/:serviceType/:url" element={<VinnetRequest/>} />
             <Route path="/got-it-management/project/:url" element={<GotItRequest/>} />
-            <Route path="/gift-management/project/:url" element={<GiftRequest/>} />
             <Route path="/gift-management/rejection/:url" element={<GiftRejectionRequest/>} />
             <Route path="/page200" element={< Page200 messageSuccess="" />} />
             <Route path="/error" element={<ErrorPage />} />

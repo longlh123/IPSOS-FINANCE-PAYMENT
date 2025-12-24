@@ -8,10 +8,178 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
-use App\Http\Resources\TransactionResource;
+use App\Http\Requests\StoreTransactionRequest;
+use App\Models\InterviewURL;
+use App\Models\Project;
+use App\Models\ProjectRespondent;
 
 class TransactionController extends Controller
 {
+    private function generate_formated_uuid()
+    {
+        // Generate a UUID using Laravel's Str::uuid() method
+        $uuid = Uuid::uuid4()->toString();
+        return $uuid;
+    }
+
+    public function authenticate_token(StoreTransactionRequest $request){
+        try
+        {
+            $validatedRequest = $request->validated();
+
+            $decodedURL = base64_decode($validatedRequest['url']);
+
+            if (!$decodedURL || !str_contains($decodedURL, '/')) {
+                return response()->json([
+                    'message' => 'URL không hợp lệ.',
+                    'error' => 'INVALID_URL'
+                ], 400);
+            }
+
+            $splittedURL = explode("/", $decodedURL);
+
+            Log::info('URL Splitted: ' . json_encode($splittedURL));
+            
+            try{
+
+                $interviewURL = new InterviewURL($splittedURL);
+
+            } catch (\Exception $e){
+                return response()->json([
+                    'message' => $e->getMessage(),
+                    'error' => $e->getMessage()
+                ], 404);
+            }
+
+            //Tìm thông tin dự án dựa trên dữ liệu từ Interview URL
+            $project = Project::findByInterviewURL($interviewURL);
+
+            if (!$project->projectDetails) {
+                return response()->json([
+                    'message' => Project::ERROR_PROJECT_DETAILS_NOT_CONFIGURED . ' Vui lòng liên hệ Admin để biết thêm thông tin.',
+                    'error' => Project::ERROR_PROJECT_DETAILS_NOT_CONFIGURED
+                ], 404);
+            }
+
+            //Tìm thông tin dự án đã được set up giá dựa trên dữ liệu từ Interview URL
+            Log::info('Find the price item by province');
+            
+            try {
+                $price = $project->getPriceForProvince($interviewURL);
+            } catch(\Exception $e){
+
+                Log::error($e->getMessage());
+
+                return response()->json([
+                    'message' => $e->getMessage() . ' Vui lòng liên hệ Admin để biết thêm thông tin.',
+                    'error' => Project::STATUS_PROJECT_NOT_SUITABLE_PRICES
+                ], 404);
+            }
+
+            Log::info('Price: ' . intval($price));
+
+            if($price == 0)
+            {   
+                Log::error(Project::STATUS_PROJECT_NOT_SUITABLE_PRICES);
+                
+                return response()->json([
+                    'message' => Project::STATUS_PROJECT_NOT_SUITABLE_PRICES . ' Vui lòng liên hệ Admin để biết thêm thông tin.',
+                    'error' => Project::STATUS_PROJECT_NOT_SUITABLE_PRICES
+                ], 422);
+            }
+
+            try
+            {
+                //Kiểm tra đáp viên đã thực hiện giao dịch nhận quà trước đó hay chưa?
+                ProjectRespondent::checkIfRespondentProcessed($project, $interviewURL);
+
+            } catch(\Exception $e){
+                return response()->json([
+                    'message' => $e->getMessage() . ' Vui lòng liên hệ Admin để biết thêm thông tin.',
+                    'error' => $e->getMessage()
+                ], 409);
+            }
+
+            // Tìm thông tin của Project Respondent
+            $projectRespondent = ProjectRespondent::findProjectRespondent($project, $interviewURL);
+
+            if(!$projectRespondent){
+                //Thông tin mới => Cập nhật thông tin vào hệ thống
+                DB::beginTransaction();
+
+                $uuid = $this->generate_formated_uuid();
+
+                try{
+                    $projectRespondent = $project->createProjectRespondents([
+                        'project_id' => $project->id,
+                        'shell_chainid' => $interviewURL->shell_chainid,
+                        'respondent_id' => $interviewURL->shell_chainid . '-' . $interviewURL->respondent_id,
+                        'employee_id' => $interviewURL->employee->id,
+                        'province_id' => $interviewURL->province_id,
+                        'interview_start' => $interviewURL->interview_start,
+                        'interview_end' => $interviewURL->interview_end,
+                        'respondent_phone_number' => $interviewURL->respondent_phone_number,
+                        'price_level' => $interviewURL->price_level,
+                        'channel' => $interviewURL->channel,
+                        'token' => $uuid,
+                        'status' => ProjectRespondent::STATUS_RESPONDENT_PENDING
+                    ]);
+
+                    DB::commit();
+
+                } catch(\Exception $e) {
+
+                    DB::rollBack();
+
+                    Log::error('SQL Error ['.$e->getCode().']: '.$e->getMessage());
+
+                    if($e->getCode() === '23000'){
+                        return response()->json([
+                            'message' => ProjectRespondent::ERROR_CANNOT_STORE_RESPONDENT,
+                            'error' => $e->getMessage()
+                        ], 409); // 409 Conflict
+                    }
+                    
+                    return response()->json([
+                        'message' => ProjectRespondent::ERROR_CANNOT_STORE_RESPONDENT,
+                        'error' => $e->getMessage()
+                    ], 500);
+                }
+            } else {
+                //Thông tin cũ
+                //Kiểm tra xem Project Respondent có thực hiện bất kỳ giao dịch nào chưa?
+                //Nếu chưa => xem như thông tin mới => cập nhật lại status cho Project Respondent
+
+                Log::info("Number of transactions: " . $projectRespondent->vinnetTransactions()->count());
+
+                if($projectRespondent->vinnetTransactions()->count() == 0){
+                    
+                    $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_PENDING);
+                } else {
+                    Log::info(ProjectRespondent::ERROR_DUPLICATE_RESPONDENT . ' [Trường hợp Đáp viên đã tồn tại và đã có thực hiện giao dịch]');
+
+                    //Nếu đã thực hiện giao dịch => không cho thực hiện
+                    return response()->json([
+                        'message' => ProjectRespondent::ERROR_DUPLICATE_RESPONDENT,
+                        'error' => ProjectRespondent::ERROR_DUPLICATE_RESPONDENT . ' [Trường hợp Đáp viên đã tồn tại và đã có thực hiện giao dịch]'
+                    ], 500);
+                }
+            }
+
+            return response()->json([
+                'message' => ProjectRespondent::STATUS_RESPONDENT_QUALIFIED,
+                'token' => $uuid
+            ]);
+
+        } catch(\Exception $e){
+            Log::error($e->getMessage());
+            
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], 400);
+        }
+    }
+
     public function show(Request $request, $projectId)
     {
         try{

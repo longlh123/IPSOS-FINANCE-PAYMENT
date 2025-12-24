@@ -11,7 +11,6 @@ use App\Http\Controllers\VinnetController;
 use App\Http\Controllers\AdministrativeDivisionsController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\MetadataController;
-use App\Http\Controllers\ProjectTypeController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\RespondentController;
 use App\Http\Controllers\TechcombankPanelController;
@@ -33,7 +32,6 @@ Route::get('/project-management/metadata', [MetadataController::class, 'index'])
 
 Route::get('/project-management/departments', [DepartmentController::class, 'index']);
 Route::get('/project-management/{department_id}/teams', [DepartmentController::class, 'get_teams']);
-Route::get('/project-management/project-types', [ProjectTypeController::class, 'index']);
 
 Route::middleware(['auth:sanctum'])->group(function(){
     Route::get('/users', [UserController::class, 'index'])->middleware('ensureUserHasRole:admin');
@@ -67,7 +65,9 @@ Route::middleware(['auth:sanctum'])->group(function(){
     Route::get('/project-management/vinnet/merchantinfo', [VinnetController::class, 'merchantinfo'])->middleware('ensureUserHasRole:admin,Finance');
 });
 
-Route::get('/project-management/project/verify-vinnet-token/{internal_code}/{project_name}/{respondent_id}/{remember_token}', [ProjectController::class, 'verify_vinnet_token']);
+Route::post('/project-management/project/authenticate_token', [TransactionController::class, 'authenticate_token']);
+
+//delete Route::get('/project-management/project/verify-vinnet-token/{internal_code}/{project_name}/{respondent_id}/{remember_token}', [ProjectController::class, 'verify_vinnet_token']);
 
 // Route::post('/project-management/vinnet/change-key', [VinnetController::class, 'change_key']);
 Route::post('/project-management/vinnet/transactions', [VinnetController::class, 'perform_multiple_transactions']);

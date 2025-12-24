@@ -1,4 +1,5 @@
 import "../../assets/css/components.css";
+import ipsosLogo from "../../assets/img/Ipsos logo.svg";
 import ITelecomLogo from "../../assets/img/providers/itelecom_logo.png";
 import MobiFoneLogo from "../../assets/img/providers/mobifone_logo.png";
 import VietnameMobileLogo from "../../assets/img/providers/vietnamobile_logo.png";
@@ -16,6 +17,7 @@ import SendIcon from '@mui/icons-material/Send';
 import { ApiConfig } from '../../config/ApiConfig';
 
 import {
+    Box,
     Card,
     CardContent,
     Divider,
@@ -70,7 +72,7 @@ const isValidServiceType = (type: any): type is ServiceType => {
     return type === 'topup' || type === 'card';
 };
 
-const SubmitPhoneNumber = () => {
+const VinnetRequest = () => {
     const navigate = useNavigate();
 
     const { open, openDialog, closeDialog } = useDialog();
@@ -161,7 +163,17 @@ const SubmitPhoneNumber = () => {
                 break;
             default:
                 console.warn(`Invalid serviceType: ${serviceType}`);
-        }    
+        }
+
+        // const mobiFoneServiceCodes = ["S0003", "S0012"];
+        
+        // if(mobiFoneServiceCodes.includes(serviceCode)){
+        //     setStatusMessage("Nhà mạng MobiFone đang gặp sự cố, vui lòng dùng số điện thoại khác nếu có hoặc PVV có thể gửi quà trực tiếp cho bạn.");
+        //     setIsError(true);
+        //     setSelectedProvider("");   // reset provider
+        //     setSelectedServiceCode(""); // reset service
+        //     return;
+        // }    
 
         if (serviceCode) {
             const provider = providers.find((p) => p.serviceCode === serviceCode);
@@ -317,8 +329,20 @@ const SubmitPhoneNumber = () => {
     return (
         <GuestLayout>
             <Card className="welcome-container">
-                <CardContent className='welcome-header'>
-                    
+                <CardContent sx={{ py: 1.5, background: "linear-gradient(to right, #fff, #fff)" }}>
+                    <Box display="flex" justifyContent="center">
+                        <Box width={120}>
+                        <img
+                            src={ipsosLogo}
+                            alt="Company logo"
+                            style={{
+                                width: "100%",
+                                height: "auto",
+                                objectFit: "contain",
+                            }}
+                        />
+                        </Box>
+                    </Box>
                 </CardContent>
                 <CardContent className='welcome-body'>
                     <div className='item'>
@@ -436,4 +460,4 @@ const SubmitPhoneNumber = () => {
     );
 };
 
-export default SubmitPhoneNumber;
+export default VinnetRequest;
