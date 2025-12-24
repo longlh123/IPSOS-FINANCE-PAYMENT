@@ -1802,8 +1802,8 @@ class VinnetController extends Controller
     public function test_sms(Request $request){
         $apiCMCObject = new APICMCObject();
 
-        $phone_number = '0972231445';
-        $messageCard = "Noi dung tin nhan test.";
+        $phone_number = $request->input('phone_number');
+        $messageCard = $request->input('message');
                     
         $responseSMSData = $apiCMCObject->send_sms($phone_number, $messageCard);
     }
