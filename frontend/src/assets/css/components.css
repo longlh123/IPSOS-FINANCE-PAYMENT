@@ -349,13 +349,11 @@ h4 span {
 .welcome-footer .gotit-slogan {
     font-size: 1.25rem;
     font-weight: 600;
-    color: var(--gotit-color-primary);
 }
 
 .welcome-footer .vinnet-slogan {
     font-size: 1.25rem;
     font-weight: 600;
-    color: var(--vinnet-color-secondary);
 }
 
 .provider-warning {

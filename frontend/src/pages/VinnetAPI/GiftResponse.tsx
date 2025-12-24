@@ -5,7 +5,7 @@ import { useState } from "react";
 import LoadingButton from "@mui/lab/LoadingButton";
 import SendIcon from '@mui/icons-material/Send';
 
-const GiftRequest = () => {
+const GiftResponse = () => {
     const [ error, setError ] = useState(false);
     const [ message, setMessage ] = useState("");
     const [ loadingConfirmed, setLoadingConfirmed ] = useState(false); 
@@ -78,4 +78,4 @@ const GiftRequest = () => {
     )
 }
 
-export default GiftRequest;
+export default GiftResponse;
