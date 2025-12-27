@@ -17,7 +17,6 @@ use App\Models\Project;
 use App\Models\ProjectType;
 use App\Models\Team;
 use App\Models\Province;
-use App\Models\ProjectVinnetToken;
 use App\Models\ProjectUUID;
 use App\Models\Employee;
 use App\Models\ProjectEmployee;

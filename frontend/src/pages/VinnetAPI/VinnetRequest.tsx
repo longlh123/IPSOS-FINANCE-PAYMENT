@@ -15,6 +15,7 @@ import GuestLayout from '../../Layouts/GuestLayout';
 import LoadingButton from '@mui/lab/LoadingButton';
 import SendIcon from '@mui/icons-material/Send';
 import { ApiConfig } from '../../config/ApiConfig';
+import { CircularProgress } from "@mui/material";
 
 import {
     Box,
@@ -34,6 +35,7 @@ import { getServiceCode, getServiceCodeForMobileCardPurchaseService } from "../.
 import ConfirmDialog from "../../components/Dialogs/ConfirmDialog";
 import useDialog from "../../hook/useDialog";
 import RejectDialog from "../../components/Dialogs/RejectDialog";
+import { TrySharp } from "@mui/icons-material";
 
 interface Provider {
     label: string,
@@ -91,10 +93,45 @@ const VinnetRequest = () => {
     const [ isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
     const [ rejectReason, setRejectReason] = useState('');
 
-    const { serviceType, url } = useParams<{
+    const { serviceType, token } = useParams<{
         serviceType?: string,
-        url?: string
-    }>();
+        token?: string
+    }>();   
+
+    const [ loading, setLoading ] = useState(true);
+
+    useEffect(() => {
+        const verify = async () => {
+            try{
+                setLoading(true);
+                setIsError(false);
+
+                const response = await axios.get(ApiConfig.project.verifyTransactionToken, {
+                    params: { token }
+                });
+
+                setIsError(false);
+            }catch(error){
+                setIsError(true);
+
+                let errorMessage = '';
+
+                if (axios.isAxiosError(error)) {
+                    errorMessage = error.response?.data.message ?? error.message;
+                } else {
+                    errorMessage = (error as Error).message;
+                }
+
+                setStatusMessage(errorMessage);
+
+                navigate('/gift/response?status=error&message=' + errorMessage);
+            } finally{
+                setLoading(false);
+            }
+        };
+
+        verify();
+    }, [token]);
 
     const providers: Provider[] = isValidServiceType(serviceType) ? MobileServices[serviceType] : [];
 
@@ -165,16 +202,6 @@ const VinnetRequest = () => {
                 console.warn(`Invalid serviceType: ${serviceType}`);
         }
 
-        // const mobiFoneServiceCodes = ["S0003", "S0012"];
-        
-        // if(mobiFoneServiceCodes.includes(serviceCode)){
-        //     setStatusMessage("Nhà mạng MobiFone đang gặp sự cố, vui lòng dùng số điện thoại khác nếu có hoặc PVV có thể gửi quà trực tiếp cho bạn.");
-        //     setIsError(true);
-        //     setSelectedProvider("");   // reset provider
-        //     setSelectedServiceCode(""); // reset service
-        //     return;
-        // }    
-
         if (serviceCode) {
             const provider = providers.find((p) => p.serviceCode === serviceCode);
 
@@ -217,7 +244,7 @@ const VinnetRequest = () => {
         try
         {
             const reqAuthenPost = await axios.post(ApiConfig.vinnet.performMultipleTransactions, {
-                url: url,
+                token: token,
                 service_type: serviceType,
                 phone_number: phoneNumber,
                 service_code: selectedServiceCode,
@@ -230,7 +257,7 @@ const VinnetRequest = () => {
             console.log(reqAuthenPost.data);
 
             if(reqAuthenPost.status === 200){
-                navigate('/page200?message=' + reqAuthenPost.data.message);
+                navigate('/gift/response?status=success&message=' + reqAuthenPost.data.message);
             } else {
                 throw new Error(reqAuthenPost.data.message);
             }
@@ -253,7 +280,7 @@ const VinnetRequest = () => {
             setShouldSubmit(false);
         }
         
-    }, [url, phoneNumber, selectedServiceCode]);
+    }, [token, phoneNumber, selectedServiceCode]);
     
     const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -293,7 +320,7 @@ const VinnetRequest = () => {
             console.log('Rejection Reason:', reason);
 
             const request = await axios.post(ApiConfig.vinnet.rejectTransaction, {
-                url: url,
+                token: token,
                 reject_message: reason
             }, { 
                 headers : {
@@ -328,116 +355,123 @@ const VinnetRequest = () => {
 
     return (
         <GuestLayout>
-            <Card className="welcome-container">
-                <CardContent sx={{ py: 1.5, background: "linear-gradient(to right, #fff, #fff)" }}>
-                    <Box display="flex" justifyContent="center">
-                        <Box width={120}>
-                        <img
-                            src={ipsosLogo}
-                            alt="Company logo"
-                            style={{
-                                width: "100%",
-                                height: "auto",
-                                objectFit: "contain",
-                            }}
-                        />
-                        </Box>
-                    </Box>
-                </CardContent>
-                <CardContent className='welcome-body'>
-                    <div className='item'>
-                        <p>Xin chân thành cảm ơn bạn đã dành thời gian quý báu để hoàn thành khảo sát của chúng tôi. Ý kiến đóng góp của bạn là nguồn cảm hứng quan trọng để chúng tôi không ngừng cải thiện chất lượng sản phẩm/dịch vụ.</p>
-                    </div>
-                    <div className='item'>
-                        <p>Để bày tỏ lòng biết ơn, chúng tôi xin gửi tặng bạn một phần quà nhỏ. Vui lòng điền số điện thoại của bạn vào ô bên dưới để chúng tôi có thể liên hệ và gửi quà đến bạn sớm nhất.</p>
-                    </div>
-                    <div className='item'>
-                        <p><b>Chúng tôi cam kết bảo mật tuyệt đối thông tin cá nhân của bạn</b>. Số điện thoại bạn cung cấp chỉ được sử dụng để liên hệ trao quà và sẽ không được chia sẻ với bất kỳ bên thứ ba nào.</p>
-                    </div>
-                    <div className='item'>
-                        <p>Một lần nữa, xin chân thành cảm ơn!</p>
-                    </div>
-                    {isError && (
-                        <div className='item'>
-                            <Alert severity="error" className="message-invalid">{statusMessage}</Alert> 
-                        </div>
-                    )}
-                    <form onSubmit={handleFormSubmit}>
-                        <div className='item'>
-                            <TextField
-                                label="Nhập số điện thoại"
-                                variant="outlined"
-                                onChange={(e) => handleChangeInput(e.target.value)}
-                                fullWidth
+            {(loading ? (
+                <Box display="flex" justifyContent="center" alignItems="center" height="100%">
+                    <CircularProgress />
+                </Box>
+            ) : (
+                <Card className="welcome-container">
+                    <CardContent sx={{ py: 1.5, background: "linear-gradient(to right, #fff, #fff)" }}>
+                        <Box display="flex" justifyContent="center">
+                            <Box width={120}>
+                            <img
+                                src={ipsosLogo}
+                                alt="Company logo"
+                                style={{
+                                    width: "100%",
+                                    height: "auto",
+                                    objectFit: "contain",
+                                }}
                             />
-                        </div>
-                        <br/>
+                            </Box>
+                        </Box>
+                    </CardContent>
+                    <CardContent className='welcome-body'>
                         <div className='item'>
-                            <FormControl fullWidth>
-                                <InputLabel id="provider-select-label">Thay đổi nhà mạng</InputLabel>
-                                <Select
-                                    labelId="provider-select-label"
-                                    id="provider-select"
-                                    value={selectedProvider}
-                                    label="Thay đổi nhà mạng"
-                                    onChange={handleChangeProvider}
-                                    renderValue={(value) => value}
-                                    disabled = {!selectedServiceCode}
-                                >
-                                    <MenuItem value="">
-                                        <em className="provider-warning">Vui lòng chỉ thay đổi nhà mạng khi bạn đã đăng ký giữ số chuyển mạng</em>
-                                    </MenuItem>
-                                    {providers.map((provider) => (
-                                    <MenuItem key={provider.label} value={provider.label}>
-                                        <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center', justifyItems: 'center', gap: 20, width: '100%'}}>
-                                            <div>
-                                                <img src={provider.imgSrc} width={50} height={50}  />
-                                            </div>
-                                            <div>
-                                                <ListItemText primary={provider.label} />
-                                            </div>
-                                        </div>
-                                        
-                                        
-                                    </MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
+                            <p>Xin chân thành cảm ơn bạn đã dành thời gian quý báu để hoàn thành khảo sát của chúng tôi. Ý kiến đóng góp của bạn là nguồn cảm hứng quan trọng để chúng tôi không ngừng cải thiện chất lượng sản phẩm/dịch vụ.</p>
                         </div>
-                        <br/>
-                        <div className="action">
-                            <LoadingButton
-                                type="submit"
-                                size="large"
-                                endIcon={<SendIcon />}
-                                loading={loadingConfirmed}
-                                loadingPosition="end"
-                                variant="contained"
-                                className='btn bg-vinnet-primary'
-                                >
-                                <span>XÁC NHẬN</span>
-                            </LoadingButton>
-                            {/* <LoadingButton
-                                type="button"
-                                size="large"
-                                endIcon={<ThumbDownOffAltRoundedIcon />}
-                                loading={loadingReject}
-                                onClick={handleOpenRejectDialog}
-                                loadingPosition="end"
-                                variant="contained"
-                                className='btn bg-reject'
-                                >
-                                <span>TỪ CHỐI</span>
-                            </LoadingButton> */}
-                        </div>   
-                    </form>
-                </CardContent>
-                <Divider/>
-                <CardContent className='welcome-footer'>
-                    <img src={VinnetJSC}/>
-                    <div className="vinnet-slogan">Giữ an toàn cho thông tin của bạn là trách nhiệm của chúng tôi.</div>
-                </CardContent>
-            </Card>
+                        <div className='item'>
+                            <p>Để bày tỏ lòng biết ơn, chúng tôi xin gửi tặng bạn một phần quà nhỏ. Vui lòng điền số điện thoại của bạn vào ô bên dưới để chúng tôi có thể liên hệ và gửi quà đến bạn sớm nhất.</p>
+                        </div>
+                        <div className='item'>
+                            <p><b>Chúng tôi cam kết bảo mật tuyệt đối thông tin cá nhân của bạn</b>. Số điện thoại bạn cung cấp chỉ được sử dụng để liên hệ trao quà và sẽ không được chia sẻ với bất kỳ bên thứ ba nào.</p>
+                        </div>
+                        <div className='item'>
+                            <p>Một lần nữa, xin chân thành cảm ơn!</p>
+                        </div>
+                        {isError && (
+                            <div className='item'>
+                                <Alert severity="error" className="message-invalid">{statusMessage}</Alert> 
+                            </div>
+                        )}
+                        <form onSubmit={handleFormSubmit}>
+                            <div className='item'>
+                                <TextField
+                                    label="Nhập số điện thoại"
+                                    variant="outlined"
+                                    onChange={(e) => handleChangeInput(e.target.value)}
+                                    fullWidth
+                                />
+                            </div>
+                            <br/>
+                            <div className='item'>
+                                <FormControl fullWidth>
+                                    <InputLabel id="provider-select-label">Thay đổi nhà mạng</InputLabel>
+                                    <Select
+                                        labelId="provider-select-label"
+                                        id="provider-select"
+                                        value={selectedProvider}
+                                        label="Thay đổi nhà mạng"
+                                        onChange={handleChangeProvider}
+                                        renderValue={(value) => value}
+                                        disabled = {!selectedServiceCode}
+                                    >
+                                        <MenuItem value="">
+                                            <em className="provider-warning">Vui lòng chỉ thay đổi nhà mạng khi bạn đã đăng ký giữ số chuyển mạng</em>
+                                        </MenuItem>
+                                        {providers.map((provider) => (
+                                        <MenuItem key={provider.label} value={provider.label}>
+                                            <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center', justifyItems: 'center', gap: 20, width: '100%'}}>
+                                                <div>
+                                                    <img src={provider.imgSrc} width={50} height={50}  />
+                                                </div>
+                                                <div>
+                                                    <ListItemText primary={provider.label} />
+                                                </div>
+                                            </div>
+                                            
+                                            
+                                        </MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
+                            </div>
+                            <br/>
+                            <div className="action">
+                                <LoadingButton
+                                    type="submit"
+                                    size="large"
+                                    endIcon={<SendIcon />}
+                                    loading={loadingConfirmed}
+                                    loadingPosition="end"
+                                    variant="contained"
+                                    className='btn bg-vinnet-primary'
+                                    >
+                                    <span>XÁC NHẬN</span>
+                                </LoadingButton>
+                                {/* <LoadingButton
+                                    type="button"
+                                    size="large"
+                                    endIcon={<ThumbDownOffAltRoundedIcon />}
+                                    loading={loadingReject}
+                                    onClick={handleOpenRejectDialog}
+                                    loadingPosition="end"
+                                    variant="contained"
+                                    className='btn bg-reject'
+                                    >
+                                    <span>TỪ CHỐI</span>
+                                </LoadingButton> */}
+                            </div>   
+                        </form>
+                    </CardContent>
+                    <Divider/>
+                    <CardContent className='welcome-footer'>
+                        <img src={VinnetJSC}/>
+                        <div className="vinnet-slogan">Giữ an toàn cho thông tin của bạn là trách nhiệm của chúng tôi.</div>
+                    </CardContent>
+                </Card>
+            ))}
+            
             
             {/* Show ConfirmDialog */}
             <ConfirmDialog

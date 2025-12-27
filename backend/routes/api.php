@@ -65,6 +65,7 @@ Route::middleware(['auth:sanctum'])->group(function(){
     Route::get('/project-management/vinnet/merchantinfo', [VinnetController::class, 'merchantinfo'])->middleware('ensureUserHasRole:admin,Finance');
 });
 
+Route::get('/project-management/project/verify_token', [TransactionController::class, 'verify']);
 Route::post('/project-management/project/authenticate_token', [TransactionController::class, 'authenticate_token']);
 
 //delete Route::get('/project-management/project/verify-vinnet-token/{internal_code}/{project_name}/{respondent_id}/{remember_token}', [ProjectController::class, 'verify_vinnet_token']);

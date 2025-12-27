@@ -8,21 +8,36 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
-use App\Http\Requests\StoreTransactionRequest;
+use Illuminate\Support\Facades\Hash;
+use App\Http\Requests\ProjectRespondentTokenRequest;
 use App\Models\InterviewURL;
 use App\Models\Project;
 use App\Models\ProjectRespondent;
+use Ramsey\Uuid\Uuid;
+use App\Constants\TransactionStatus;
+use App\Services\ProjectRespondentTokenService;
+use App\Services\VinnetService;
 
 class TransactionController extends Controller
 {
-    private function generate_formated_uuid()
+    public function verify(Request $request, ProjectRespondentTokenService $tokenService)
     {
-        // Generate a UUID using Laravel's Str::uuid() method
-        $uuid = Uuid::uuid4()->toString();
-        return $uuid;
+        try{
+            $recordToken = $tokenService->verifyToken($request->token);
+
+            return response()->json(['valid' => true]);
+
+        } catch(\Exception $e){
+            Log::error($e->getMessage());
+            
+            return response()->json([
+                'status_code' => 400,
+                'message' => $e->getMessage(),
+            ], 400);
+        }
     }
 
-    public function authenticate_token(StoreTransactionRequest $request){
+    public function authenticate_token(ProjectRespondentTokenRequest $request, ProjectRespondentTokenService $tokenService, VinnetService $vinnetService){
         try
         {
             $validatedRequest = $request->validated();
@@ -31,6 +46,7 @@ class TransactionController extends Controller
 
             if (!$decodedURL || !str_contains($decodedURL, '/')) {
                 return response()->json([
+                    'status_code' => 400,
                     'message' => 'URL không hợp lệ.',
                     'error' => 'INVALID_URL'
                 ], 400);
@@ -46,6 +62,7 @@ class TransactionController extends Controller
 
             } catch (\Exception $e){
                 return response()->json([
+                    'status_code' => 404,
                     'message' => $e->getMessage(),
                     'error' => $e->getMessage()
                 ], 404);
@@ -56,6 +73,7 @@ class TransactionController extends Controller
 
             if (!$project->projectDetails) {
                 return response()->json([
+                    'status_code' => 404,
                     'message' => Project::ERROR_PROJECT_DETAILS_NOT_CONFIGURED . ' Vui lòng liên hệ Admin để biết thêm thông tin.',
                     'error' => Project::ERROR_PROJECT_DETAILS_NOT_CONFIGURED
                 ], 404);
@@ -65,12 +83,13 @@ class TransactionController extends Controller
             Log::info('Find the price item by province');
             
             try {
-                $price = $project->getPriceForProvince($interviewURL);
+                $price = $project->getPriceForProvince($interviewURL->province_id, $interviewURL->price_level);
             } catch(\Exception $e){
 
                 Log::error($e->getMessage());
 
                 return response()->json([
+                    'status_code' => 404,
                     'message' => $e->getMessage() . ' Vui lòng liên hệ Admin để biết thêm thông tin.',
                     'error' => Project::STATUS_PROJECT_NOT_SUITABLE_PRICES
                 ], 404);
@@ -83,11 +102,82 @@ class TransactionController extends Controller
                 Log::error(Project::STATUS_PROJECT_NOT_SUITABLE_PRICES);
                 
                 return response()->json([
+                    'status_code' => 422,
                     'message' => Project::STATUS_PROJECT_NOT_SUITABLE_PRICES . ' Vui lòng liên hệ Admin để biết thêm thông tin.',
                     'error' => Project::STATUS_PROJECT_NOT_SUITABLE_PRICES
                 ], 422);
             }
+            
+            $gifts = [];
 
+            $serviceCode = $vinnetService->get_service_code($validatedRequest['phone_number']);
+
+            if(!$serviceCode){
+                return response()->json([
+                    'status_code' => 901,
+                    'message' => ProjectRespondent::ERROR_INVALID_RESPONDENT_PHONE_NUMBER . 'Vui lòng kiểm tra lại.',
+                    'error' => ProjectRespondent::ERROR_INVALID_RESPONDENT_PHONE_NUMBER
+                ]);
+            }
+
+            try{
+                $tokenData = $vinnetService->authenticate_token();
+
+                if($tokenData['code'] != 0){
+                    $gifts[] = 'gotit';
+                } else {
+                    $serviceItemsData = $vinnetService->query_service(
+                                            $interviewURL->phone_number, 
+                                            $validatedRequest['service_code'], 
+                                            $tokenData['token'], 
+                                            null
+                                        );
+                    if($serviceItemsData['code'] != 0){
+                        $gifts[] = 'gotit';
+                    } else {
+
+                    }
+                }
+            } catch (\Throwable $e) {
+                $gifts[] = 'gotit';
+            }
+
+            $step_info = "Query Service API";
+
+            try{
+                $serviceItemsData = $vinnetService->query_service(
+                                            $validatedRequest['phone_number'], 
+                                            $validatedRequest['service_code'], 
+                                            $tokenData['token'], 
+                                            null
+                                        );
+                                        
+                if($serviceItemsData['code'] != 0)
+                {
+                    Log::error('Query Service API Exception: ' . $serviceItemsData['message']);
+
+                    if(isset($projectRespondent)){
+                        $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_TEMPORARY_ERROR);
+                    }
+
+                    return response()->json([
+                        'message' => ProjectRespondent::ERROR_RESPONDENT_GIFT_TEMPORARY,
+                        'error' => ProjectRespondent::ERROR_RESPONDENT_GIFT_TEMPORARY
+                    ], 404);
+                }
+            } catch(\Throwable $e){
+                Log::error('Query Service API Exception: ' . $e->getMessage());
+
+                if(isset($projectRespondent)){
+                    $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_TEMPORARY_ERROR);
+                }
+
+                return response()->json([
+                    'message' => ProjectRespondent::ERROR_RESPONDENT_GIFT_TEMPORARY,
+                    'error' => ProjectRespondent::ERROR_RESPONDENT_GIFT_TEMPORARY
+                ], 404);
+            }
+            
             try
             {
                 //Kiểm tra đáp viên đã thực hiện giao dịch nhận quà trước đó hay chưa?
@@ -95,6 +185,7 @@ class TransactionController extends Controller
 
             } catch(\Exception $e){
                 return response()->json([
+                    'status_code' => 409,
                     'message' => $e->getMessage() . ' Vui lòng liên hệ Admin để biết thêm thông tin.',
                     'error' => $e->getMessage()
                 ], 409);
@@ -106,8 +197,6 @@ class TransactionController extends Controller
             if(!$projectRespondent){
                 //Thông tin mới => Cập nhật thông tin vào hệ thống
                 DB::beginTransaction();
-
-                $uuid = $this->generate_formated_uuid();
 
                 try{
                     $projectRespondent = $project->createProjectRespondents([
@@ -121,10 +210,9 @@ class TransactionController extends Controller
                         'respondent_phone_number' => $interviewURL->respondent_phone_number,
                         'price_level' => $interviewURL->price_level,
                         'channel' => $interviewURL->channel,
-                        'token' => $uuid,
                         'status' => ProjectRespondent::STATUS_RESPONDENT_PENDING
                     ]);
-
+                    
                     DB::commit();
 
                 } catch(\Exception $e) {
@@ -135,12 +223,14 @@ class TransactionController extends Controller
 
                     if($e->getCode() === '23000'){
                         return response()->json([
+                            'status_code' => 409,
                             'message' => ProjectRespondent::ERROR_CANNOT_STORE_RESPONDENT,
                             'error' => $e->getMessage()
                         ], 409); // 409 Conflict
                     }
                     
                     return response()->json([
+                        'status_code' => 500,
                         'message' => ProjectRespondent::ERROR_CANNOT_STORE_RESPONDENT,
                         'error' => $e->getMessage()
                     ], 500);
@@ -160,21 +250,26 @@ class TransactionController extends Controller
 
                     //Nếu đã thực hiện giao dịch => không cho thực hiện
                     return response()->json([
+                        'status_code' => 500,
                         'message' => ProjectRespondent::ERROR_DUPLICATE_RESPONDENT,
                         'error' => ProjectRespondent::ERROR_DUPLICATE_RESPONDENT . ' [Trường hợp Đáp viên đã tồn tại và đã có thực hiện giao dịch]'
                     ], 500);
                 }
             }
 
+            $token = $tokenService->createOrReuseToken($projectRespondent);
+
             return response()->json([
+                'status_code' => 200,
                 'message' => ProjectRespondent::STATUS_RESPONDENT_QUALIFIED,
-                'token' => $uuid
-            ]);
+                'token' => $token
+            ], 200);
 
         } catch(\Exception $e){
             Log::error($e->getMessage());
             
             return response()->json([
+                'status_code' => 400,
                 'message' => $e->getMessage(),
             ], 400);
         }
