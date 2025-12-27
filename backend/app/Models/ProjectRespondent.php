@@ -29,6 +29,7 @@ class ProjectRespondent extends Model
     const ERROR_DUPLICATE_RESPONDENT =                    'Đáp viên đã tồn tại.';
     const ERROR_DUPLICATE_RESPONDENTID =                  'Thông tin đáp viên đã được ghi nhận trong hệ thống trước đó.';
     const ERROR_DUPLICATE_RESPONDENT_PHONE_NUMBER =       'Số điện thoại của đáp viên đã được ghi nhận trong hệ thống trước đó.';
+    const ERROR_INVALID_RESPONDENT_PHONE_NUMBER =         'Số điệnt thoại của đáp viên không đúng.';
     const ERROR_RESPONDENT_GIFT_RECEIVED =                'Đáp viên đã nhận quà, không thể thao tác lại.';
     const ERROR_SMS_SEND_FAILED =                         'Gửi tin nhắn không thành công.';
     const ERROR_INVALID_INTERVIEWERURL =                  'Liên kết phỏng vấn không hợp lệ. Vui lòng sử dụng link được hệ thống cung cấp. Nếu bạn đã chỉnh sửa hoặc thay đổi thông tin trong đường link, vui lòng truy cập lại link gốc từ hệ thống.';
@@ -67,6 +68,11 @@ class ProjectRespondent extends Model
         self::STATUS_RESPONDENT_CANCELLED,
         self::STATUS_RESPONDENT_REJECTED,
     ];
+
+    public function token()
+    {
+        return $this->hasOne(ProjectRespondentToken::class);
+    }
 
     public function project()
     {

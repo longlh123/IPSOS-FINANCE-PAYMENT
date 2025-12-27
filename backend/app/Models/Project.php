@@ -119,25 +119,23 @@ class Project extends Model
         return $project;
     }
 
-    public function getPriceForProvince($interviewURL)
+    public function getPriceForProvince($provinceId, $priceLevel)
     {
-        $price_item = $this->projectProvinces->firstWhere('province_id', $interviewURL->province_id);
+        $price_item = $this->projectProvinces->firstWhere('province_id', $provinceId);
 
         if(!$price_item){
             Log::error(Project::STATUS_PROJECT_NOT_SUITABLE_PRICES);
             throw new \Exception(Project::STATUS_PROJECT_NOT_SUITABLE_PRICES);
         }
         
-        $level = $interviewURL->price_level;
-
-        if(str_starts_with($level, 'main')){
-            $property = 'price_' . $level;
-        } elseif(str_starts_with($level, 'boosters')){
-            $property = 'price_' . str_replace('boosters', 'boosters', $level);
-        } elseif(str_starts_with($level, 'booster')){
-            $property = 'price_' . str_replace('booster', 'boosters', $level);
-        }elseif(str_starts_with($level, 'non')) {
-            $property = 'price_' . $level;
+        if(str_starts_with($priceLevel, 'main')){
+            $property = 'price_' . $priceLevel;
+        } elseif(str_starts_with($priceLevel, 'boosters')){
+            $property = 'price_' . str_replace('boosters', 'boosters', $priceLevel);
+        } elseif(str_starts_with($priceLevel, 'booster')){
+            $property = 'price_' . str_replace('booster', 'boosters', $priceLevel);
+        }elseif(str_starts_with($priceLevel, 'non')) {
+            $property = 'price_' . $priceLevel;
         } else {
             $property = null;
         }

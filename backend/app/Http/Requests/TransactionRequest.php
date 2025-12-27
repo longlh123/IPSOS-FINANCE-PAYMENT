@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreProjectVinnetTokenRequest extends FormRequest
+class TransactionRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,7 +22,7 @@ class StoreProjectVinnetTokenRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'url' => 'required|string',
+            'token' => 'required|string',
             'phone_number' => 'required|string|digits_between:10,11',
             'service_type' => 'required|string|in:topup,card',
             'service_code' => 'required|string|max:10'
@@ -31,7 +31,7 @@ class StoreProjectVinnetTokenRequest extends FormRequest
 
     public function messages() {
         return [
-            'url.required' => 'The url is required', 
+            'token.required' => 'The token is required', 
             'phone_number.required' => 'The phone number is required.',
             'phone_number.digits_between' => 'The phone number must be between 10 and 11 digits.',
             
