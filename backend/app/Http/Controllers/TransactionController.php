@@ -46,7 +46,7 @@ class TransactionController extends Controller
 
             if (!$decodedURL || !str_contains($decodedURL, '/')) {
                 return response()->json([
-                    'status_code' => 400,
+                    'status_code' => 901,
                     'message' => 'URL không hợp lệ.',
                     'error' => 'INVALID_URL'
                 ], 400);
@@ -62,7 +62,7 @@ class TransactionController extends Controller
 
             } catch (\Exception $e){
                 return response()->json([
-                    'status_code' => 404,
+                    'status_code' => 901,
                     'message' => $e->getMessage(),
                     'error' => $e->getMessage()
                 ], 404);
@@ -73,7 +73,7 @@ class TransactionController extends Controller
 
             if (!$project->projectDetails) {
                 return response()->json([
-                    'status_code' => 404,
+                    'status_code' => 901,
                     'message' => Project::ERROR_PROJECT_DETAILS_NOT_CONFIGURED . ' Vui lòng liên hệ Admin để biết thêm thông tin.',
                     'error' => Project::ERROR_PROJECT_DETAILS_NOT_CONFIGURED
                 ], 404);
@@ -89,7 +89,7 @@ class TransactionController extends Controller
                 Log::error($e->getMessage());
 
                 return response()->json([
-                    'status_code' => 404,
+                    'status_code' => 901,
                     'message' => $e->getMessage() . ' Vui lòng liên hệ Admin để biết thêm thông tin.',
                     'error' => Project::STATUS_PROJECT_NOT_SUITABLE_PRICES
                 ], 404);
@@ -102,7 +102,7 @@ class TransactionController extends Controller
                 Log::error(Project::STATUS_PROJECT_NOT_SUITABLE_PRICES);
                 
                 return response()->json([
-                    'status_code' => 422,
+                    'status_code' => 901,
                     'message' => Project::STATUS_PROJECT_NOT_SUITABLE_PRICES . ' Vui lòng liên hệ Admin để biết thêm thông tin.',
                     'error' => Project::STATUS_PROJECT_NOT_SUITABLE_PRICES
                 ], 422);
@@ -128,7 +128,7 @@ class TransactionController extends Controller
                 } else {
                     $serviceItemsData = $vinnetService->query_service(
                                             $interviewURL->phone_number, 
-                                            $validatedRequest['service_code'], 
+                                            $serviceCode, 
                                             $tokenData['token'], 
                                             null
                                         );
@@ -142,42 +142,6 @@ class TransactionController extends Controller
                 $gifts[] = 'gotit';
             }
 
-            $step_info = "Query Service API";
-
-            try{
-                $serviceItemsData = $vinnetService->query_service(
-                                            $validatedRequest['phone_number'], 
-                                            $validatedRequest['service_code'], 
-                                            $tokenData['token'], 
-                                            null
-                                        );
-                                        
-                if($serviceItemsData['code'] != 0)
-                {
-                    Log::error('Query Service API Exception: ' . $serviceItemsData['message']);
-
-                    if(isset($projectRespondent)){
-                        $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_TEMPORARY_ERROR);
-                    }
-
-                    return response()->json([
-                        'message' => ProjectRespondent::ERROR_RESPONDENT_GIFT_TEMPORARY,
-                        'error' => ProjectRespondent::ERROR_RESPONDENT_GIFT_TEMPORARY
-                    ], 404);
-                }
-            } catch(\Throwable $e){
-                Log::error('Query Service API Exception: ' . $e->getMessage());
-
-                if(isset($projectRespondent)){
-                    $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_TEMPORARY_ERROR);
-                }
-
-                return response()->json([
-                    'message' => ProjectRespondent::ERROR_RESPONDENT_GIFT_TEMPORARY,
-                    'error' => ProjectRespondent::ERROR_RESPONDENT_GIFT_TEMPORARY
-                ], 404);
-            }
-            
             try
             {
                 //Kiểm tra đáp viên đã thực hiện giao dịch nhận quà trước đó hay chưa?
@@ -209,7 +173,6 @@ class TransactionController extends Controller
                         'interview_end' => $interviewURL->interview_end,
                         'respondent_phone_number' => $interviewURL->respondent_phone_number,
                         'price_level' => $interviewURL->price_level,
-                        'channel' => $interviewURL->channel,
                         'status' => ProjectRespondent::STATUS_RESPONDENT_PENDING
                     ]);
                     
