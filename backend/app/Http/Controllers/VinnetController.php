@@ -279,20 +279,20 @@ class VinnetController extends Controller
             $serviceType = $validatedRequest['service_type'] ?? null;
             $serviceCode = $validatedRequest['service_code'] ?? null;
             $phoneNumber = $validatedRequest['phone_number'] ?? null;
+            $provider = $validatedRequest['provider'] ?? null;
 
             Log::info('Transaction Info: ', [
                 'token' => $token,
                 'service_type' => $serviceType,
                 'service_code' => $serviceCode,
-                'phone_number' => $phoneNumber
+                'phone_number' => $phoneNumber,
+                'provider' => $provider
             ]);
 
-            if(in_array($serviceCode, ['S0029','S0013','S0031','S0015'])){
-                Log::error(ProjectRespondent::ERROR_MOBILE_NETWORK_NOT_SUPPORTED);
-                throw new \Exception(ProjectRespondent::ERROR_MOBILE_NETWORK_NOT_SUPPORTED . ' Vui lòng dùng số điện thoại khác nếu có hoặc PVV có thể gửi quà trực tiếp cho bạn.');
-            }
-
-            Log::info('Starting');
+            // if(in_array($serviceCode, ['S0029','S0013','S0031','S0015'])){
+            //     Log::error(ProjectRespondent::ERROR_MOBILE_NETWORK_NOT_SUPPORTED);
+            //     throw new \Exception(ProjectRespondent::ERROR_MOBILE_NETWORK_NOT_SUPPORTED . ' Vui lòng dùng số điện thoại khác nếu có hoặc PVV có thể gửi quà trực tiếp cho bạn.');
+            // }
 
             $tokenRecord = $tokenService->verifyToken($token);
 
@@ -301,18 +301,6 @@ class VinnetController extends Controller
             $project = $projectRespondent->project;
             
             Log::info('Project: ' . $project);
-
-            try
-            {
-                //Kiểm tra số điện thoại đáp viên nhập đã được nhận quà trước đó hay chưa?
-                ProjectRespondent::checkGiftPhoneNumber($project, $phoneNumber);
-
-            } catch(\Exception $e){
-                return response()->json([
-                    'message' => $e->getMessage() . ' Vui lòng liên hệ Admin để biết thêm thông tin.',
-                    'error' => $e->getMessage()
-                ], 409);
-            }
 
             //Tìm thông tin dự án đã được set up giá dựa trên dữ liệu từ Interview URL
             Log::info('Find the price item by province');
@@ -324,9 +312,21 @@ class VinnetController extends Controller
                 Log::error($e->getMessage());
 
                 return response()->json([
+                    'status_code' => 903,
                     'message' => $e->getMessage() . ' Vui lòng liên hệ Admin để biết thêm thông tin.',
                     'error' => Project::STATUS_PROJECT_NOT_SUITABLE_PRICES
                 ], 404);
+            }
+
+            if($price == 0)
+            {   
+                Log::error(Project::STATUS_PROJECT_NOT_SUITABLE_PRICES);
+                
+                return response()->json([
+                    'status_code' => 903,
+                    'message' => Project::STATUS_PROJECT_NOT_SUITABLE_PRICES . ' Vui lòng liên hệ Admin để biết thêm thông tin.',
+                    'error' => Project::STATUS_PROJECT_NOT_SUITABLE_PRICES
+                ], 422);
             }
 
             Log::info('Price: ' . intval($price));
@@ -341,29 +341,21 @@ class VinnetController extends Controller
                     ]);
                     
                     return response()->json([
+                        'status_code' => 900,
                         'message' => TransactionStatus::STATUS_TRANSACTION_TEST . ' [Giá trị quà tặng: ' . $price . ']'
                     ], 200);
             } 
 
             Log::info('Live Environment:');
-            
-            if($price == 0)
-            {   
-                Log::error(Project::STATUS_PROJECT_NOT_SUITABLE_PRICES);
-                
-                return response()->json([
-                    'message' => Project::STATUS_PROJECT_NOT_SUITABLE_PRICES . ' Vui lòng liên hệ Admin để biết thêm thông tin.',
-                    'error' => Project::STATUS_PROJECT_NOT_SUITABLE_PRICES
-                ], 422);
-            }
 
             try
             {
                 //Kiểm tra số điện thoại đáp viên nhập đã được nhận quà trước đó hay chưa?
-                ProjectRespondent::checkGiftPhoneNumber($project, $validatedRequest['phone_number']);
+                ProjectRespondent::checkGiftPhoneNumber($project, $phoneNumber);
 
             } catch(\Exception $e){
                 return response()->json([
+                    'status_code' => 905,
                     'message' => $e->getMessage() . ' Vui lòng liên hệ Admin để biết thêm thông tin.',
                     'error' => $e->getMessage()
                 ], 409);
@@ -372,7 +364,8 @@ class VinnetController extends Controller
             $projectRespondent->update([
                 'phone_number' => $phoneNumber,
                 'service_code' => $serviceCode,
-                'service_type' => $serviceType
+                'service_type' => $serviceType,
+                'provider' => $provider
             ]); 
             
             Log::info('Project respondent: ' . json_encode($projectRespondent->toArray()));
@@ -391,6 +384,7 @@ class VinnetController extends Controller
                     $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_TEMPORARY_ERROR);
                     
                     return response()->json([
+                        'status_code' => 998,
                         'message' => ProjectRespondent::ERROR_RESPONDENT_GIFT_TEMPORARY,
                         'error' => ProjectRespondent::ERROR_RESPONDENT_GIFT_TEMPORARY
                     ], 404);
@@ -403,6 +397,7 @@ class VinnetController extends Controller
                 }
 
                 return response()->json([
+                    'status_code' => 999,
                     'message' => ProjectRespondent::ERROR_RESPONDENT_GIFT_TEMPORARY,
                     'error' => ProjectRespondent::ERROR_RESPONDENT_GIFT_TEMPORARY
                 ], 404);
@@ -427,6 +422,7 @@ class VinnetController extends Controller
                     }
 
                     return response()->json([
+                        'status_code' => 998,
                         'message' => ProjectRespondent::ERROR_RESPONDENT_GIFT_TEMPORARY,
                         'error' => ProjectRespondent::ERROR_RESPONDENT_GIFT_TEMPORARY
                     ], 404);
@@ -439,6 +435,7 @@ class VinnetController extends Controller
                 }
 
                 return response()->json([
+                    'status_code' => 999,
                     'message' => ProjectRespondent::ERROR_RESPONDENT_GIFT_TEMPORARY,
                     'error' => ProjectRespondent::ERROR_RESPONDENT_GIFT_TEMPORARY
                 ], 404);
@@ -461,13 +458,14 @@ class VinnetController extends Controller
                 $selectedPrices = $this->findSubsets($prices, $price);
             }
 
-            if(empty($selectedPrices)){
+            if(empty($selectedPrices) || count($selectedPrices) !== 1){
                 return response()->json([
+                    'status_code' => 906,
                     'message' => TransactionStatus::STATUS_INVALID_DENOMINATION,
                     'error' => 'Không tìm được mệnh giá phù hợp.'
                 ], 404);
             }
-            
+
             Log::info('Selected Prices: ' . implode(", ", $selectedPrices));
             
             $vinnet_token_order = 1;
@@ -532,6 +530,7 @@ class VinnetController extends Controller
                     }
 
                     return response()->json([
+                        'status_code' => 999,
                         'message' => ProjectRespondent::ERROR_RESPONDENT_GIFT_SYSTEM,
                         'error' => ProjectRespondent::ERROR_RESPONDENT_GIFT_SYSTEM
                     ], 400);
@@ -590,6 +589,7 @@ class VinnetController extends Controller
                     }
 
                     return response()->json([
+                        'status_code' => 998,
                         'message' => ProjectRespondent::ERROR_RESPONDENT_GIFT_SYSTEM,
                         'error' => ProjectRespondent::ERROR_RESPONDENT_GIFT_SYSTEM
                     ], 400);
@@ -612,7 +612,7 @@ class VinnetController extends Controller
                     $apiCMCObject = new APICMCObject();
                     
                     try{
-                        $responseSMSData = $apiCMCObject->send_sms($validatedRequest['phone_number'], $messageCard);
+                        $responseSMSData = $apiCMCObject->send_sms($phoneNumber, $messageCard);
                     } catch(\Exception $e){
                         Log::error("CMC Telecom API Error: " . $e->getMessage());
                     
@@ -627,6 +627,8 @@ class VinnetController extends Controller
                         }
 
                         return response()->json([
+                            'status_code' => 999,
+                            'card' => $messageCard,
                             'message' => ProjectRespondent::ERROR_RESPONDENT_GIFT_SYSTEM,
                             'error' => ProjectRespondent::ERROR_RESPONDENT_GIFT_SYSTEM
                         ], 404);
@@ -638,6 +640,8 @@ class VinnetController extends Controller
                         $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED);
 
                         return response()->json([
+                            'status_code' => 900,
+                            'card' => $messageCard,
                             'message' => TransactionStatus::SUCCESS
                         ], 200);
                     } else {
@@ -646,6 +650,8 @@ class VinnetController extends Controller
                         $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_NOT_RECEIVED);
 
                         return response()->json([
+                            'status_code' => 997,
+                            'card' => $messageCard,
                             'message' => SMSStatus::ERROR,
                             'error' => SMSStatus::ERROR
                         ], 400);
@@ -674,6 +680,7 @@ class VinnetController extends Controller
             Log::error($e->getMessage());
             
             return response()->json([
+                'status_code' => $e->getCode(),
                 'message' => $e->getMessage(),
             ], 400);
         }

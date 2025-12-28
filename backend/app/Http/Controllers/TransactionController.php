@@ -73,7 +73,7 @@ class TransactionController extends Controller
 
             if (!$project->projectDetails) {
                 return response()->json([
-                    'status_code' => 901,
+                    'status_code' => 902,
                     'message' => Project::ERROR_PROJECT_DETAILS_NOT_CONFIGURED . ' Vui lòng liên hệ Admin để biết thêm thông tin.',
                     'error' => Project::ERROR_PROJECT_DETAILS_NOT_CONFIGURED
                 ], 404);
@@ -89,7 +89,7 @@ class TransactionController extends Controller
                 Log::error($e->getMessage());
 
                 return response()->json([
-                    'status_code' => 901,
+                    'status_code' => 903,
                     'message' => $e->getMessage() . ' Vui lòng liên hệ Admin để biết thêm thông tin.',
                     'error' => Project::STATUS_PROJECT_NOT_SUITABLE_PRICES
                 ], 404);
@@ -102,13 +102,13 @@ class TransactionController extends Controller
                 Log::error(Project::STATUS_PROJECT_NOT_SUITABLE_PRICES);
                 
                 return response()->json([
-                    'status_code' => 901,
+                    'status_code' => 903,
                     'message' => Project::STATUS_PROJECT_NOT_SUITABLE_PRICES . ' Vui lòng liên hệ Admin để biết thêm thông tin.',
                     'error' => Project::STATUS_PROJECT_NOT_SUITABLE_PRICES
                 ], 422);
             }
             
-            $gifts = [];
+            $gifts = ['gotit'];
 
             $phoneNumber = $validatedRequest['phone_number'];
 
@@ -116,7 +116,7 @@ class TransactionController extends Controller
 
             if(!$serviceCode){
                 return response()->json([
-                    'status_code' => 901,
+                    'status_code' => 904,
                     'message' => ProjectRespondent::ERROR_INVALID_RESPONDENT_PHONE_NUMBER . 'Vui lòng kiểm tra lại.',
                     'error' => ProjectRespondent::ERROR_INVALID_RESPONDENT_PHONE_NUMBER
                 ], 409);
@@ -125,18 +125,15 @@ class TransactionController extends Controller
             try{
                 $tokenData = $vinnetService->authenticate_token();
 
-                if($tokenData['code'] != 0){
-                    $gifts[] = 'gotit';
-                } else {
+                if($tokenData['code'] == 0){
                     $serviceItemsData = $vinnetService->query_service(
-                                            $interviewURL->phone_number, 
+                                            $phoneNumber, 
                                             $serviceCode, 
                                             $tokenData['token'], 
                                             null
                                         );
-                    if($serviceItemsData['code'] != 0){
-                        $gifts[] = 'gotit';
-                    } else {
+
+                    if($serviceItemsData['code'] == 0){
                         foreach($serviceItemsData['service_items'] as $serviceItem){
                             
                             if($serviceItem['itemValue'] === $price){
@@ -149,6 +146,8 @@ class TransactionController extends Controller
                 $gifts[] = 'gotit';
             }
 
+            Log::info('Gift types: ' . implode(",", $gifts));
+
             try
             {
                 //Kiểm tra đáp viên đã thực hiện giao dịch nhận quà trước đó hay chưa?
@@ -159,7 +158,7 @@ class TransactionController extends Controller
 
             } catch(\Exception $e){
                 return response()->json([
-                    'status_code' => 902,
+                    'status_code' => 905,
                     'message' => $e->getMessage() . ' Vui lòng liên hệ Admin để biết thêm thông tin.',
                     'error' => $e->getMessage()
                 ], 409);
@@ -225,7 +224,7 @@ class TransactionController extends Controller
 
                     //Nếu đã thực hiện giao dịch => không cho thực hiện
                     return response()->json([
-                        'status_code' => 902,
+                        'status_code' => 905,
                         'message' => ProjectRespondent::ERROR_DUPLICATE_RESPONDENT,
                         'error' => ProjectRespondent::ERROR_DUPLICATE_RESPONDENT . ' [Trường hợp Đáp viên đã tồn tại và đã có thực hiện giao dịch]'
                     ], 500);
@@ -235,7 +234,7 @@ class TransactionController extends Controller
             $token = $tokenService->createOrReuseToken($projectRespondent);
 
             return response()->json([
-                'status_code' => 200,
+                'status_code' => 900,
                 'message' => ProjectRespondent::STATUS_RESPONDENT_QUALIFIED,
                 'token' => $token,
                 'gifts' => $gifts
@@ -245,7 +244,7 @@ class TransactionController extends Controller
             Log::error($e->getMessage());
             
             return response()->json([
-                'status_code' => 400,
+                'status_code' => 989,
                 'message' => $e->getMessage(),
             ], 400);
         }
