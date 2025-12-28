@@ -35,7 +35,7 @@ class InterviewURL
         $this->respondent_phone_number = $splittedURL[8] ?? null;
         $this->province_id = $splittedURL[9] ?? null;
         $this->price_level = $splittedURL[10] ?? null;
-        $this->remember_token = implode('', array_slice($splittedURL, 12)) ?? null;
+        $this->remember_token = implode('', array_slice($splittedURL, 11)) ?? null;
         
         $this->logDetails();
         

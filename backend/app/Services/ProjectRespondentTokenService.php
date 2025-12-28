@@ -21,24 +21,30 @@ class ProjectRespondentTokenService
 
     public function createOrReuseToken(ProjectRespondent $projectRespondent){
 
-        $token = $projectRespondent->token;
+        $resultToken = $projectRespondent->token;
 
-        if($token){
-            if($token->status === 'blocked'){
+        if($resultToken){
+            if($resultToken->status === 'blocked'){
                 throw new \Exception(TransactionStatus::STATUS_EXPIRED);
             }
 
             // Nếu token đã hết hạn → block luôn
-            if ($token->expires_at->isPast()) {
+            if ($resultToken->expires_at->isPast()) {
 
-                $token->update([
+                $resultToken->update([
                     'status' => 'blocked'
                 ]);
 
                 throw new \Exception(TransactionStatus::STATUS_EXPIRED);
             }
 
-            return null;
+            $secret = Str::random(40);
+
+            $resultToken->update([
+                'token_hash' => Hash::make($secret),
+            ]);
+
+            return $resultToken->token_public . '.' . $secret;
         }
 
         $public = $this->generate_formated_uuid();
