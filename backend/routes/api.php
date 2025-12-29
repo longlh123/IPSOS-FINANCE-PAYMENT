@@ -75,7 +75,7 @@ Route::post('/project-management/vinnet/transactions', [VinnetController::class,
 Route::post('/project-management/vinnet/reject-transaction', [VinnetController::class, 'reject_transaction']); //API update status lý do đáp viên không nhận quà qua tin nhắn
 Route::post('/project-management/vinnet/check-transaction/{refReqUuid}', [VinnetController::class, 'check_transaction']);
 
-Route::post('/project-management/got-it/transaction', [GotItController::class, 'perform_transaction']);
+Route::post('/project-management/gotit/transactions', [GotItController::class, 'perform_transaction']);
 Route::post('/project-management/got-it/reject-transaction', [GotItController::class, 'reject_transaction']); //API update status lý do đáp viên không nhận quà qua tin nhắn
 Route::get('/project-management/got-it/check-transaction-refid/{transactionRefId}', [GotItController::class, 'check_transaction']);
 

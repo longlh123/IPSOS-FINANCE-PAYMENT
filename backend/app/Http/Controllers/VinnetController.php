@@ -289,11 +289,6 @@ class VinnetController extends Controller
                 'provider' => $provider
             ]);
 
-            // if(in_array($serviceCode, ['S0029','S0013','S0031','S0015'])){
-            //     Log::error(ProjectRespondent::ERROR_MOBILE_NETWORK_NOT_SUPPORTED);
-            //     throw new \Exception(ProjectRespondent::ERROR_MOBILE_NETWORK_NOT_SUPPORTED . ' Vui lòng dùng số điện thoại khác nếu có hoặc PVV có thể gửi quà trực tiếp cho bạn.');
-            // }
-
             $tokenRecord = $tokenService->verifyToken($token);
 
             $projectRespondent = $tokenRecord->projectRespondent;
@@ -598,6 +593,10 @@ class VinnetController extends Controller
                 $vinnet_token_order++;
             }
 
+            $projectRespondent->token()->update([
+                'status' => 'blocked'
+            ]);
+
             //TH Đáp viên chọn thẻ nạp tiền
             if($allSuccess){
                 if(!empty($messagesToSend)) {
@@ -628,7 +627,6 @@ class VinnetController extends Controller
 
                         return response()->json([
                             'status_code' => 999,
-                            'card' => $messageCard,
                             'message' => ProjectRespondent::ERROR_RESPONDENT_GIFT_SYSTEM,
                             'error' => ProjectRespondent::ERROR_RESPONDENT_GIFT_SYSTEM
                         ], 404);
@@ -641,7 +639,6 @@ class VinnetController extends Controller
 
                         return response()->json([
                             'status_code' => 900,
-                            'card' => $messageCard,
                             'message' => TransactionStatus::SUCCESS
                         ], 200);
                     } else {
@@ -651,7 +648,6 @@ class VinnetController extends Controller
 
                         return response()->json([
                             'status_code' => 997,
-                            'card' => $messageCard,
                             'message' => SMSStatus::ERROR,
                             'error' => SMSStatus::ERROR
                         ], 400);
