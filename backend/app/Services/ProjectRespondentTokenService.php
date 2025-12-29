@@ -76,30 +76,30 @@ class ProjectRespondentTokenService
                                             ->first();
 
         if(!$record){
-            throw new \Exception(TransactionStatus::STATUS_INVALID);
+            throw new \Exception(TransactionStatus::STATUS_INVALID, 501);
         }
 
         if($record->status === 'blocked'){
-            throw new \Exception(TransactionStatus::STATUS_EXPIRED);
+            throw new \Exception(TransactionStatus::STATUS_EXPIRED, 502);
         }
 
         if($record->expires_at->isPast()){
             $record->update([
                 'status' => 'blocked'
             ]);
-            throw new \Exception(TransactionStatus::STATUS_EXPIRED);
+            throw new \Exception(TransactionStatus::STATUS_EXPIRED, 502);
         }
 
         if($record->attempts >= 3){
             $record->update([
                 'status' => 'blocked'
             ]);
-            throw new \Exception(TransactionStatus::STATUS_SUSPENDED);
+            throw new \Exception(TransactionStatus::STATUS_SUSPENDED, 503);
         }
 
         if(!Hash::check($secret, $record->token_hash)){
             $record->increment('attempts');
-            throw new \Exception(TransactionStatus::STATUS_INVALID);
+            throw new \Exception(TransactionStatus::STATUS_INVALID, 501);
         }
 
         return $record;
