@@ -331,8 +331,8 @@ class VinnetService
             }
             
             // Log the data and signature for debugging purposes
-            Log::info('Data to verify: ' . $data);
-            Log::info('Signature to verify (base64): ' . $decoded_signature);
+            // Log::info('Data to verify: ' . $data);
+            // Log::info('Signature to verify (base64): ' . $decoded_signature);
             
             // Verify the signature using SHA256 with RSA
             $verify = openssl_verify($data, $decoded_signature, $pubKeyId, OPENSSL_ALGO_SHA256);
@@ -384,9 +384,9 @@ class VinnetService
                         $header[] = 'Authorization: ' . $token;
                     }
 
-                    Log::info("POST attempt {$attempt} to URL: {$url}");
-                    Log::info('Headers: ' . implode(',', $header));
-                    Log::info('Payload: ' . $jsonData);
+                    // Log::info("POST attempt {$attempt} to URL: {$url}");
+                    // Log::info('Headers: ' . implode(',', $header));
+                    // Log::info('Payload: ' . $jsonData);
 
                     // Set cURL options
                     curl_setopt_array($ch, [
@@ -422,7 +422,7 @@ class VinnetService
                     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
                     curl_close($ch);
 
-                    Log::info("Response received in {$duration}s (HTTP {$httpCode})");
+                    // Log::info("Response received in {$duration}s (HTTP {$httpCode})");
 
                     // Kiểm tra response rỗng
                     if ($response === false || $response === null || trim($response) === '') {
@@ -459,7 +459,7 @@ class VinnetService
                         throw new Exception('Xác thực chữ ký không hợp lệ (invalid signature)');
                     }
 
-                    Log::info('Response data: ' . json_encode($responseData));
+                    // Log::info('Response data: ' . json_encode($responseData));
                     return json_encode($responseData);
                 } catch (Exception $innerEx) {
                     Log::error("POST attempt {$attempt} failed: " . $innerEx->getMessage());
@@ -503,7 +503,7 @@ class VinnetService
 
             //Log::info('Encrypted data: ' . $reqData);
 
-            Log::info('Signature: ' . str_replace('"', '', $merchantInfo['VINNET_MERCHANT_CODE']) . $uuid . $reqData);
+            // Log::info('Signature: ' . str_replace('"', '', $merchantInfo['VINNET_MERCHANT_CODE']) . $uuid . $reqData);
 
             $signature = $this->generate_signature(str_replace('"', '', $merchantInfo['VINNET_MERCHANT_CODE']) . $uuid . $reqData);
 
@@ -587,7 +587,7 @@ class VinnetService
             }
 
             $uuid = $this->generate_formated_uuid();
-            //Log::info('UUID: ' . $uuid);
+            Log::info('Query Service UUID: ' . $uuid);
             
             $dataRequest = [
                 'serviceCode' => $service_code,
@@ -629,10 +629,10 @@ class VinnetService
                 $strServices = '';
 
                 foreach($resDatas as $resData){
-                    Log::info($resData);
+                    // Log::info($resData);
                     $decryptedData = $this->decrypt_data($resData);
                     $strServices = $strServices . $decryptedData;
-                    Log::info($decryptedData);
+                    // Log::info($decryptedData);
                 }
 
                 //Log::info($strServices);
@@ -673,7 +673,7 @@ class VinnetService
                         return $item['itemValue'] === $price;
                     })->values()->first();
 
-                    Log::info("Service Items: " . print_r($selectedServiceItems, true) . " - Check: " . is_array($selectedServiceItems));
+                    // Log::info("Service Items: " . print_r($selectedServiceItems, true) . " - Check: " . is_array($selectedServiceItems));
 
                     return [
                         'reqUuid' => $uuid,
@@ -682,7 +682,7 @@ class VinnetService
                         'message' => $decodedResponse['resMesg']
                     ];
                 } else {
-                    Log::info("Service Items: " . print_r($serviceItems, true) . is_array($serviceItems));
+                    // Log::info("Service Items: " . print_r($serviceItems, true) . is_array($serviceItems));
 
                     return [
                         'reqUuid' => $uuid,
@@ -739,13 +739,13 @@ class VinnetService
                 'quantity' => 1
             ];
 
-            Log::info('Data request: ' . json_encode($dataRequest));
+            // Log::info('Data request: ' . json_encode($dataRequest));
             
             $reqData = $this->encrypt_data(json_encode($dataRequest));
 
-            Log::info('Encrypted data: ' . $reqData);
+            // Log::info('Encrypted data: ' . $reqData);
 
-            Log::info('Data signature: ' . str_replace('"', '', $merchantInfo['VINNET_MERCHANT_CODE']) . $uuid . $reqData);
+            // Log::info('Data signature: ' . str_replace('"', '', $merchantInfo['VINNET_MERCHANT_CODE']) . $uuid . $reqData);
 
             $signature = $this->generate_signature(str_replace('"', '', $merchantInfo['VINNET_MERCHANT_CODE']) . $uuid . $reqData);
             
@@ -758,7 +758,7 @@ class VinnetService
 
             $response = $this->post_vinnet_request(str_replace('"', '', $url) . '/payservice', $token, $postData);
             
-            Log::info('Pay service response: ' . $response);
+            // Log::info('Pay service response: ' . $response);
 
             $decodedResponse = json_decode($response, true);
             
@@ -773,11 +773,11 @@ class VinnetService
 
             if($decodedResponse['resCode'] == '00')
             {
-                Log::info('Pay service data: ' . $decodedResponse['resData']);
+                // Log::info('Pay service data: ' . $decodedResponse['resData']);
 
                 $decryptedData = $this->decrypt_data($decodedResponse['resData']);
 
-                Log::info('Decrypted pay service data: ' . $decryptedData);
+                // Log::info('Decrypted pay service data: ' . $decryptedData);
                 
                 $decodedData = json_decode($decryptedData, true);
 
@@ -819,60 +819,23 @@ class VinnetService
         }
     }
 
-    public function check_transaction(Request $request, $refReqUuid){
+    public function check_transaction($token, $refReqUuid)
+    {
         try 
         {
-            $step_info = "Authentication Token API";
-
-            try{
-                $tokenData = $this->authenticate_token();
-
-                Log::info('Token data: ' . json_encode($tokenData));
-
-                if($tokenData['code'] != 0)
-                {
-                    Log::error('Authentication Token API Exception: ' . $tokenData['message']);
-
-                    $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_TEMPORARY_ERROR);
-                    
-                    return response()->json([
-                        'message' => ProjectRespondent::ERROR_RESPONDENT_GIFT_TEMPORARY,
-                        'error' => ProjectRespondent::ERROR_RESPONDENT_GIFT_TEMPORARY
-                    ], 404);
-                }
-            } catch (\Throwable $e) {
-                Log::error('Authentication Token API Exception: ' . $e->getMessage());
-
-                if(isset($projectRespondent)){
-                    $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_TEMPORARY_ERROR);
-                }
-
-                return response()->json([
-                    'message' => ProjectRespondent::ERROR_RESPONDENT_GIFT_TEMPORARY,
-                    'error' => ProjectRespondent::ERROR_RESPONDENT_GIFT_TEMPORARY
-                ], 404);
-            }
-
             $envObject = new ENVObject();
             $environment = $envObject->environment;
             $merchantInfo = $envObject->merchantInfo;
             $url = $envObject->url;
 
             $checkTransactionUuid = $this->generate_formated_uuid();
-            Log::info('Check Transaction UUID: ' . $checkTransactionUuid);
-            
-            //$encodedServiceItem = json_decode($service_item, true);
             
             $dataRequest = [
                 'refReqUuid' => $refReqUuid
             ];
 
             $reqData = $this->encrypt_data(json_encode($dataRequest));
-
-            Log::info('Encrypted data: ' . $reqData);
-
-            Log::info('Data signature: ' . str_replace('"', '', $merchantInfo['VINNET_MERCHANT_CODE']) . $checkTransactionUuid . $reqData);
-
+            
             $signature = $this->generate_signature(str_replace('"', '', $merchantInfo['VINNET_MERCHANT_CODE']) . $checkTransactionUuid . $reqData);
 
             $postData = [
@@ -882,9 +845,9 @@ class VinnetService
                 'sign' => $signature
             ];
 
-            $response = $this->post_vinnet_request(str_replace('"', '', $url) . '/checktransaction', $tokenData['token'], $postData);
+            $response = $this->post_vinnet_request(str_replace('"', '', $url) . '/checktransaction', $token, $postData);
 
-            Log::info('Pay service response: ' . $response);
+            // Log::info('Pay service response: ' . $response);
 
             $decodedResponse = json_decode($response, true);
             
@@ -901,7 +864,7 @@ class VinnetService
             {
                 $decryptedData = $this->decrypt_data($decodedResponse['resData']);
 
-                Log::info('Decrypted pay service data: ' . $decryptedData);
+                // Log::info('Decrypted pay service data: ' . $decryptedData);
                 
                 $decodedData = json_decode($decryptedData, true);
 
@@ -917,7 +880,7 @@ class VinnetService
                     throw new \Exception('Decoded services data is not an array');
                 }
 
-                Log::info('Pay item array: ' . print_r($decodedData, true));
+                // Log::info('Pay item array: ' . print_r($decodedData, true));
 
                 return [
                     'reqUuid' => $refReqUuid,

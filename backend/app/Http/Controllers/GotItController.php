@@ -21,6 +21,7 @@ use App\Constants\SMSStatus;
 use App\Constants\TransactionStatus;
 use App\Services\ProjectRespondentTokenService;
 use App\Http\Requests\TransactionRequest;
+use App\Http\Requests\CheckTransactionRequest;
 
 class GotItController extends Controller
 {
@@ -69,62 +70,62 @@ class GotItController extends Controller
         return $subset;
     }
 
-    public function reject_transaction(Request $request)
-    {
-        try
-        {
-            $request->validate([
-                'url' => 'required|string',
-                'reject_message' => 'required|string|min:3'
-            ], [
-                'url.required' => 'Yêu cầu từ chối không hợp lệ.',
-                'url.string' => 'Yêu cầu từ chối không hợp lệ.', 
-                'reject_message.required' => 'Lý do từ chối là bắt buộc.',
-                'reject_message.string' => 'Lý do từ chối phải là một đoạn văn bản hợp lệ.',
-                'reject_message.min' => 'Lý do từ chối phải là một đoạn văn bản hợp lệ.'
-            ]);
+    // public function reject_transaction(Request $request)
+    // {
+    //     try
+    //     {
+    //         $request->validate([
+    //             'url' => 'required|string',
+    //             'reject_message' => 'required|string|min:3'
+    //         ], [
+    //             'url.required' => 'Yêu cầu từ chối không hợp lệ.',
+    //             'url.string' => 'Yêu cầu từ chối không hợp lệ.', 
+    //             'reject_message.required' => 'Lý do từ chối là bắt buộc.',
+    //             'reject_message.string' => 'Lý do từ chối phải là một đoạn văn bản hợp lệ.',
+    //             'reject_message.min' => 'Lý do từ chối phải là một đoạn văn bản hợp lệ.'
+    //         ]);
 
-            $url = $request->input('url');
-            $reject_message = $request->input('reject_message');
+    //         $url = $request->input('url');
+    //         $reject_message = $request->input('reject_message');
 
-            $decodedURL = base64_decode($url);
-            $splittedURL = explode("/", $decodedURL);
+    //         $decodedURL = base64_decode($url);
+    //         $splittedURL = explode("/", $decodedURL);
 
-            $interviewURL = new InterviewURL($splittedURL);
+    //         $interviewURL = new InterviewURL($splittedURL);
 
-            $project = Project::findByInterviewURL($interviewURL);
+    //         $project = Project::findByInterviewURL($interviewURL);
 
-            $projectRespondent = $project->createProjectRespondents([
-                'project_id' => $project->id,
-                'shell_chainid' => $interviewURL->shell_chainid,
-                'respondent_id' => $interviewURL->shell_chainid . '-' . $interviewURL->respondent_id,
-                'employee_id' => $interviewURL->employee->id,
-                'province_id' => $interviewURL->province_id,
-                'interview_start' => $interviewURL->interview_start,
-                'interview_end' => $interviewURL->interview_end,
-                'respondent_phone_number' => $interviewURL->respondent_phone_number,
-                'phone_number' => $interviewURL->respondent_phone_number,
-                'price_level' => $interviewURL->price_level,
-                'channel' => $interviewURL->channel,
-                'status' => ProjectRespondent::STATUS_RESPONDENT_REJECTED,
-                'reject_message' => $reject_message
-            ]);
+    //         $projectRespondent = $project->createProjectRespondents([
+    //             'project_id' => $project->id,
+    //             'shell_chainid' => $interviewURL->shell_chainid,
+    //             'respondent_id' => $interviewURL->shell_chainid . '-' . $interviewURL->respondent_id,
+    //             'employee_id' => $interviewURL->employee->id,
+    //             'province_id' => $interviewURL->province_id,
+    //             'interview_start' => $interviewURL->interview_start,
+    //             'interview_end' => $interviewURL->interview_end,
+    //             'respondent_phone_number' => $interviewURL->respondent_phone_number,
+    //             'phone_number' => $interviewURL->respondent_phone_number,
+    //             'price_level' => $interviewURL->price_level,
+    //             'channel' => $interviewURL->channel,
+    //             'status' => ProjectRespondent::STATUS_RESPONDENT_REJECTED,
+    //             'reject_message' => $reject_message
+    //         ]);
 
-            if (!$projectRespondent) {
-                throw new \Exception(ProjectRespondent::ERROR_CANNOT_STORE_RESPONDENT);
-            }
+    //         if (!$projectRespondent) {
+    //             throw new \Exception(ProjectRespondent::ERROR_CANNOT_STORE_RESPONDENT);
+    //         }
 
-            Log::info('Transaction stored successfully', ['internal_code' => $interviewURL->internal_code, 'respondent_id' => $interviewURL->shell_chainid . '-' . $interviewURL->respondent_id, 'reject_message' => $reject_message]);
-        }
-        catch(\Exception $e)
-        {
-            Log::error($e->getMessage());
-            return response()->json([
-                'status_code' => Response::HTTP_BAD_REQUEST, //400
-                'message' => $e->getMessage(),
-            ], Response::HTTP_BAD_REQUEST);
-        }
-    }
+    //         Log::info('Transaction stored successfully', ['internal_code' => $interviewURL->internal_code, 'respondent_id' => $interviewURL->shell_chainid . '-' . $interviewURL->respondent_id, 'reject_message' => $reject_message]);
+    //     }
+    //     catch(\Exception $e)
+    //     {
+    //         Log::error($e->getMessage());
+    //         return response()->json([
+    //             'status_code' => Response::HTTP_BAD_REQUEST, //400
+    //             'message' => $e->getMessage(),
+    //         ], Response::HTTP_BAD_REQUEST);
+    //     }
+    // }
 
     public function perform_transaction(TransactionRequest $request, ProjectRespondentTokenService $tokenService)
     {
@@ -155,8 +156,6 @@ class GotItController extends Controller
             Log::info('Project: ' . $project);
 
             //Tìm thông tin dự án đã được set up giá dựa trên dữ liệu từ Interview URL
-            Log::info('Find the price item by province');
-            
             try {
                 $price = $project->getPriceForProvince($projectRespondent->province_id, $projectRespondent->price_level);
             } catch(\Exception $e){
@@ -181,19 +180,21 @@ class GotItController extends Controller
                 ], 422);
             }
 
-            Log::info('Price: ' . intval($price));
+            Log::info('Price item by province: ' . intval($price));
             
+            $employee = $projectRespondent->employee;
+
             if($project->projectDetails->status === Project::STATUS_IN_COMING || $project->projectDetails->status === Project::STATUS_ON_HOLD || 
-                ($project->projectDetails->status === Project::STATUS_ON_GOING && $projectRespondent->employee_id === 1)){
+                ($project->projectDetails->status === Project::STATUS_ON_GOING && !in_array(substr(strtolower($employee->employee_id), 0, 2), ['hn', 'sg', 'dn', 'ct']))){
                     
                     Log::info('Staging Environment: ');
 
-                    $tokenRecord->update([
-                        'status' => 'blocked'
-                    ]);
+                    // $tokenRecord->update([
+                    //     'status' => 'blocked'
+                    // ]);
                     
                     return response()->json([
-                        'status_code' => 900,
+                        'status_code' => 996,
                         'message' => TransactionStatus::STATUS_TRANSACTION_TEST . ' [Giá trị quà tặng: ' . $price . ']'
                     ], 200);
             } 
@@ -220,8 +221,6 @@ class GotItController extends Controller
                 'provider' => $provider
             ]); 
 
-            Log::info('Project respondent: ' . json_encode($projectRespondent->toArray()));
-            
             //Tìm loại voucher tương ứng với mức giá quà tặng
             $priceMap = [
                 3088 => 10000,
@@ -453,7 +452,7 @@ class GotItController extends Controller
 
                     return response()->json([
                         'status_code' => 999,
-                        'transaction_ref_id' => $apiObject->getTransactionRefId(),
+                        'transaction_id' => $apiObject->getTransactionRefId(),
                         'message' => ProjectRespondent::ERROR_RESPONDENT_GIFT_SYSTEM,
                         'error' => ProjectRespondent::ERROR_RESPONDENT_GIFT_SYSTEM
                     ], 404);
@@ -466,7 +465,7 @@ class GotItController extends Controller
 
                     return response()->json([
                         'status_code' => 900,
-                        'transaction_ref_id' => $apiObject->getTransactionRefId(),
+                        'transaction_id' => $apiObject->getTransactionRefId(),
                         'message' => TransactionStatus::SUCCESS
                     ], 200);
                 } else {
@@ -478,7 +477,7 @@ class GotItController extends Controller
 
                     return response()->json([
                         'status_code' => 997,
-                        'transaction_ref_id' => $apiObject->getTransactionRefId(),
+                        'transaction_id' => $apiObject->getTransactionRefId(),
                         'message' => SMSStatus::ERROR . ' [' . $responseSMSData['statusDescription'] . ']',
                         'error' => SMSStatus::ERROR . ' [' . $responseSMSData['statusDescription'] . ']',
                     ], 400);
@@ -522,8 +521,8 @@ class GotItController extends Controller
     private function generate_voucher_request($apiObject, $voucher_link_type, $phone_number, $prices)
     {
         $time=strtotime(date('Y-m-d'));
-        $month = date("F", $time);
-        $year = date("Y", $time);
+        $month = (int)date("n", $time);
+        $year = (int)date("Y", $time);
 
         if ($month < 6){
             $month = 12;
@@ -644,28 +643,45 @@ class GotItController extends Controller
         return $dataRequest;
     }
 
-    public function check_transaction(Request $request, $transactionRefId){
+    public function check_transaction(CheckTransactionRequest $request){
 
         try{
-            Log::info("Check Transaction RefId: " . $transactionRefId);
+            $validatedRequest = $request->validated();
+
+            $token = $validatedRequest['token'] ?? null;
+            $transaction_id = $validatedRequest['transaction_id'] ?? null;
+
+            Log::info("Check Transaction RefId: " . $transaction_id);
 
             $apiObject = new APIObject();
 
-            $responsedVoucher = $apiObject->check_transaction_refid($transactionRefId);
+            $responsedVoucher = $apiObject->check_transaction($transaction_id);
 
-            Log::info("Check Transaction: " . json_encode($responsedVoucher));
+            if($responsedVoucher['statusCode'] == 200 && empty($responsedVoucher['error'])){
+                Log::info("Check Transaction: " . json_encode($responsedVoucher['data']));
 
-            return response()->json([
-                'status_code' => Response::HTTP_OK, //200
-                'message' => 'Successful request.',
-                'data' => $responsedVoucher
-            ]);
-            
+                if(empty($responsedVoucher['data'][0]['vouchers'][0]['groupLink'])){
+                    $voucherLink = $responsedVoucher['data'][0]['vouchers'][0]['voucherLink'];
+                } else {
+                    $voucherLink = $responsedVoucher['data'][0]['vouchers'][0]['groupLink'];
+                }
+
+                return response()->json([
+                    'status_code' => 900,
+                    'message' => 'Successful request.',
+                    'data' => $voucherLink
+                ]);
+            } else {
+                return response()->json([
+                    'status_code' => 995,
+                    'message' => TransactionStatus::STATUS_INVALID_TRANSACTION . " [" . $responsedVoucher['message'] . "]"
+                ]);
+            }
         } catch (\Exception $e) {
             Log::error($e->getMessage());
             
             return response()->json([
-                'status_code' => Response::HTTP_BAD_REQUEST, //400
+                'status_code' => 999,
                 'message' => $e->getMessage(),
             ]);
         }

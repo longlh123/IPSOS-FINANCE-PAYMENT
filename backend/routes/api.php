@@ -68,16 +68,17 @@ Route::middleware(['auth:sanctum'])->group(function(){
 Route::get('/project-management/project/verify_token', [TransactionController::class, 'verify']);
 Route::post('/project-management/project/authenticate_token', [TransactionController::class, 'authenticate_token']);
 
-//delete Route::get('/project-management/project/verify-vinnet-token/{internal_code}/{project_name}/{respondent_id}/{remember_token}', [ProjectController::class, 'verify_vinnet_token']);
-
-// Route::post('/project-management/vinnet/change-key', [VinnetController::class, 'change_key']);
 Route::post('/project-management/vinnet/transactions', [VinnetController::class, 'perform_multiple_transactions']);
-Route::post('/project-management/vinnet/reject-transaction', [VinnetController::class, 'reject_transaction']); //API update status lý do đáp viên không nhận quà qua tin nhắn
-Route::post('/project-management/vinnet/check-transaction/{refReqUuid}', [VinnetController::class, 'check_transaction']);
+Route::post('/project-management/vinnet/check-transaction', [VinnetController::class, 'check_transaction']);
 
 Route::post('/project-management/gotit/transactions', [GotItController::class, 'perform_transaction']);
-Route::post('/project-management/got-it/reject-transaction', [GotItController::class, 'reject_transaction']); //API update status lý do đáp viên không nhận quà qua tin nhắn
-Route::get('/project-management/got-it/check-transaction-refid/{transactionRefId}', [GotItController::class, 'check_transaction']);
+Route::post('/project-management/gotit/check-transaction', [GotItController::class, 'check_transaction']);
+
+//delete Route::get('/project-management/project/verify-vinnet-token/{internal_code}/{project_name}/{respondent_id}/{remember_token}', [ProjectController::class, 'verify_vinnet_token']);
+// Route::post('/project-management/vinnet/change-key', [VinnetController::class, 'change_key']);
+//delete Route::post('/project-management/vinnet/reject-transaction', [VinnetController::class, 'reject_transaction']); //API update status lý do đáp viên không nhận quà qua tin nhắn
+//delete Route::post('/project-management/got-it/reject-transaction', [GotItController::class, 'reject_transaction']); //API update status lý do đáp viên không nhận quà qua tin nhắn
+
 
 
 Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail']);

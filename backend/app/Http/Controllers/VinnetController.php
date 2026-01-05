@@ -23,6 +23,7 @@ use App\Models\VinnetUUID;
 use App\Models\ENVObject;
 use App\Models\APICMCObject;
 use App\Http\Requests\TransactionRequest;
+use App\Http\Requests\CheckTransactionRequest;
 use App\Http\Resources\VinnetProjectResource;
 use App\Constants\SMSStatus;
 use App\Constants\TransactionStatus;
@@ -87,176 +88,176 @@ class VinnetController extends Controller
         return $subset;
     }
     
-    public function reject_transaction(Request $request)
-    {
-        try
-        {
-            $request->validate([
-                'url' => 'required|string',
-                'reject_message' => 'required|string|min:3'
-            ], [
-                'url.required' => 'Yêu cầu từ chối không hợp lệ.',
-                'url.string' => 'Yêu cầu từ chối không hợp lệ.', 
-                'reject_message.required' => 'Lý do từ chối là bắt buộc.',
-                'reject_message.string' => 'Lý do từ chối phải là một đoạn văn bản hợp lệ.',
-                'reject_message.min' => 'Lý do từ chối phải là một đoạn văn bản hợp lệ.'
-            ]);
+    // public function reject_transaction(Request $request)
+    // {
+    //     try
+    //     {
+    //         $request->validate([
+    //             'url' => 'required|string',
+    //             'reject_message' => 'required|string|min:3'
+    //         ], [
+    //             'url.required' => 'Yêu cầu từ chối không hợp lệ.',
+    //             'url.string' => 'Yêu cầu từ chối không hợp lệ.', 
+    //             'reject_message.required' => 'Lý do từ chối là bắt buộc.',
+    //             'reject_message.string' => 'Lý do từ chối phải là một đoạn văn bản hợp lệ.',
+    //             'reject_message.min' => 'Lý do từ chối phải là một đoạn văn bản hợp lệ.'
+    //         ]);
 
-            $url = $request->input('url');
-            $reject_message = $request->input('reject_message');
+    //         $url = $request->input('url');
+    //         $reject_message = $request->input('reject_message');
 
-            $decodedURL = base64_decode($url);
+    //         $decodedURL = base64_decode($url);
 
-            if (!$decodedURL || !str_contains($decodedURL, '/')) {
-                return response()->json([
-                    'message' => 'URL không hợp lệ.',
-                    'error' => 'INVALID_URL'
-                ], 400);
-            }
+    //         if (!$decodedURL || !str_contains($decodedURL, '/')) {
+    //             return response()->json([
+    //                 'message' => 'URL không hợp lệ.',
+    //                 'error' => 'INVALID_URL'
+    //             ], 400);
+    //         }
 
-            $splittedURL = explode("/", $decodedURL);
+    //         $splittedURL = explode("/", $decodedURL);
 
-            Log::info('URL Splitted: ' . json_encode($splittedURL));
+    //         Log::info('URL Splitted: ' . json_encode($splittedURL));
             
-            try{
+    //         try{
 
-                $interviewURL = new InterviewURL($splittedURL);
+    //             $interviewURL = new InterviewURL($splittedURL);
 
-                if(!in_array($interviewURL->channel, ['gotit','vinnet','other'])){
-                    Log::error('URL Vinnet nhưng thông tin đường link là quà Got It.');
-                    throw new \Exception(ProjectRespondent::ERROR_INVALID_INTERVIEWERURL);
-                }
+    //             if(!in_array($interviewURL->channel, ['gotit','vinnet','other'])){
+    //                 Log::error('URL Vinnet nhưng thông tin đường link là quà Got It.');
+    //                 throw new \Exception(ProjectRespondent::ERROR_INVALID_INTERVIEWERURL);
+    //             }
 
-            } catch (\Exception $e){
-                return response()->json([
-                    'message' => $e->getMessage(),
-                    'error' => $e->getMessage()
-                ], 404);
-            }
+    //         } catch (\Exception $e){
+    //             return response()->json([
+    //                 'message' => $e->getMessage(),
+    //                 'error' => $e->getMessage()
+    //             ], 404);
+    //         }
 
-            //Tìm thông tin dự án dựa trên dữ liệu từ Interview URL
-            $project = Project::findByInterviewURL($interviewURL);
+    //         //Tìm thông tin dự án dựa trên dữ liệu từ Interview URL
+    //         $project = Project::findByInterviewURL($interviewURL);
 
-            if (!$project->projectDetails) {
-                return response()->json([
-                    'message' => Project::ERROR_PROJECT_DETAILS_NOT_CONFIGURED . ' Vui lòng liên hệ Admin để biết thêm thông tin.',
-                    'error' => Project::ERROR_PROJECT_DETAILS_NOT_CONFIGURED
-                ], 404);
-            }
+    //         if (!$project->projectDetails) {
+    //             return response()->json([
+    //                 'message' => Project::ERROR_PROJECT_DETAILS_NOT_CONFIGURED . ' Vui lòng liên hệ Admin để biết thêm thông tin.',
+    //                 'error' => Project::ERROR_PROJECT_DETAILS_NOT_CONFIGURED
+    //             ], 404);
+    //         }
 
-            if($project->projectDetails->status === Project::STATUS_IN_COMING || $project->projectDetails->status === Project::STATUS_ON_HOLD || 
-                ($project->projectDetails->status === Project::STATUS_ON_GOING && !in_array(substr(strtolower($interviewURL->location_id), 0, 2), ['hn', 'sg', 'dn', 'ct']))){
+    //         if($project->projectDetails->status === Project::STATUS_IN_COMING || $project->projectDetails->status === Project::STATUS_ON_HOLD || 
+    //             ($project->projectDetails->status === Project::STATUS_ON_GOING && !in_array(substr(strtolower($interviewURL->location_id), 0, 2), ['hn', 'sg', 'dn', 'ct']))){
                     
-                    Log::info('Staging Environment: ');
+    //                 Log::info('Staging Environment: ');
                     
-                    return response()->json([
-                        'message' => TransactionStatus::STATUS_TRANSACTION_TEST . ' [Ghi nhận lý do từ chối của đáp viên]'
-                    ], Response::HTTP_OK);
-            } 
+    //                 return response()->json([
+    //                     'message' => TransactionStatus::STATUS_TRANSACTION_TEST . ' [Ghi nhận lý do từ chối của đáp viên]'
+    //                 ], Response::HTTP_OK);
+    //         } 
 
-            Log::info('Live Environment:');
+    //         Log::info('Live Environment:');
 
-            try
-            {
-                //Kiểm tra đáp viên đã thực hiện giao dịch nhận quà trước đó hay chưa?
-                ProjectRespondent::checkIfRespondentProcessed($project, $interviewURL);
+    //         try
+    //         {
+    //             //Kiểm tra đáp viên đã thực hiện giao dịch nhận quà trước đó hay chưa?
+    //             ProjectRespondent::checkIfRespondentProcessed($project, $interviewURL);
 
-            } catch(\Exception $e){
-                return response()->json([
-                    'message' => $e->getMessage() . ' Vui lòng liên hệ Admin để biết thêm thông tin.',
-                    'error' => $e->getMessage()
-                ], 409);
-            }
+    //         } catch(\Exception $e){
+    //             return response()->json([
+    //                 'message' => $e->getMessage() . ' Vui lòng liên hệ Admin để biết thêm thông tin.',
+    //                 'error' => $e->getMessage()
+    //             ], 409);
+    //         }
 
-            // Tìm thông tin của Project Respondent
-            $projectRespondent = ProjectRespondent::findProjectRespondent($project, $interviewURL);
+    //         // Tìm thông tin của Project Respondent
+    //         $projectRespondent = ProjectRespondent::findProjectRespondent($project, $interviewURL);
 
-            if(!$projectRespondent){
-                //Thông tin mới => Cập nhật thông tin vào hệ thống
-                DB::beginTransaction();
+    //         if(!$projectRespondent){
+    //             //Thông tin mới => Cập nhật thông tin vào hệ thống
+    //             DB::beginTransaction();
 
-                try{
-                    $projectRespondent = $project->createProjectRespondents([
-                        'project_id' => $project->id,
-                        'shell_chainid' => $interviewURL->shell_chainid,
-                        'respondent_id' => $interviewURL->shell_chainid . '-' . $interviewURL->respondent_id,
-                        'employee_id' => $interviewURL->employee->id,
-                        'province_id' => $interviewURL->province_id,
-                        'interview_start' => $interviewURL->interview_start,
-                        'interview_end' => $interviewURL->interview_end,
-                        'respondent_phone_number' => $interviewURL->respondent_phone_number,
-                        'phone_number' => $interviewURL->respondent_phone_number,
-                        'price_level' => $interviewURL->price_level,
-                        'channel' => $interviewURL->channel,
-                        'service_code' => '',
-                        'status' => ProjectRespondent::STATUS_RESPONDENT_PENDING
-                    ]);
+    //             try{
+    //                 $projectRespondent = $project->createProjectRespondents([
+    //                     'project_id' => $project->id,
+    //                     'shell_chainid' => $interviewURL->shell_chainid,
+    //                     'respondent_id' => $interviewURL->shell_chainid . '-' . $interviewURL->respondent_id,
+    //                     'employee_id' => $interviewURL->employee->id,
+    //                     'province_id' => $interviewURL->province_id,
+    //                     'interview_start' => $interviewURL->interview_start,
+    //                     'interview_end' => $interviewURL->interview_end,
+    //                     'respondent_phone_number' => $interviewURL->respondent_phone_number,
+    //                     'phone_number' => $interviewURL->respondent_phone_number,
+    //                     'price_level' => $interviewURL->price_level,
+    //                     'channel' => $interviewURL->channel,
+    //                     'service_code' => '',
+    //                     'status' => ProjectRespondent::STATUS_RESPONDENT_PENDING
+    //                 ]);
 
-                    DB::commit();
+    //                 DB::commit();
 
-                } catch(\Exception $e) {
+    //             } catch(\Exception $e) {
 
-                    DB::rollBack();
+    //                 DB::rollBack();
 
-                    Log::error('SQL Error ['.$e->getCode().']: '.$e->getMessage());
+    //                 Log::error('SQL Error ['.$e->getCode().']: '.$e->getMessage());
 
-                    if($e->getCode() === '23000'){
-                        return response()->json([
-                            'message' => ProjectRespondent::ERROR_CANNOT_STORE_RESPONDENT,
-                            'error' => $e->getMessage()
-                        ], 409); // 409 Conflict
-                    }
+    //                 if($e->getCode() === '23000'){
+    //                     return response()->json([
+    //                         'message' => ProjectRespondent::ERROR_CANNOT_STORE_RESPONDENT,
+    //                         'error' => $e->getMessage()
+    //                     ], 409); // 409 Conflict
+    //                 }
                     
-                    return response()->json([
-                        'message' => ProjectRespondent::ERROR_CANNOT_STORE_RESPONDENT,
-                        'error' => $e->getMessage()
-                    ], 500);
-                }
-            } else {
-                //Thông tin cũ
-                //Kiểm tra xem Project Respondent có thực hiện bất kỳ giao dịch nào chưa?
-                //Nếu chưa => xem như thông tin mới => cập nhật lại status cho Project Respondent
+    //                 return response()->json([
+    //                     'message' => ProjectRespondent::ERROR_CANNOT_STORE_RESPONDENT,
+    //                     'error' => $e->getMessage()
+    //                 ], 500);
+    //             }
+    //         } else {
+    //             //Thông tin cũ
+    //             //Kiểm tra xem Project Respondent có thực hiện bất kỳ giao dịch nào chưa?
+    //             //Nếu chưa => xem như thông tin mới => cập nhật lại status cho Project Respondent
 
-                Log::info("Number of transactions: " . $projectRespondent->vinnetTransactions()->count());
+    //             Log::info("Number of transactions: " . $projectRespondent->vinnetTransactions()->count());
 
-                if($projectRespondent->vinnetTransactions()->count() == 0){
+    //             if($projectRespondent->vinnetTransactions()->count() == 0){
 
-                    $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_PENDING);
-                } else {
-                    Log::info(ProjectRespondent::ERROR_DUPLICATE_RESPONDENT . ' [Trường hợp Đáp viên đã tồn tại và đã có thực hiện giao dịch]');
+    //                 $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_PENDING);
+    //             } else {
+    //                 Log::info(ProjectRespondent::ERROR_DUPLICATE_RESPONDENT . ' [Trường hợp Đáp viên đã tồn tại và đã có thực hiện giao dịch]');
 
-                    //Nếu đã thực hiện giao dịch => không cho thực hiện
-                    return response()->json([
-                        'message' => ProjectRespondent::ERROR_DUPLICATE_RESPONDENT,
-                        'error' => ProjectRespondent::ERROR_DUPLICATE_RESPONDENT . ' [Trường hợp Đáp viên đã tồn tại và đã có thực hiện giao dịch]'
-                    ], 500);
-                }
-            }
+    //                 //Nếu đã thực hiện giao dịch => không cho thực hiện
+    //                 return response()->json([
+    //                     'message' => ProjectRespondent::ERROR_DUPLICATE_RESPONDENT,
+    //                     'error' => ProjectRespondent::ERROR_DUPLICATE_RESPONDENT . ' [Trường hợp Đáp viên đã tồn tại và đã có thực hiện giao dịch]'
+    //                 ], 500);
+    //             }
+    //         }
 
-            if (!$projectRespondent) {
-                throw new \Exception(ProjectRespondent::ERROR_CANNOT_STORE_RESPONDENT);
-            }
+    //         if (!$projectRespondent) {
+    //             throw new \Exception(ProjectRespondent::ERROR_CANNOT_STORE_RESPONDENT);
+    //         }
 
-            $projectRespondent->update([
-                'reject_message' => $reject_message,
-                'status' => ProjectRespondent::STATUS_RESPONDENT_REJECTED
-            ]);
+    //         $projectRespondent->update([
+    //             'reject_message' => $reject_message,
+    //             'status' => ProjectRespondent::STATUS_RESPONDENT_REJECTED
+    //         ]);
 
-            Log::info('Transaction stored successfully', ['internal_code' => $interviewURL->internal_code, 'respondent_id' => $interviewURL->shell_chainid . '-' . $interviewURL->respondent_id, 'reject_message' => $reject_message]);
+    //         Log::info('Transaction stored successfully', ['internal_code' => $interviewURL->internal_code, 'respondent_id' => $interviewURL->shell_chainid . '-' . $interviewURL->respondent_id, 'reject_message' => $reject_message]);
             
-            return response()->json([
-                'message' => 'Cảm ơn bạn đã chia sẻ lý do!'
-            ], 200);
-        }
-        catch(\Exception $e)
-        {
-            Log::error($e->getMessage());
-            return response()->json([
-                'status_code' => Response::HTTP_BAD_REQUEST, //400
-                'message' => $e->getMessage(),
-            ], Response::HTTP_BAD_REQUEST);
-        }
-    }
+    //         return response()->json([
+    //             'message' => 'Cảm ơn bạn đã chia sẻ lý do!'
+    //         ], 200);
+    //     }
+    //     catch(\Exception $e)
+    //     {
+    //         Log::error($e->getMessage());
+    //         return response()->json([
+    //             'status_code' => Response::HTTP_BAD_REQUEST, //400
+    //             'message' => $e->getMessage(),
+    //         ], Response::HTTP_BAD_REQUEST);
+    //     }
+    // }
 
     /**
      * 
@@ -298,8 +299,6 @@ class VinnetController extends Controller
             Log::info('Project: ' . $project);
 
             //Tìm thông tin dự án đã được set up giá dựa trên dữ liệu từ Interview URL
-            Log::info('Find the price item by province');
-            
             try {
                 $price = $project->getPriceForProvince($projectRespondent->province_id, $projectRespondent->price_level);
             } catch(\Exception $e){
@@ -324,19 +323,21 @@ class VinnetController extends Controller
                 ], 422);
             }
 
-            Log::info('Price: ' . intval($price));
+            Log::info('Price item by province: ' . intval($price));
             
+            $employee = $projectRespondent->employee;
+
             if($project->projectDetails->status === Project::STATUS_IN_COMING || $project->projectDetails->status === Project::STATUS_ON_HOLD || 
-                ($project->projectDetails->status === Project::STATUS_ON_GOING && $projectRespondent->employee_id === 1)){
+                ($project->projectDetails->status === Project::STATUS_ON_GOING && !in_array(substr(strtolower($employee->employee_id), 0, 2), ['hn', 'sg', 'dn', 'ct']))){
                     
                     Log::info('Staging Environment: ');
 
-                    $tokenRecord->update([
-                        'status' => 'blocked'
-                    ]);
+                    // $tokenRecord->update([
+                    //     'status' => 'blocked'
+                    // ]);
                     
                     return response()->json([
-                        'status_code' => 900,
+                        'status_code' => 996,
                         'message' => TransactionStatus::STATUS_TRANSACTION_TEST . ' [Giá trị quà tặng: ' . $price . ']'
                     ], 200);
             } 
@@ -363,13 +364,10 @@ class VinnetController extends Controller
                 'provider' => $provider
             ]); 
             
-            Log::info('Project respondent: ' . json_encode($projectRespondent->toArray()));
-            
-            Log::info('Authentication Token to make API calls and retrieve information about suitable carrier pricing tiers.');
-            
             $step_info = "Authentication Token API";
 
-            try{
+            try
+            {
                 $tokenData = $vinnetService->authenticate_token();
 
                 if($tokenData['code'] != 0)
@@ -526,6 +524,7 @@ class VinnetController extends Controller
 
                     return response()->json([
                         'status_code' => 999,
+                        'transaction_id' => $payServiceUuid,
                         'message' => ProjectRespondent::ERROR_RESPONDENT_GIFT_SYSTEM,
                         'error' => ProjectRespondent::ERROR_RESPONDENT_GIFT_SYSTEM
                     ], 400);
@@ -585,6 +584,7 @@ class VinnetController extends Controller
 
                     return response()->json([
                         'status_code' => 998,
+                        'transaction_id' => $payServiceUuid,
                         'message' => ProjectRespondent::ERROR_RESPONDENT_GIFT_SYSTEM,
                         'error' => ProjectRespondent::ERROR_RESPONDENT_GIFT_SYSTEM
                     ], 400);
@@ -627,6 +627,7 @@ class VinnetController extends Controller
 
                         return response()->json([
                             'status_code' => 999,
+                            'transaction_id' => $payServiceUuid,
                             'message' => ProjectRespondent::ERROR_RESPONDENT_GIFT_SYSTEM,
                             'error' => ProjectRespondent::ERROR_RESPONDENT_GIFT_SYSTEM
                         ], 404);
@@ -639,6 +640,7 @@ class VinnetController extends Controller
 
                         return response()->json([
                             'status_code' => 900,
+                            'transaction_id' => $payServiceUuid,
                             'message' => TransactionStatus::SUCCESS
                         ], 200);
                     } else {
@@ -648,6 +650,7 @@ class VinnetController extends Controller
 
                         return response()->json([
                             'status_code' => 997,
+                            'transaction_id' => $payServiceUuid,
                             'message' => SMSStatus::ERROR,
                             'error' => SMSStatus::ERROR
                         ], 400);
@@ -859,6 +862,84 @@ class VinnetController extends Controller
             Log::error('Merchant Information failed: ' . $e->getMessage());
 
             throw $e;
+        }
+    }
+
+    public function check_transaction(CheckTransactionRequest $request, VinnetService $vinnetService)
+    {
+        try
+        {
+            try
+            {
+                $tokenData = $vinnetService->authenticate_token();
+
+                if($tokenData['code'] != 0)
+                {
+                    Log::error('Authentication Token API Exception: ' . $tokenData['message']);
+
+                    return response()->json([
+                        'status_code' => 998,
+                        'message' => TransactionStatus::STATUS_NOT_RECEIVED,
+                        'error' => TransactionStatus::STATUS_NOT_RECEIVED
+                    ], 404);
+                }
+            } catch (\Throwable $e) {
+                Log::error('Authentication Token API Exception: ' . $e->getMessage());
+
+                return response()->json([
+                    'status_code' => 999,
+                    'message' => TransactionStatus::STATUS_NOT_RECEIVED,
+                    'error' => TransactionStatus::STATUS_NOT_RECEIVED
+                ], 404);
+            }
+
+            $validatedRequest = $request->validated();
+
+            $token = $validatedRequest['token'] ?? null;
+            $transaction_id = $validatedRequest['transaction_id'] ?? null;
+
+            try
+            {
+                $dataRequest = $vinnetService->check_transaction($tokenData['token'], $transaction_id);
+            
+                if(intval($dataRequest['code']) == 0){
+                    $messagesToSend = sprintf(
+                        "IPSOS cam on ban. Tang ban ma dien thoai:\n%s:Code:%s,Seri:%s,Exp:%s",
+                        number_format($dataRequest['pay_item']['totalAmt'] / 1000, 0) . 'K',
+                        $dataRequest['pay_item']['cardItems'][0]['pinCode'] ?? 'N/A',
+                        $dataRequest['pay_item']['cardItems'][0]['serialNo'] ?? 'N/A',
+                        $dataRequest['pay_item']['cardItems'][0]['expiryDate'] ?? 'N/A'
+                    );
+
+                    Log::info('Checked Transaction: ' . $messagesToSend);
+
+                    return response()->json([
+                        'data' => $messagesToSend,
+                        'status_code' => 900,
+                        'message' => TransactionStatus::SUCCESS,
+                    ]);
+                } else {
+                    return response()->json([
+                        'status_code' => 995,
+                        'message' => TransactionStatus::STATUS_INVALID_TRANSACTION . " [" . $dataRequest['message'] . "]"
+                    ]);
+                }
+            } catch(\Throwable $e)
+            {
+                return response()->json([
+                    'status_code' => 999,
+                    'message' => TransactionStatus::STATUS_NOT_RECEIVED,
+                    'error' => TransactionStatus::STATUS_NOT_RECEIVED
+                ], 404);
+            }
+        } catch(\Exception $e) {
+            
+            Log::error($e->getMessage());
+            
+            return response()->json([
+                'status_code' => $e->getCode(),
+                'message' => $e->getMessage(),
+            ], 400);
         }
     }
 
