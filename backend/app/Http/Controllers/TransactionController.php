@@ -80,8 +80,6 @@ class TransactionController extends Controller
             }
 
             //Tìm thông tin dự án đã được set up giá dựa trên dữ liệu từ Interview URL
-            Log::info('Find the price item by province');
-            
             try {
                 $price = $project->getPriceForProvince($interviewURL->province_id, $interviewURL->price_level);
             } catch(\Exception $e){
@@ -95,7 +93,7 @@ class TransactionController extends Controller
                 ], 404);
             }
 
-            Log::info('Price: ' . intval($price));
+            Log::info('Find the price by province: ' . intval($price));
 
             if($price == 0)
             {   
@@ -146,7 +144,7 @@ class TransactionController extends Controller
                 $gifts[] = 'gotit';
             }
 
-            Log::info('Gift types: ' . implode(",", $gifts));
+            Log::info('Gift items by price: ' . implode(",", $gifts));
 
             try
             {

@@ -29,6 +29,7 @@ class TransactionStatus
     const STATUS_INVALID_DENOMINATION = 'Mệnh giá quà không hợp lệ'; // Invalid denomination
     const STATUS_TRANSACTION_FAILED = 'Giao dịch được thực hiện không qua quá trình phỏng vấn.';
     const STATUS_TRANSACTION_TEST = 'Giao dịch test đang được thực hiện';
+    const STATUS_INVALID_TRANSACTION = 'Transaction Id is not valid.';
 
     const ERROR_CODE_CONNECTION_FAILED = 'Could not resolve host';
     const ERROR_SERVICE_NOT_ROUTED     = 'Hệ thống chưa kết nối được đến dịch vụ chuyển quà.';

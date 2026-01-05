@@ -78,7 +78,7 @@ class APIObject
         return $responseData;
     }
 
-    public function check_transaction_refid($refid){
+    public function check_transaction($refid){
         
         $this->setTransactionRefId();
         $this->signatureData = $this->envObject->gotitInfo['API_KEY'] . '|' . $refid;
@@ -102,7 +102,7 @@ class APIObject
     {
         $url = $this->envObject->gotitUrl . '/vouchers/' . $voucher_link_type;
 
-        Log::info('URL: ' . $url);
+        // Log::info('URL: ' . $url);
 
         $responseData = $this->post_request($url, $postData);
         
@@ -334,14 +334,14 @@ class APIObject
                 $jsonData = json_encode($postData);
             }
             
-            Log::info("Post Data: ".$jsonData);
+            // Log::info("Post Data: ".$jsonData);
 
             // Set cURL options
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
             $header = $this->header;
 
-            Log::info('Headers: ' . implode(',', $header));
+            // Log::info('Headers: ' . implode(',', $header));
             
             curl_setopt_array($ch, [
                 CURLOPT_RETURNTRANSFER => true,
@@ -368,8 +368,8 @@ class APIObject
             $headerText = substr($response, 0, $headerSize);
             $bodyData = substr($response, $headerSize);
 
-            Log::info("Header: " . $headerText);
-            Log::info("Body: " . $bodyData);
+            // Log::info("Header: " . $headerText);
+            // Log::info("Body: " . $bodyData);
 
             // Parse header thành mảng
             $headers = [];
@@ -452,7 +452,7 @@ class APIObject
     public function generate_signature()
     {
         try {
-            Log::info('Data to generate Signature: ' . $this->signatureData);
+            // Log::info('Data to generate Signature: ' . $this->signatureData);
             
             // Load the public key from the file
             $privateKeyPath = storage_path('keys/gotit/' . $this->envObject->environment . '/private_key_pkcs1.pem');
@@ -487,7 +487,7 @@ class APIObject
             // Encode the signature to base64
             $encodedSignature = base64_encode($signature);
             
-            Log::info('Encoded signature: '. $encodedSignature);
+            // Log::info('Encoded signature: '. $encodedSignature);
 
             return $encodedSignature;
         } catch (\Exception $e) {
@@ -533,16 +533,16 @@ class APIObject
             }
             
             // Log the data and signature for debugging purposes
-            Log::info('Data to verify: ' . $responseData);
-            Log::info('Signature to verify (base64): ' . $signature);
-            Log::info('Decoded signature (re-encoded for check): ' . base64_encode($decoded_signature));
+            // Log::info('Data to verify: ' . $responseData);
+            // Log::info('Signature to verify (base64): ' . $signature);
+            // Log::info('Decoded signature (re-encoded for check): ' . base64_encode($decoded_signature));
 
-            Log::info('Signature binary length: ' . strlen($decoded_signature));
+            // Log::info('Signature binary length: ' . strlen($decoded_signature));
             
             // Verify the signature using SHA256 with RSA
             $verify = openssl_verify($responseData, $decoded_signature, $pubKeyId, OPENSSL_ALGO_SHA256);
             
-            Log::info('verify = ' . $verify);
+            // Log::info('verify = ' . $verify);
 
             // Free the key resource
             openssl_free_key($pubKeyId);
@@ -553,7 +553,7 @@ class APIObject
             }
             
             // Return the verification result
-            Log::info('verify = 1');
+            // Log::info('verify = 1');
 
             return $verify === 1;
         } catch(Exception $e) {
@@ -630,7 +630,7 @@ class APIObject
                 throw new Exception('Malformed JSON data: ' . json_last_error_msg());
             }
             
-            Log::info('Result data decryption: ' . $decodedData);
+            // Log::info('Result data decryption: ' . $decodedData);
             
             return $decodedData;
         } catch (Exception $e){
