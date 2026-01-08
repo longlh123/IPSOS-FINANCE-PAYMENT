@@ -937,7 +937,7 @@ class VinnetController extends Controller
             Log::error($e->getMessage());
             
             return response()->json([
-                'status_code' => $e->getCode(),
+                'status_code' => 999,
                 'message' => $e->getMessage(),
             ], 400);
         }

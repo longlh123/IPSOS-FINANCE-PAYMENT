@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use App\Http\Requests\ProjectRespondentTokenRequest;
+use App\Http\Resources\TransactionResource;
 use App\Models\InterviewURL;
 use App\Models\Project;
 use App\Models\ProjectRespondent;
@@ -17,6 +18,7 @@ use Ramsey\Uuid\Uuid;
 use App\Constants\TransactionStatus;
 use App\Services\ProjectRespondentTokenService;
 use App\Services\VinnetService;
+
 
 class TransactionController extends Controller
 {
@@ -253,9 +255,7 @@ class TransactionController extends Controller
         try{
             $perPage = $request->query('per_page', 10);
             $search = $request->query('searchTerm');
-            $searchMonth = $request->query('searchMonth');
-            $searchYear = $request->query('searchYear');
-
+            
             $query = DB::table('project_respondents as pr')
                     ->leftJoin('project_vinnet_transactions as pvt', 'pr.id', '=', 'pvt.project_respondent_id')
                     ->leftJoin('project_gotit_voucher_transactions as pgt', 'pr.id', '=', 'pgt.project_respondent_id')
@@ -303,19 +303,10 @@ class TransactionController extends Controller
                 Log::info('search: ' . $search);
 
                 $query->where(function($q) use ($search){
-                    $q->where('p.project_name', 'LIKE', "%$search%")
-                        ->orWhere('p.internal_code', 'LIKE', "%$search%");  
+                    $q->where('pr.respondent_phone_number', 'LIKE', "%$search%")
+                        ->orWhere('pr.phone_number', 'LIKE', "%$search%");  
                 });
             }
-            
-            $query->when($searchMonth && $searchYear, function ($q) use ($searchMonth, $searchYear) {
-                return $q->whereMonth(DB::raw('COALESCE(pvt.created_at, pgt.created_at)'), $searchMonth)
-                        ->whereYear(DB::raw('COALESCE(pvt.created_at, pgt.created_at)'), $searchYear);
-            });
-
-            $query->when(!$searchMonth && $searchYear, function ($q) use ($searchYear) {
-                return $q->whereYear(DB::raw('COALESCE(pvt.created_at, pgt.created_at)'), $searchYear);
-            });
             
             if($request->query('export_all')){
                 $transactions = $query->get();

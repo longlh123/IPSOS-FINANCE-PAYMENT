@@ -30,6 +30,7 @@ class ProjectResource extends JsonResource
             'project_name' => $this->project_name,
             'symphony' => $this->projectDetails->symphony ?? null,
             'job_number' => $this->projectDetails->job_number ?? null,
+            'remember_token' => $this->projectDetails->remember_token ?? null,
             'status' => $this->projectDetails->status ?? null,
             'platform' => $this->projectDetails->platform ?? null,
             'planned_field_start' => $this->projectDetails->planned_field_start ?? null,
