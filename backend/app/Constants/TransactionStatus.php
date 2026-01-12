@@ -10,6 +10,8 @@ class TransactionStatus
     const ERROR_C98  = 'Giao dịch chưa xác định kết quả. Vui lòng liên hệ Admin để kiểm tra.';
     const ERROR_C99  = 'Giao dịch thất bại';
 
+    const VINNET_SUCCESS = 'Thành Công';
+
     //Token Status
     const STATUS_NOT_RECEIVED = 'Không nhận được Token từ client';
     const STATUS_NOT_VERIFIED = 'Không xác thực được Token';
@@ -30,6 +32,7 @@ class TransactionStatus
     const STATUS_TRANSACTION_FAILED = 'Giao dịch được thực hiện không qua quá trình phỏng vấn.';
     const STATUS_TRANSACTION_TEST = 'Giao dịch test đang được thực hiện';
     const STATUS_INVALID_TRANSACTION = 'Transaction Id is not valid.';
+    const STATUS_REFUSAL_TRANSACTION = 'Thông tin từ chối đã được hệ thống ghi nhận.';
 
     const ERROR_CODE_CONNECTION_FAILED = 'Could not resolve host';
     const ERROR_SERVICE_NOT_ROUTED     = 'Hệ thống chưa kết nối được đến dịch vụ chuyển quà.';

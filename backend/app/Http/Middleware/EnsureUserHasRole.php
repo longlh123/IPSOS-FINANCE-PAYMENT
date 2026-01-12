@@ -28,13 +28,13 @@ class EnsureUserHasRole
 
         $user = Auth::user();
 
-        Log::info("Permission Roles: " . implode(", ", $roles));
+        // Log::info("Permission Roles: " . implode(", ", $roles));
         
-        if ($user && $user->userDetails) {
-            Log::info('User Role: ' . $user->userDetails->role->name);
-        } else {
-            Log::warning('UserDetail not found for user ID: ' . $user?->id);
-        }
+        // if ($user && $user->userDetails) {
+        //     Log::info('User Role: ' . $user->userDetails->role->name);
+        // } else {
+        //     Log::warning('UserDetail not found for user ID: ' . $user?->id);
+        // }
 
         if(!$user->userDetails || !$user->userDetails->hasAnyRole($roles))
         {

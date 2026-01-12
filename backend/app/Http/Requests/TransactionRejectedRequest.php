@@ -1,0 +1,40 @@
+<?php
+
+namespace App\Http\Requests;
+
+use Illuminate\Foundation\Http\FormRequest;
+
+class TransactionRejectedRequest extends FormRequest
+{
+    /**
+     * Determine if the user is authorized to make this request.
+     */
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    /**
+     * Get the validation rules that apply to the request.
+     *
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     */
+    public function rules(): array
+    {
+        return [
+            'token' => 'required|string',
+            'refusal_message' => 'required|string'
+        ];
+    }
+
+    public function message(): array
+    {
+        return [
+            'token.required' => 'The token is required.',
+            'token.string' => 'The token must be a string',
+
+            'refusal_message.required' => 'the refusal message is required',
+            'refusal_message.string' => 'the refusal message is string'
+        ];
+    }
+}

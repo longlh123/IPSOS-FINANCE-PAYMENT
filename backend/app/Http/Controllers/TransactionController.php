@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use App\Http\Requests\ProjectRespondentTokenRequest;
+use App\Http\Requests\TransactionRejectedRequest;
+use App\Http\Resources\TransactionResource;
 use App\Models\InterviewURL;
 use App\Models\Project;
 use App\Models\ProjectRespondent;
@@ -17,6 +19,7 @@ use Ramsey\Uuid\Uuid;
 use App\Constants\TransactionStatus;
 use App\Services\ProjectRespondentTokenService;
 use App\Services\VinnetService;
+
 
 class TransactionController extends Controller
 {
@@ -37,7 +40,68 @@ class TransactionController extends Controller
         }
     }
 
-    public function authenticate_token(ProjectRespondentTokenRequest $request, ProjectRespondentTokenService $tokenService, VinnetService $vinnetService){
+    public function refusal_transaction(TransactionRejectedRequest $request, ProjectRespondentTokenService $tokenService)
+    {
+        try
+        {
+            $validatedRequest = $request->validated();
+
+            $token = $validatedRequest['token'] ?? null;
+            $refusalMessage = $validatedRequest['refusal_message'] ?? null;
+
+            Log::info('Transaction Info: ', [
+                'token' => $token,
+                'refusal_message' => $refusalMessage
+            ]);
+
+            $tokenRecord = $tokenService->verifyToken($token);
+
+            $projectRespondent = $tokenRecord->projectRespondent;
+
+            $project = $projectRespondent->project;
+
+            $employee = $projectRespondent->employee;
+
+            if($project->projectDetails->status === Project::STATUS_IN_COMING || $project->projectDetails->status === Project::STATUS_ON_HOLD || 
+                ($project->projectDetails->status === Project::STATUS_ON_GOING && !in_array(substr(strtolower($employee->employee_id), 0, 2), ['hn', 'sg', 'dn', 'ct']))){
+                    
+                    Log::info('Staging Environment: ');
+                    
+                    return response()->json([
+                        'message' => TransactionStatus::STATUS_TRANSACTION_TEST . ' [Ghi nhận lý do từ chối của đáp viên]'
+                    ], Response::HTTP_OK);
+            } 
+
+            Log::info('Live Environment:');
+
+            $projectRespondent->update([
+                'channel' => 'other',
+                'reject_message' => $refusalMessage,
+                'status' => ProjectRespondent::STATUS_RESPONDENT_REJECTED
+            ]);
+            
+            $projectRespondent->token()->update([
+                'status' => 'blocked'
+            ]);
+
+            return response()->json([
+                'status_code' => 994,
+                'message' => TransactionStatus::STATUS_REFUSAL_TRANSACTION
+            ], 200);
+            
+        } catch(\Exception $e) {
+            
+            Log::error($e->getMessage());
+            
+            return response()->json([
+                'status_code' => $e->getCode(),
+                'message' => $e->getMessage(),
+            ], 400);
+        }
+    }
+
+    public function authenticate_token(ProjectRespondentTokenRequest $request, ProjectRespondentTokenService $tokenService, VinnetService $vinnetService)
+    {
         try
         {
             $validatedRequest = $request->validated();
@@ -106,8 +170,6 @@ class TransactionController extends Controller
                 ], 422);
             }
             
-            $gifts = ['gotit'];
-
             $phoneNumber = $validatedRequest['phone_number'];
 
             $serviceCode = $vinnetService->get_service_code($phoneNumber);
@@ -120,31 +182,7 @@ class TransactionController extends Controller
                 ], 409);
             }
 
-            try{
-                $tokenData = $vinnetService->authenticate_token();
-
-                if($tokenData['code'] == 0){
-                    $serviceItemsData = $vinnetService->query_service(
-                                            $phoneNumber, 
-                                            $serviceCode, 
-                                            $tokenData['token'], 
-                                            null
-                                        );
-
-                    if($serviceItemsData['code'] == 0){
-                        foreach($serviceItemsData['service_items'] as $serviceItem){
-                            
-                            if($serviceItem['itemValue'] === $price){
-                                $gifts[] = 'vinnet';
-                            }
-                        }
-                    }
-                }
-            } catch (\Throwable $e) {
-                $gifts[] = 'gotit';
-            }
-
-            Log::info('Gift items by price: ' . implode(",", $gifts));
+            $serviceItems = $vinnetService->get_service_items($price);
 
             try
             {
@@ -195,14 +233,14 @@ class TransactionController extends Controller
 
                     if($e->getCode() === '23000'){
                         return response()->json([
-                            'status_code' => 989,
+                            'status_code' => 999,
                             'message' => ProjectRespondent::ERROR_CANNOT_STORE_RESPONDENT,
                             'error' => $e->getMessage()
                         ], 409); // 409 Conflict
                     }
                     
                     return response()->json([
-                        'status_code' => 989,
+                        'status_code' => 999,
                         'message' => ProjectRespondent::ERROR_CANNOT_STORE_RESPONDENT,
                         'error' => $e->getMessage()
                     ], 500);
@@ -211,21 +249,32 @@ class TransactionController extends Controller
                 //Thông tin cũ
                 //Kiểm tra xem Project Respondent có thực hiện bất kỳ giao dịch nào chưa?
                 //Nếu chưa => xem như thông tin mới => cập nhật lại status cho Project Respondent
+                $vinnetTransactions = $projectRespondent->vinnetTransactions;
 
-                Log::info("Number of transactions: " . $projectRespondent->vinnetTransactions()->count());
+                if($vinnetTransactions->isNotEmpty()){
+                    $numberOfSuccess = $vinnetTransactions
+                                            ->where('vinnet_token_status', TransactionStatus::STATUS_VERIFIED)
+                                            ->count();
 
-                if($projectRespondent->vinnetTransactions()->count() == 0){
-                    
-                    $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_PENDING);
+                    if($numberOfSuccess == 0){
+                        $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_PENDING);    
+                    } else {
+                        Log::warning(
+                            ProjectRespondent::ERROR_DUPLICATE_RESPONDENT . ' [Trường hợp Đáp viên đã tồn tại và đã có thực hiện giao dịch]',
+                            [
+                                'respondent_id' => $projectRespondent->id
+                            ]
+                        );
+
+                        //Nếu đã thực hiện giao dịch => không cho thực hiện
+                        return response()->json([
+                            'status_code' => 905,
+                            'message' => ProjectRespondent::ERROR_DUPLICATE_RESPONDENT,
+                            'error' => ProjectRespondent::ERROR_DUPLICATE_RESPONDENT . ' [Trường hợp Đáp viên đã tồn tại và đã có thực hiện giao dịch]'
+                        ], 500);
+                    }
                 } else {
-                    Log::info(ProjectRespondent::ERROR_DUPLICATE_RESPONDENT . ' [Trường hợp Đáp viên đã tồn tại và đã có thực hiện giao dịch]');
-
-                    //Nếu đã thực hiện giao dịch => không cho thực hiện
-                    return response()->json([
-                        'status_code' => 905,
-                        'message' => ProjectRespondent::ERROR_DUPLICATE_RESPONDENT,
-                        'error' => ProjectRespondent::ERROR_DUPLICATE_RESPONDENT . ' [Trường hợp Đáp viên đã tồn tại và đã có thực hiện giao dịch]'
-                    ], 500);
+                    $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_PENDING);
                 }
             }
 
@@ -235,14 +284,14 @@ class TransactionController extends Controller
                 'status_code' => 900,
                 'message' => ProjectRespondent::STATUS_RESPONDENT_QUALIFIED,
                 'token' => $token,
-                'gifts' => $gifts
+                'service_items' => $serviceItems
             ], 200);
 
         } catch(\Exception $e){
             Log::error($e->getMessage());
             
             return response()->json([
-                'status_code' => 989,
+                'status_code' => 999,
                 'message' => $e->getMessage(),
             ], 400);
         }
@@ -253,9 +302,7 @@ class TransactionController extends Controller
         try{
             $perPage = $request->query('per_page', 10);
             $search = $request->query('searchTerm');
-            $searchMonth = $request->query('searchMonth');
-            $searchYear = $request->query('searchYear');
-
+            
             $query = DB::table('project_respondents as pr')
                     ->leftJoin('project_vinnet_transactions as pvt', 'pr.id', '=', 'pvt.project_respondent_id')
                     ->leftJoin('project_gotit_voucher_transactions as pgt', 'pr.id', '=', 'pgt.project_respondent_id')
@@ -303,20 +350,11 @@ class TransactionController extends Controller
                 Log::info('search: ' . $search);
 
                 $query->where(function($q) use ($search){
-                    $q->where('p.project_name', 'LIKE', "%$search%")
-                        ->orWhere('p.internal_code', 'LIKE', "%$search%");  
+                    $q->where('pr.respondent_phone_number', 'LIKE', "%$search%")
+                        ->orWhere('pr.phone_number', 'LIKE', "%$search%");  
                 });
             }
-            
-            $query->when($searchMonth && $searchYear, function ($q) use ($searchMonth, $searchYear) {
-                return $q->whereMonth(DB::raw('COALESCE(pvt.created_at, pgt.created_at)'), $searchMonth)
-                        ->whereYear(DB::raw('COALESCE(pvt.created_at, pgt.created_at)'), $searchYear);
-            });
 
-            $query->when(!$searchMonth && $searchYear, function ($q) use ($searchYear) {
-                return $q->whereYear(DB::raw('COALESCE(pvt.created_at, pgt.created_at)'), $searchYear);
-            });
-            
             if($request->query('export_all')){
                 $transactions = $query->get();
 

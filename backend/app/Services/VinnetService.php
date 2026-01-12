@@ -8,6 +8,90 @@ use App\Models\ENVObject;
 
 class VinnetService
 {
+    public $proviceItems = [
+        "Viettel" => [
+            "providerCode" => "VTT",
+            "subscriberNumberPrefix" => ['086','096','097','098','0162','0163','0164','0165','0166','0167','0168','0169','032','033','034','035','036','037','038','039'],
+            "serviceCode" => "S0004"
+        ],
+        "Vinaphone" => [
+            "providerCode" => "VNP",
+            "subscriberNumberPrefix" => ['091','094','088','0123','0124','0125','0127','0129','083','084','085','081','082'],
+            "serviceCode" => "S0014"
+        ],
+        "MobiFone" => [
+            "providerCode" => "VMS",
+            "subscriberNumberPrefix" => ['089','090','093','0120','0121','0122','0126','0128','070','079','077','076','078'],
+            "serviceCode" => "S0012"
+        ],
+        "Vietnamobile" => [
+            "providerCode" => "VNM",
+            "subscriberNumberPrefix" => ['052','092','0186','0188','056','058'],
+            "serviceCode" => "S0013"
+        ],
+        "Gmobile" => [
+            "providerCode" => "BEE",
+            "subscriberNumberPrefix" => ['099','0199','059'],
+            "serviceCode" => "S0011"
+        ],
+        "Wintel" => [
+            "providerCode" => "WTL",
+            "subscriberNumberPrefix" => ['055'],
+            "serviceCode" => "S0015"
+        ],
+        "I-Telecom" => [
+            "providerCode" => "I-Telecom",
+            "subscriberNumberPrefix" => ['087'],
+            "serviceCode" => "S0014"
+        ]
+    ];
+    
+    public $serviceItems = [
+        "S0004" => [
+            'label' => 'Mã thẻ nạp Viettel',
+            'prices' => [ 10000, 20000, 30000, 50000, 100000, 200000, 300000, 500000, 1000000 ]
+        ],
+        "S0011" => [
+            'label' => 'Mã thẻ nạp Gmobile',
+            'prices' => []
+        ],
+        "S0012" => [
+            'label' => 'Mã thẻ nạp Mobifone',
+            'prices' => [ 10000, 20000, 30000, 50000, 100000, 200000, 300000, 500000 ]
+        ],
+        "S0013" => [
+            'label' => 'Mã thẻ nạp Vietnamobile',
+            'prices' => [ 20000, 50000, 100000, 200000, 300000, 500000 ]
+        ],
+        "S0014" => [
+            'label' => 'Mã thẻ nạp Vinaphone',
+            'prices' => [ 10000, 20000, 30000, 50000, 100000, 200000, 300000, 500000 ]
+        ],
+        "S0015" => [
+            'label' => 'Mã thẻ nạp Wintel',
+            'prices' => []
+        ]
+    ];
+
+    function get_prices($serviceCode): array
+    {
+        return $this->serviceItems[$serviceCode];
+    }
+
+    function get_service_items($price): array
+    {
+        $service_items = [];
+
+        foreach($this->serviceItems as $key=>$serviceItem)
+        {
+            if(in_array($price, $serviceItem['prices'])){
+                $service_items[] = $key;
+            }
+        }
+
+        return $service_items;
+    }
+
     function get_service_code(string $phonenumber): ?string
     {
         $phonenumber = trim($phonenumber);
@@ -21,49 +105,11 @@ class VinnetService
         if ($length < 10 || $length > 11) {
             return null;
         }
-
-        $providers = [
-            "Viettel" => [
-                "providerCode" => "VTT",
-                "subscriberNumberPrefix" => ['086','096','097','098','0162','0163','0164','0165','0166','0167','0168','0169','032','033','034','035','036','037','038','039'],
-                "serviceCode" => "S0004"
-            ],
-            "Vinaphone" => [
-                "providerCode" => "VNP",
-                "subscriberNumberPrefix" => ['091','094','088','0123','0124','0125','0127','0129','083','084','085','081','082'],
-                "serviceCode" => "S0014"
-            ],
-            "MobiFone" => [
-                "providerCode" => "VMS",
-                "subscriberNumberPrefix" => ['089','090','093','0120','0121','0122','0126','0128','070','079','077','076','078'],
-                "serviceCode" => "S0012"
-            ],
-            "Vietnamobile" => [
-                "providerCode" => "VNM",
-                "subscriberNumberPrefix" => ['052','092','0186','0188','056','058'],
-                "serviceCode" => "S0013"
-            ],
-            "Gmobile" => [
-                "providerCode" => "BEE",
-                "subscriberNumberPrefix" => ['099','0199','059'],
-                "serviceCode" => "S0011"
-            ],
-            "Wintel" => [
-                "providerCode" => "WTL",
-                "subscriberNumberPrefix" => ['055'],
-                "serviceCode" => "S0015"
-            ],
-            "I-Telecom" => [
-                "providerCode" => "I-Telecom",
-                "subscriberNumberPrefix" => ['087'],
-                "serviceCode" => "S0014"
-            ]
-        ];
-
+        
         // nếu số 11 số => lấy 4 ký tự đầu, còn lại lấy 3
         $prefix = substr($phonenumber, 0, ($length == 11 ? 4 : 3));
 
-        foreach ($providers as $provider) {
+        foreach ($this->proviceItems as $provider) {
             if (in_array($prefix, $provider['subscriberNumberPrefix'])) {
                 return $provider['serviceCode'];
             }
@@ -582,7 +628,7 @@ class VinnetService
             $url = $envObject->url;
 
             // Validate inputs
-            if (empty($phone_number) || empty($service_code)|| empty($token)) {
+            if (empty($service_code)|| empty($token)) {
                 throw new \InvalidArgumentException('One or more required (phone_number|service_code|token) fields are empty');
             }
 
@@ -880,7 +926,7 @@ class VinnetService
                     throw new \Exception('Decoded services data is not an array');
                 }
 
-                // Log::info('Pay item array: ' . print_r($decodedData, true));
+                // Log::info('Checked Transaction: ' . print_r($decodedData, true));
 
                 return [
                     'reqUuid' => $refReqUuid,

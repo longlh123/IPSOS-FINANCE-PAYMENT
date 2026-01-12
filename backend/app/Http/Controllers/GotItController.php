@@ -70,63 +70,6 @@ class GotItController extends Controller
         return $subset;
     }
 
-    // public function reject_transaction(Request $request)
-    // {
-    //     try
-    //     {
-    //         $request->validate([
-    //             'url' => 'required|string',
-    //             'reject_message' => 'required|string|min:3'
-    //         ], [
-    //             'url.required' => 'Yêu cầu từ chối không hợp lệ.',
-    //             'url.string' => 'Yêu cầu từ chối không hợp lệ.', 
-    //             'reject_message.required' => 'Lý do từ chối là bắt buộc.',
-    //             'reject_message.string' => 'Lý do từ chối phải là một đoạn văn bản hợp lệ.',
-    //             'reject_message.min' => 'Lý do từ chối phải là một đoạn văn bản hợp lệ.'
-    //         ]);
-
-    //         $url = $request->input('url');
-    //         $reject_message = $request->input('reject_message');
-
-    //         $decodedURL = base64_decode($url);
-    //         $splittedURL = explode("/", $decodedURL);
-
-    //         $interviewURL = new InterviewURL($splittedURL);
-
-    //         $project = Project::findByInterviewURL($interviewURL);
-
-    //         $projectRespondent = $project->createProjectRespondents([
-    //             'project_id' => $project->id,
-    //             'shell_chainid' => $interviewURL->shell_chainid,
-    //             'respondent_id' => $interviewURL->shell_chainid . '-' . $interviewURL->respondent_id,
-    //             'employee_id' => $interviewURL->employee->id,
-    //             'province_id' => $interviewURL->province_id,
-    //             'interview_start' => $interviewURL->interview_start,
-    //             'interview_end' => $interviewURL->interview_end,
-    //             'respondent_phone_number' => $interviewURL->respondent_phone_number,
-    //             'phone_number' => $interviewURL->respondent_phone_number,
-    //             'price_level' => $interviewURL->price_level,
-    //             'channel' => $interviewURL->channel,
-    //             'status' => ProjectRespondent::STATUS_RESPONDENT_REJECTED,
-    //             'reject_message' => $reject_message
-    //         ]);
-
-    //         if (!$projectRespondent) {
-    //             throw new \Exception(ProjectRespondent::ERROR_CANNOT_STORE_RESPONDENT);
-    //         }
-
-    //         Log::info('Transaction stored successfully', ['internal_code' => $interviewURL->internal_code, 'respondent_id' => $interviewURL->shell_chainid . '-' . $interviewURL->respondent_id, 'reject_message' => $reject_message]);
-    //     }
-    //     catch(\Exception $e)
-    //     {
-    //         Log::error($e->getMessage());
-    //         return response()->json([
-    //             'status_code' => Response::HTTP_BAD_REQUEST, //400
-    //             'message' => $e->getMessage(),
-    //         ], Response::HTTP_BAD_REQUEST);
-    //     }
-    // }
-
     public function perform_transaction(TransactionRequest $request, ProjectRespondentTokenService $tokenService)
     {
         try
@@ -138,13 +81,15 @@ class GotItController extends Controller
             $serviceCode = $validatedRequest['service_code'] ?? null;
             $phoneNumber = $validatedRequest['phone_number'] ?? null;
             $provider = $validatedRequest['provider'] ?? null;
+            $deliveryMethod = $validatedRequest['delivery_method'] ?? null; 
 
             Log::info('Transaction Info: ', [
                 'token' => $token,
                 'service_type' => $serviceType,
                 'service_code' => $serviceCode,
                 'phone_number' => $phoneNumber,
-                'provider' => $provider
+                'provider' => $provider,
+                'delivery_method' => $deliveryMethod
             ]);
 
             $tokenRecord = $tokenService->verifyToken($token);
@@ -188,10 +133,6 @@ class GotItController extends Controller
                 ($project->projectDetails->status === Project::STATUS_ON_GOING && !in_array(substr(strtolower($employee->employee_id), 0, 2), ['hn', 'sg', 'dn', 'ct']))){
                     
                     Log::info('Staging Environment: ');
-
-                    // $tokenRecord->update([
-                    //     'status' => 'blocked'
-                    // ]);
                     
                     return response()->json([
                         'status_code' => 996,
@@ -218,7 +159,8 @@ class GotItController extends Controller
                 'phone_number' => $phoneNumber,
                 'service_code' => $serviceCode,
                 'service_type' => $serviceType,
-                'provider' => $provider
+                'provider' => $provider,
+                'delivery_method' => $deliveryMethod
             ]); 
 
             //Tìm loại voucher tương ứng với mức giá quà tặng

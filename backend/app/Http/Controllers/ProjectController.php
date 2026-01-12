@@ -85,12 +85,13 @@ class ProjectController extends Controller
 
             if(in_array(Auth::user()->userDetails->role->name, ['Admin', 'Finance'])){
                 $query = Project::with([
+                    'projectDetails', 
                     'projectDetails.createdBy'
                 ])
                 ->withCount('projectRespondents as count_respondents')
                 ->withCount('projectEmployees as count_employees');
             } else {
-                $query = Project::with(['projectDetails.createdBy'])
+                $query = Project::with(['projectDetails', 'projectDetails.createdBy'])
                     ->withCount('projectRespondents as total_respondents')
                     ->withCount('projectEmployees as count_employees')
                     ->whereHas('projectPermissions', function($q) use ($logged_in_user) {
@@ -115,11 +116,7 @@ class ProjectController extends Controller
                 });
             });
 
-            Log::info('search: ' . $search);
-
             if($search){
-                Log::info('search: ' . $search);
-
                 $query->where(function($q) use ($search){
                     $q->where('project_name', 'LIKE', "%$search%")
                         ->orWhere('internal_code', 'LIKE', "%$search%")
@@ -139,7 +136,7 @@ class ProjectController extends Controller
             });
 
             $query->orderBy('id', 'asc');
-            
+
             //$projects = $query->get();
             // Laravel paginator
             $projects = $query->paginate($perPage);

@@ -29,7 +29,11 @@ class ProjectRespondentTokenRequest extends FormRequest
 
     public function messages() {
         return [
-            'url.required' => 'The url is required'
+            'url.required' => 'The url is required',
+            'url.string' => 'The URL must be a string.',
+            'phone_number.required' => 'The phone number is required.',
+            'phone_number.string' => 'The phone number must be a string.',
+            'phone_number.digits_between' => 'The phone number must be between 10 and 11 digits.'
         ];
     }
 }
