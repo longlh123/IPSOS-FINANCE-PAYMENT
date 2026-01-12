@@ -162,8 +162,6 @@ class APIObject
 
                     $decryptedVoucherLinkCode = $this->decrypt_data($voucher['voucherLinkCode']);
                     $voucher['voucherLinkCode'] = $decryptedVoucherLinkCode;
-
-                    Log::info('Voucher Link Image: ' . $voucher['voucherImageLink']);
                 }  
             }
         } else {

@@ -26,13 +26,14 @@ class TransactionRequest extends FormRequest
             'phone_number' => 'required|string|digits_between:10,11',
             'service_type' => 'required|string|in:topup,card,voucher',
             'service_code' => 'required|string|max:10',
-            'provider' => 'required|string|in:vinnet,gotit'
+            'provider' => 'required|string|in:vinnet,gotit',
+            'delivery_method' => 'required|string|in:qr,sms'
         ];
     }
 
     public function messages() {
         return [
-            'token.required' => 'The token is required', 
+            'token.required' => 'The token is required.', 
             'phone_number.required' => 'The phone number is required.',
             'phone_number.digits_between' => 'The phone number must be between 10 and 11 digits.',
             
@@ -43,6 +44,10 @@ class TransactionRequest extends FormRequest
 
             'provider.required' => 'Provider is required',
             'provider.in' => 'The provider must be one of the following: vinnet, gotit.',
+
+            'delivery_method.required' => 'Delivery Method is required.',
+            'delivery_method.string' => 'Delivery Method must be a string.',
+            'delivery_method.in' => 'The Delivery Method must be one of the following: qr, sms.'
         ];
     }
 }

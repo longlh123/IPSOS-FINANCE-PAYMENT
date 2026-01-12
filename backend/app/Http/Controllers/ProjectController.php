@@ -116,11 +116,7 @@ class ProjectController extends Controller
                 });
             });
 
-            Log::info('search: ' . $search);
-
             if($search){
-                Log::info('search: ' . $search);
-
                 $query->where(function($q) use ($search){
                     $q->where('project_name', 'LIKE', "%$search%")
                         ->orWhere('internal_code', 'LIKE', "%$search%")
