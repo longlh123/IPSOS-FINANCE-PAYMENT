@@ -12,13 +12,13 @@ use Illuminate\Support\Facades\Hash;
 use App\Http\Requests\ProjectRespondentTokenRequest;
 use App\Http\Requests\TransactionRejectedRequest;
 use App\Http\Resources\TransactionResource;
-use App\Models\InterviewURL;
 use App\Models\Project;
 use App\Models\ProjectRespondent;
 use Ramsey\Uuid\Uuid;
 use App\Constants\TransactionStatus;
 use App\Services\ProjectRespondentTokenService;
 use App\Services\VinnetService;
+use App\Services\InterviewURL;
 
 
 class TransactionController extends Controller

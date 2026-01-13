@@ -1,11 +1,12 @@
 <?php
 
-namespace App\Models;
+namespace App\Services;
 
 use Illuminate\Support\Facades\Log;
 use App\Models\ProjectGotItVoucherTransaction;
 use App\Models\ProjectVinnetTransaction;
 use App\Constants\TransactionStatus;
+use App\Models\Employee;
 
 class InterviewURL
 {

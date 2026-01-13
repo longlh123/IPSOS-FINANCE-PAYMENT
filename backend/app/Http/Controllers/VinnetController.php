@@ -18,10 +18,7 @@ use App\Models\Employee;
 use App\Models\ProjectVinnetTransaction;
 use App\Models\ProjectVinnetSMSTransaction;
 use App\Models\ProjectRespondent;
-use App\Models\InterviewURL;
 use App\Models\VinnetUUID;
-use App\Models\ENVObject;
-use App\Models\APICMCObject;
 use App\Http\Requests\TransactionRequest;
 use App\Http\Requests\CheckTransactionRequest;
 use App\Http\Resources\VinnetProjectResource;
@@ -29,6 +26,9 @@ use App\Constants\SMSStatus;
 use App\Constants\TransactionStatus;
 use App\Services\ProjectRespondentTokenService;
 use App\Services\VinnetService;
+use App\Services\InterviewURL;
+use App\Services\ENVObject;
+use App\Services\APICMCObject;
 
 class VinnetController extends Controller
 {
@@ -357,6 +357,10 @@ class VinnetController extends Controller
                     
                     $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_DISPATCHED);
 
+                    $tokenRecord->update([
+                        'status' => 'blocked'
+                    ]);
+
                 } else if($dataRequest['pay_item']['status'] === 2){
                     //2: giao dịch đang xử lý, không được hoàn tiền KH
                     Log::error('Authentication Token API Exception: Lỗi treo từ Vinnet, chờ để kiểm tra lại');
@@ -446,6 +450,10 @@ class VinnetController extends Controller
                 $payItem = $payItemData['pay_item'];
 
                 $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_DISPATCHED);
+
+                $tokenRecord->update([
+                    'status' => 'blocked'
+                ]);
             }
 
             if($payItem){
@@ -524,14 +532,10 @@ class VinnetController extends Controller
                 
                 return response()->json([
                     'status_code' => 900,
-                    'transaction_id' => $messageCard,
+                    'transaction_id' => $payServiceUuid,
                     'message' => TransactionStatus::SUCCESS
                 ], 200);
             }
-
-            $tokenRecord->update([
-                'status' => 'blocked'
-            ]);
         } catch(\Exception $e) {
             
             Log::error($e->getMessage());

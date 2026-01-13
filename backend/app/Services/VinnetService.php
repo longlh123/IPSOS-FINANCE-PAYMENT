@@ -4,7 +4,6 @@ namespace App\Services;
 
 use Ramsey\Uuid\Uuid;
 use Illuminate\Support\Facades\Log;
-use App\Models\ENVObject;
 
 class VinnetService
 {

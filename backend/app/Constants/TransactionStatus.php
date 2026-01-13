@@ -10,7 +10,8 @@ class TransactionStatus
     const ERROR_C98  = 'Giao dịch chưa xác định kết quả. Vui lòng liên hệ Admin để kiểm tra.';
     const ERROR_C99  = 'Giao dịch thất bại';
 
-    const VINNET_SUCCESS = 'Thành Công';
+    const VINNET_SUCCESS = 'Thành công';
+    const GOTIT_SUCCESS = 'Voucher được cập nhật thành công.';
 
     //Token Status
     const STATUS_NOT_RECEIVED = 'Không nhận được Token từ client';

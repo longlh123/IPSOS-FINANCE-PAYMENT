@@ -8,18 +8,18 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
 use App\Http\Requests\StoreProjectGotItRequest;
-use App\Models\APIObject;
-use App\Models\InterviewURL;
 use App\Models\Project;
 use App\Models\ProjectRespondent;
 use App\Models\ProjectGotItVoucherTransaction;
 use App\Models\ProjectGotItSMSTransaction;
-use App\Models\ENVObject;
-use App\Models\APICMCObject;
 use App\Exceptions\GotItVoucherException;
 use App\Constants\SMSStatus;
 use App\Constants\TransactionStatus;
 use App\Services\ProjectRespondentTokenService;
+use App\Services\InterviewURL;
+use App\Services\APIObject;
+use App\Services\ENVObject;
+use App\Services\APICMCObject;
 use App\Http\Requests\TransactionRequest;
 use App\Http\Requests\CheckTransactionRequest;
 
@@ -374,56 +374,68 @@ class GotItController extends Controller
                     implode("\n", $messagesToSend) ?? 'N/A'
                 );
                 
-                $apiCMCObject = new APICMCObject();
+                if($deliveryMethod === 'sms')
+                {   
+                    $apiCMCObject = new APICMCObject();
 
-                try{
-                    $responseSMSData = $apiCMCObject->send_sms($validatedRequest['phone_number'], $messageCard);
-                } catch(\Exception $e){
+                    try{
+                        $responseSMSData = $apiCMCObject->send_sms($validatedRequest['phone_number'], $messageCard);
+                    } catch(\Exception $e){
 
-                    Log::error("CMC Telecom API Error: " . $e->getMessage());
-                    
-                    if(isset($smsTransaction)){
-                        $smsTransaction->update([
-                            'sms_status' => $e->getMessage()
-                        ]);
+                        Log::error("CMC Telecom API Error: " . $e->getMessage());
+                        
+                        if(isset($smsTransaction)){
+                            $smsTransaction->update([
+                                'sms_status' => $e->getMessage()
+                            ]);
+                        }
+
+                        if(isset($projectRespondent)){
+                            $projectRespondent->updateStatus(ProjectRespondent::STATUS_API_FAILED);
+                        }
+
+                        return response()->json([
+                            'status_code' => 999,
+                            'transaction_id' => $apiObject->getTransactionRefId(),
+                            'message' => ProjectRespondent::ERROR_RESPONDENT_GIFT_SYSTEM,
+                            'error' => ProjectRespondent::ERROR_RESPONDENT_GIFT_SYSTEM
+                        ], 404);
                     }
 
-                    if(isset($projectRespondent)){
-                        $projectRespondent->updateStatus(ProjectRespondent::STATUS_API_FAILED);
+                    if(intval($responseSMSData['status']) == 1){
+                        $smsTransactionStatus = $smsTransaction->updateStatus(SMSStatus::SUCCESS, intval($responseSMSData['countSms']));
+
+                        $updateRespondentStatus = $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED);
+
+                        return response()->json([
+                            'status_code' => 900,
+                            'transaction_id' => $apiObject->getTransactionRefId(),
+                            'message' => TransactionStatus::SUCCESS
+                        ], 200);
+                    } else {
+                        $smsTransactionStatus = $smsTransaction->updateStatus($responseSMSData['statusDescription'], 0);
+
+                        $updateRespondentStatus = $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_NOT_RECEIVED);
+
+                        Log::error(SMSStatus::ERROR . ' [' . $responseSMSData['statusDescription'] . ']');
+
+                        return response()->json([
+                            'status_code' => 997,
+                            'transaction_id' => $apiObject->getTransactionRefId(),
+                            'message' => SMSStatus::ERROR . ' [' . $responseSMSData['statusDescription'] . ']',
+                            'error' => SMSStatus::ERROR . ' [' . $responseSMSData['statusDescription'] . ']',
+                        ], 400);
                     }
-
-                    return response()->json([
-                        'status_code' => 999,
-                        'transaction_id' => $apiObject->getTransactionRefId(),
-                        'message' => ProjectRespondent::ERROR_RESPONDENT_GIFT_SYSTEM,
-                        'error' => ProjectRespondent::ERROR_RESPONDENT_GIFT_SYSTEM
-                    ], 404);
                 }
 
-                if(intval($responseSMSData['status']) == 1){
-                    $smsTransactionStatus = $smsTransaction->updateStatus(SMSStatus::SUCCESS, intval($responseSMSData['countSms']));
-
-                    $updateRespondentStatus = $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED);
-
-                    return response()->json([
-                        'status_code' => 900,
-                        'transaction_id' => $apiObject->getTransactionRefId(),
-                        'message' => TransactionStatus::SUCCESS
-                    ], 200);
-                } else {
-                    $smsTransactionStatus = $smsTransaction->updateStatus($responseSMSData['statusDescription'], 0);
-
-                    $updateRespondentStatus = $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_NOT_RECEIVED);
-
-                    Log::error(SMSStatus::ERROR . ' [' . $responseSMSData['statusDescription'] . ']');
-
-                    return response()->json([
-                        'status_code' => 997,
-                        'transaction_id' => $apiObject->getTransactionRefId(),
-                        'message' => SMSStatus::ERROR . ' [' . $responseSMSData['statusDescription'] . ']',
-                        'error' => SMSStatus::ERROR . ' [' . $responseSMSData['statusDescription'] . ']',
-                    ], 400);
-                }
+                $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED);
+                
+                return response()->json([
+                    'status_code' => 900,
+                    'transaction_id' => $apiObject->getTransactionRefId(),
+                    'message' => TransactionStatus::SUCCESS
+                ], 200);
+                
             } else {
 
                 $updateRespondentStatus = $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_NOT_RECEIVED);

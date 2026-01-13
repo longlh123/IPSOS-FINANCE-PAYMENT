@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Models;
+namespace App\Services;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Database\Eloquent\Model;
 use Ramsey\Uuid\Uuid;
-use App\Models\ENVObject;
+use App\Services\ENVObject;
 use App\Models\ProjectGotItVoucherTransaction;
 use App\Exceptions\GotItVoucherException;
 
