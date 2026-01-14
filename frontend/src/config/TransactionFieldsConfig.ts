@@ -1,4 +1,4 @@
-import { GridColDef } from "@mui/x-data-grid";
+import { ColumnFormat } from "../config/ColumnConfig";
 
 export interface TransactionData {
     id: string,
@@ -29,125 +29,74 @@ export interface TransactionData {
     created_at: string
 };
 
-export const TableTransactionsConfig: GridColDef[] = [
+export const TransactionCellConfig: ColumnFormat[] = [
     {
-        field: "symphony",
-        headerName: "Symphony",
-        flex: 1.5,
-        minWidth: 150
+        label: "Interviewer ID",
+        name: "employee_id",
+        type: "string",
+        flex: 1.5
     },
     {
-        field: "project_name",
-        headerName: "Project Name",
-        flex: 1.5,
-        minWidth: 150
+        label: "Full Name",
+        name: "full_name",
+        type: "string",
+        flex: 1.5
     },
     {
-        field: "province_name",
-        headerName: "Province",
-        flex: 1.5,
-        minWidth: 150
+        label: "Province",
+        name: "province_name",
+        type: "string",
+        flex: 1.5
     },
     {
-        field: "employee_id",
-        headerName: "Interviewer ID",
-        flex: 1.5,
-        minWidth: 150
+        label: "Interview Start",
+        name: "interview_start",
+        type: "string",
+        flex: 1
     },
     {
-        field: "full_name",
-        headerName: "Interviewer Name",
-        flex: 1.5,
-        minWidth: 150
+        label: "Interview End",
+        name: "interview_end",
+        type: "string",
+        flex: 1
     },
     {
-        field: "transaction_id",
-        headerName: "Transaction ID",
-        flex: 1.5,
-        minWidth: 300
+        label: "Shell_ChainID",
+        name: "shell_chainid",
+        type: "string",
+        flex: 1
     },
     {
-        field: "shell_chainid",
-        headerName: "Shell ChainID",
-        flex: 1.5,
-        minWidth: 150
+        label: "Res. Phone Number",
+        name: "respondent_phone_number",
+        type: "string",
+        flex: 1,
+        align: "right"
     },
     {
-        field: "respondent_id",
-        headerName: "Respondent ID",
-        flex: 1.5,
-        minWidth: 150
+        label: "Phone Number",
+        name: "phone_number",
+        type: "string",
+        flex: 1,
+        align: "right"
     },
     {
-        field: "respondent_phone_number",
-        headerName: "Respondent Phone Number",
-        flex: 1.5,
-        minWidth: 150
+        label: "Service Code",
+        name: "service_code",
+        type: "string",
+        flex: 1
     },
     {
-        field: "phone_number",
-        headerName: "Phone Number",
-        flex: 1.5,
-        minWidth: 150
+        label: "Channel",
+        name: "channel",
+        type: "string",
+        flex: 1
     },
     {
-        field: "service_code",
-        headerName: "Service Code",
-        flex: 1.5,
-        minWidth: 150
-    },
-    {
-        field: "project_respondent_status",
-        headerName: "Project Respondent Status",
-        flex: 1.5,
-        minWidth: 150
-    },
-    {
-        field: "channel",
-        headerName: "Channel",
-        flex: 1.5,
-        minWidth: 150
-    },
-    {
-        field: "reject_message",
-        headerName: "Reject Message",
-        flex: 1.5,
-        minWidth: 150
-    },
-    {
-        field: "amount",
-        headerName: "Amount",
-        flex: 1.5,
-        minWidth: 150
-    },
-    {
-        field: "discount",
-        headerName: "Discount",
-        flex: 1.5,
-        minWidth: 150
-    },
-    {
-        field: "payment_amt",
-        headerName: "Payment Amount",
-        flex: 1.5,
-        minWidth: 150
-    },
-    {
-        field: "payment_pre_tax",
-        headerName: "Pre-tax Payment",
-        flex: 1.5,
-        minWidth: 150
-    },
-    {
-        field: "transaction_status",
-        headerName: "Transaction Status",
-        flex: 1.5,
-        minWidth: 150
-    },
-    {
-        field: "created_at",
-        headerName: "Created At",
-        flex: 1.5,
-        minWidth: 150
-    },
+        label: "Amount",
+        name: "amount",
+        type: "number",
+        flex: 1,
+        align: "right"
+    }
 ];

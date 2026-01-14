@@ -8,26 +8,20 @@ import UniversalInputDialog from "../../components/Dialogs/UniversalInputDialog"
 import AlertDialog from "../../components/AlertDialog/AlertDialog";
 import { useVisibility } from "../../hook/useVisibility";
 import SearchTextBox from "../../components/SearchTextBox";
-import axios from "axios";
 import { useEmployees } from "../../hook/useEmployees";
 import ReusableTable from "../../components/Table/ReusableTable";
 import { ColumnFormat } from "../../config/ColumnConfig";
 import { useProjects } from "../../hook/useProjects";
+import { ProjectData } from "../../config/ProjectFieldsConfig";
 
 const ParttimeEmployees = () => {
     const { id } = useParams<{id: string}>();
     const projectId = Number(id) || 0;
-    //const [project, setProject] = useState<any>(null);
+    const [ projectSelected, setProjectSelected ] = useState<ProjectData | null>(null);
 
+    const { getProject } = useProjects();
     const { employees, meta, total, page, setPage, rowsPerPage, setRowsPerPage, searchTerm, setSearchTerm, loading, error: errorEmployees, message: messageEmployees, addEmployees, removeEmployee } = useEmployees(projectId);
-    //const { getProject } = useProjects();
-
-    // useEffect(() => {
-    //     //if(!projectId) return;
-
-    //     //getProject(projectId).then(setProject);
-    // }, [projectId, getProject]);
-
+    
     const { canView } = useVisibility();
     
     const [ employeeCellConfig, setEmployeeCellConfig ] = useState(EmployeeCellConfig)
@@ -85,6 +79,7 @@ const ParttimeEmployees = () => {
 
     const handleSearchChange = (value: string) => {
         setSearchTerm(value.toLocaleLowerCase());
+        setPage(0);
     }
 
     const columns: ColumnFormat[] = [
@@ -137,11 +132,31 @@ const ParttimeEmployees = () => {
         setPage(0);
     };
 
+    useEffect(() => {
+        async function fetchProject(){
+            try{
+                const p = await getProject(projectId);
+                setProjectSelected(p);
+            }catch(error){
+                console.log(error);
+            }
+        }
+        
+        fetchProject();
+    }, [projectId]);
+
     return (
         <Box className="box-table">
             <div className="filter">
                 <div className="filter-left">
-                <h2 className="filter-title">Employees</h2>
+                    <div className="project-info">
+                        <div>
+                            <strong>Project Name:</strong> {projectSelected?.project_name}
+                        </div>
+                        <div>
+                            <strong>Symphony:</strong> {projectSelected?.symphony}
+                        </div>
+                    </div>
                 </div>
                 <div className="filter-right">
                 {canView("employees.functions.visible_import_employees") && (

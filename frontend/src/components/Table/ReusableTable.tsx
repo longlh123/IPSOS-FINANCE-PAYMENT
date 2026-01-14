@@ -37,7 +37,11 @@ const ReusableTable: React.FC<ReusableTableProps> = ({
     const [ openAlert, setOpenAlert] = useState(false);
 
     useEffect(() => {
-        if(error || message) setOpenAlert(true);
+        if(error || message){
+            setOpenAlert(true);
+        } else {
+            setOpenAlert(false);
+        }
     }, [error, message])
 
     return (
@@ -66,28 +70,33 @@ const ReusableTable: React.FC<ReusableTableProps> = ({
             <TableContainer component={Paper} className="table-container">
                 <Table sx={{ tableLayout: 'auto', width: '100%' }}>
                     <TableHead className="header-table">
-                        {columns.map((col, idx) => (
-                            <TableCell 
-                                key={idx}
-                                sx={{
-                                    whiteSpace: "nowrap",
-                                    overflow: "hidden",
-                                    textOverflow: "ellipsis"
-                                }}
-                                align="center"
-                            >
-                                { col.renderHeader ? col.renderHeader() : col.label }
-                            </TableCell>
-                        ))}
+                        <TableRow>
+                            {columns.map((col, idx) => (
+                                <TableCell 
+                                    key={idx}
+                                    sx={{
+                                        whiteSpace: "nowrap",
+                                        overflow: "hidden",
+                                        textOverflow: "ellipsis",
+                                        width: col.name == "actions" ? 120 : "auto"
+                                    }}
+                                    align="left"
+                                >
+                                    { col.renderHeader ? col.renderHeader() : col.label }
+                                </TableCell>
+                            ))}
+                        </TableRow>
                     </TableHead>
-                    {
-                        loading ? (
-                            <Box display="flex" justifyContent="center" alignItems="center" height="100%">
-                                <CircularProgress />
-                            </Box>
-                        ) : (
-                            <TableBody>
-                                {data.map((row, i) => (
+                    <TableBody>
+                        {
+                            loading ? (
+                                <TableRow>
+                                    <TableCell colSpan={columns.length} align="center">
+                                        <CircularProgress />
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                data.map((row, i) => (
                                     <TableRow
                                         key={i}
                                     >
@@ -106,10 +115,11 @@ const ReusableTable: React.FC<ReusableTableProps> = ({
                                             </TableCell>
                                         ))}
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        )
-                    }
+                                ))
+                            )
+                        }
+                        
+                    </TableBody>
                 </Table>
 
                 <TablePagination

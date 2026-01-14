@@ -7,27 +7,22 @@ export function useTransactions(projectId: number){
 
     const [ transactions, setTransactions ] = useState<TransactionData[]>([]);
     const [ loading, setLoading ] = useState(false);
-    const [ error, setError ] = useState<string | null>(null);
+    const [ error, setError ] = useState(false);
+    const [ message, setMessage ] = useState("");
 
     const [ page, setPage ] = useState(0);
     const [ rowsPerPage, setRowsPerPage ] = useState(10);
     const [ searchTerm, setSearchTerm ] = useState("");
-    
-    const today = new Date();
-    const currentMonth = today.getMonth() + 1;
-    const currentYear = today.getFullYear();
-
-    const [ searchMonth, setSearchMonth ] = useState(currentMonth);
-    const [ searchYear, setSearchYear ] = useState(currentYear);
-    const [ exportAll, setExportAll ] = useState(false);
+ 
 
     const [ meta, setMeta ] = useState<any>(null);
     const [ total, setTotal ] = useState(0);
 
-    const fetchTransactions = useCallback(async(page = 0, rowsPerPage = 0, searchTerm = "", searchMonth = currentMonth, searchYear = currentYear, exportAll = false) => {
+    const fetchTransactions = useCallback(async(page = 0, rowsPerPage = 0, searchTerm = "") => {
         try{
             setLoading(true);
-            setError("");
+            setError(false);
+            setMessage("");
 
             const token = localStorage.getItem('authToken');
             
@@ -42,28 +37,26 @@ export function useTransactions(projectId: number){
                 params: {
                     page: page + 1,
                     perPage: rowsPerPage,
-                    searchTerm: searchTerm,
-                    searchMonth: searchMonth,
-                    searchYear: searchYear,
-                    export_all: exportAll
+                    searchTerm: searchTerm
                 }
             });
 
             setTransactions(response.data.data);
             setMeta(response.data.meta);
             setTotal(response.data.meta.total);
-
+            
         }catch(error: any){
-            setError(error.message || "Failed to fetch transactions.")
+            setError(true);
+            setMessage(error.message || 'Failed to fetch Transactions');
         }finally{
             setLoading(false);
         }
 
-    }, [projectId, page, rowsPerPage, searchTerm, searchMonth, searchYear, exportAll]);
+    }, [projectId, page, rowsPerPage, searchTerm]);
 
     useEffect(() => {
-        fetchTransactions(page, rowsPerPage, searchTerm, searchMonth, searchYear, exportAll)
-    }, [page, rowsPerPage, searchTerm, searchMonth, searchYear, exportAll, fetchTransactions]);
+        fetchTransactions(page, rowsPerPage, searchTerm)
+    }, [page, rowsPerPage, searchTerm]);
 
     return {
         transactions,
@@ -75,14 +68,9 @@ export function useTransactions(projectId: number){
         setRowsPerPage,
         searchTerm,
         setSearchTerm,
-        searchMonth,
-        setSearchMonth,
-        searchYear,
-        setSearchYear,
-        exportAll,
-        setExportAll,
         loading,
         error,
+        message,
         fetchTransactions
     }
 }

@@ -109,23 +109,6 @@ export function useProjects() {
         return response.data.data;
 
     }, []);
-
-    const getTransactions = useCallback(async (id: number) => {
-
-        const token = localStorage.getItem("authToken");
-
-        const url = `${ApiConfig.project.viewTransactions.replace("{projectId}", id.toString())}`;
-
-        const response = await axios.get(url, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-        });
-
-        return response.data.data;
-    }, []);
     
     useEffect(() => {
         fetchProjects(page, rowsPerPage, searchTerm, searchFromDate, searchToDate);
@@ -150,7 +133,6 @@ export function useProjects() {
         fetchProjects,
         getProject,
         addProject,
-        updateProjectStatus,
-        getTransactions
+        updateProjectStatus
     };
 }

@@ -20,6 +20,7 @@ export function useEmployees(projectId: number) {
         try{
             setLoading(true);
             setError(false);
+            setMessage("");
 
             const token = localStorage.getItem('authToken');
 

@@ -7,7 +7,6 @@ export const ApiConfig = {
     updateStatusOfProject: `${host}/api/project-management/projects/{projectId}/status`,
     getMetadata: `${host}/api/project-management/metadata`,
     addProject: `${host}/api/project-management/projects/store`,
-    editProject: `${host}/`,
     getProjectTypes: `${host}/api/project-management/project-types`,
     getDepartments: `${host}/api/project-management/departments`,
     getTeams: `${host}/api/project-management/{department_id}/teams`,
