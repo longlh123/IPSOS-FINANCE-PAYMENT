@@ -412,11 +412,19 @@ class VinnetController extends Controller
                             $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_TEMPORARY_ERROR);
                         }
 
-                        return response()->json([
-                            'status_code' => 998,
-                            'message' => ProjectRespondent::ERROR_RESPONDENT_GIFT_TEMPORARY,
-                            'error' => ProjectRespondent::ERROR_RESPONDENT_GIFT_TEMPORARY
-                        ], 404);
+                        if($payItemData['code'] == 22){
+                            return response()->json([
+                                'status_code' => 998,
+                                'message' => $payItemData['message'],
+                                'error' => $payItemData['message']
+                            ], 404);
+                        } else {
+                            return response()->json([
+                                'status_code' => 998,
+                                'message' => ProjectRespondent::ERROR_RESPONDENT_GIFT_TEMPORARY,
+                                'error' => ProjectRespondent::ERROR_RESPONDENT_GIFT_TEMPORARY
+                            ], 404);
+                        }
                     }
                 } catch (\Throwable $e) {
                     Log::error("Google Cloud: Pay Service API Exception [UUID: " . $payServiceUuid . "]: " . $e->getMessage());
@@ -456,86 +464,84 @@ class VinnetController extends Controller
                 ]);
             }
 
-            if($payItem){
-                $messagesToSend = sprintf(
-                    "%s:Code:%s,Seri:%s,Exp:%s",
-                    number_format($payItem['totalAmt'] / 1000, 0) . 'K',
-                    $payItem['cardItems'][0]['pinCode'] ?? 'N/A',
-                    $payItem['cardItems'][0]['serialNo'] ?? 'N/A',
-                    $payItem['cardItems'][0]['expiryDate'] ?? 'N/A'
-                );
+            $messagesToSend = sprintf(
+                "%s:Code:%s,Seri:%s,Exp:%s",
+                number_format($payItem['totalAmt'] / 1000, 0) . 'K',
+                $payItem['cardItems'][0]['pinCode'] ?? 'N/A',
+                $payItem['cardItems'][0]['serialNo'] ?? 'N/A',
+                $payItem['cardItems'][0]['expiryDate'] ?? 'N/A'
+            );
 
-                $messageCard = sprintf(
-                    "IPSOS cam on ban. Tang ban ma dien thoai:\n%s",
-                    $messagesToSend ?? 'N/A'
-                );
+            $messageCard = sprintf(
+                "IPSOS cam on ban. Tang ban ma dien thoai:\n%s",
+                $messagesToSend ?? 'N/A'
+            );
 
-                if($deliveryMethod === 'sms')
+            if($deliveryMethod === 'sms')
+            {
+                $smsTransaction = $vinnetTransaction->createVinnetSMSTransaction([
+                    'vinnet_transaction_id' => $vinnetTransaction->id,
+                    'sms_status' => SMSStatus::PENDING
+                ]);
+
+                $apiCMCObject = new APICMCObject();
+                
+                try
                 {
-                    $smsTransaction = $vinnetTransaction->createVinnetSMSTransaction([
-                        'vinnet_transaction_id' => $vinnetTransaction->id,
-                        'sms_status' => SMSStatus::PENDING
-                    ]);
-
-                    $apiCMCObject = new APICMCObject();
-                    
-                    try
-                    {
-                        $responseSMSData = $apiCMCObject->send_sms($phoneNumber, $messageCard);
-                    
-                    } catch(\Exception $e){
-                        Log::error("CMC Telecom API Error: " . $e->getMessage());
-                    
-                        if(isset($smsTransaction)){
-                            $smsTransaction->update([
-                                'sms_status' => $e->getMessage()
-                            ]);
-                        }
-
-                        if(isset($projectRespondent)){
-                            $projectRespondent->updateStatus(ProjectRespondent::STATUS_API_FAILED);
-                        }
-
-                        return response()->json([
-                            'status_code' => 997,
-                            'transaction_id' => $payServiceUuid,
-                            'message' => ProjectRespondent::ERROR_RESPONDENT_GIFT_SYSTEM,
-                            'error' => ProjectRespondent::ERROR_RESPONDENT_GIFT_SYSTEM
-                        ], 404);
+                    $responseSMSData = $apiCMCObject->send_sms($phoneNumber, $messageCard);
+                
+                } catch(\Exception $e){
+                    Log::error("CMC Telecom API Error: " . $e->getMessage());
+                
+                    if(isset($smsTransaction)){
+                        $smsTransaction->update([
+                            'sms_status' => $e->getMessage()
+                        ]);
                     }
 
-                    if(intval($responseSMSData['status']) == 1){
-                        $smsTransactionStatus = $smsTransaction->updateStatus(SMSStatus::SUCCESS, intval($responseSMSData['countSms']));
-
-                        $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED);
-
-                        return response()->json([
-                            'status_code' => 900,
-                            'transaction_id' => $payServiceUuid,
-                            'message' => TransactionStatus::SUCCESS
-                        ], 200);
-                    } else {
-                        $smsTransactionStatus = $smsTransaction->updateStatus($responseSMSData['statusDescription'], 0);
-
-                        $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_NOT_RECEIVED);
-
-                        return response()->json([
-                            'status_code' => 997,
-                            'transaction_id' => $payServiceUuid,
-                            'message' => SMSStatus::ERROR,
-                            'error' => SMSStatus::ERROR
-                        ], 400);
+                    if(isset($projectRespondent)){
+                        $projectRespondent->updateStatus(ProjectRespondent::STATUS_API_FAILED);
                     }
+
+                    return response()->json([
+                        'status_code' => 997,
+                        'transaction_id' => $payServiceUuid,
+                        'message' => ProjectRespondent::ERROR_RESPONDENT_GIFT_SYSTEM,
+                        'error' => ProjectRespondent::ERROR_RESPONDENT_GIFT_SYSTEM
+                    ], 404);
                 }
 
-                $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED);
-                
-                return response()->json([
-                    'status_code' => 900,
-                    'transaction_id' => $payServiceUuid,
-                    'message' => TransactionStatus::SUCCESS
-                ], 200);
+                if(intval($responseSMSData['status']) == 1){
+                    $smsTransactionStatus = $smsTransaction->updateStatus(SMSStatus::SUCCESS, intval($responseSMSData['countSms']));
+
+                    $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED);
+
+                    return response()->json([
+                        'status_code' => 900,
+                        'transaction_id' => $payServiceUuid,
+                        'message' => TransactionStatus::SUCCESS
+                    ], 200);
+                } else {
+                    $smsTransactionStatus = $smsTransaction->updateStatus($responseSMSData['statusDescription'], 0);
+
+                    $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_NOT_RECEIVED);
+
+                    return response()->json([
+                        'status_code' => 997,
+                        'transaction_id' => $payServiceUuid,
+                        'message' => SMSStatus::ERROR,
+                        'error' => SMSStatus::ERROR
+                    ], 400);
+                }
             }
+
+            $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED);
+            
+            return response()->json([
+                'status_code' => 900,
+                'transaction_id' => $payServiceUuid,
+                'message' => TransactionStatus::SUCCESS
+            ], 200);
         } catch(\Exception $e) {
             
             Log::error($e->getMessage());

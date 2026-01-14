@@ -1,43 +1,34 @@
 import { Alert, Box, Button, Paper, Snackbar } from "@mui/material";
-import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useVisibility } from "../../hook/useVisibility";
 import SearchTextBox from "../../components/SearchTextBox";
 import { useTransactions } from "../../hook/useTransactions";
-import { TableTransactionsConfig } from "../../config/TransactionFieldsConfig";
+import { TransactionCellConfig } from "../../config/TransactionFieldsConfig";
 import dayjs, { Dayjs } from 'dayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DesktopDatePicker } from '@mui/x-date-pickers/DesktopDatePicker';
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
+import { ColumnFormat } from "../../config/ColumnConfig";
 
 const TransactionsManager = () => {
     const { id } = useParams<{id: string}>();
     const projectId = Number(id) || 0;
 
-    const { transactions, meta, total, page, setPage, rowsPerPage, setRowsPerPage, searchTerm, setSearchTerm, setSearchMonth, setSearchYear, exportAll, setExportAll, loading, error  } = useTransactions(projectId);
+    const { transactions, meta, total, page, setPage, rowsPerPage, setRowsPerPage, searchTerm, setSearchTerm, loading, error  } = useTransactions(projectId);
 
     const { canView } = useVisibility();
     
-    const [ formFieldsConfig, setFormFieldsConfig] = useState(TableTransactionsConfig);
+    const [ formFieldsConfig, setFormFieldsConfig] = useState(TransactionCellConfig);
     const [ snackbarOpen, setSnackbarOpen ] = useState<boolean>(false);
     
-    const columns = [
+    const columns: ColumnFormat[] = [
         ...formFieldsConfig
     ];
 
     const [selectedDate, setSelectedDate] = useState<Dayjs | null>(dayjs());
-    
-    const handleDateChange = (newValue: Dayjs | null) => {
-        if (!newValue) return;
-
-        if (newValue) {
-            setSearchMonth(newValue.month() + 1);
-            setSearchYear(newValue.year());
-        }
-    };
 
     const handleSearchChange = (value: string) => {
         setSearchTerm(value.toLocaleLowerCase());
@@ -101,14 +92,14 @@ const TransactionsManager = () => {
                 <h2 className="filter-title">Transactions</h2>
                 </div>
                 <div className="filter-right">
-                {canView("projects.functions.visible_add_new_project") && (
+                {/* {canView("projects.functions.visible_add_new_project") && (
                     <Button className="btnAdd" onClick={() => {
                         setExportAll(false);
                         exportToExcel(transactions);
                     }}>
                     Export Excel
                     </Button>
-                )}
+                )} */}
                 </div>
             </div>
             <div className="filter">
@@ -121,7 +112,7 @@ const TransactionsManager = () => {
                     value={selectedDate}
                     onChange={(value) => {
                         setSelectedDate(value);
-                        handleDateChange(value);
+                        // handleDateChange(value);
                     }}
                     />
                 </LocalizationProvider>
@@ -148,20 +139,7 @@ const TransactionsManager = () => {
                 
             </Snackbar>
             <Paper sx={{ height: 700, width: '100%', p: 2, overflowX: 'auto' }}>
-                <DataGrid
-                    rows={transactions || []}
-                    columns={columns}
-                    pageSizeOptions={[10, 20, 50]}
-                    initialState={{
-                        pagination: { paginationModel: { pageSize: rowsPerPage, page: page } },
-                    }}
-                    checkboxSelection
-                    sx={{
-                        border: 0,
-                        minWidth: '1200px',
-                        '& .MuiDataGrid-columnHeaders': { backgroundColor: '#f5f5f5' },
-                    }}
-                />
+                
             </Paper>
         </Box>
     )
