@@ -186,7 +186,7 @@ class VinnetController extends Controller
                 'phone_number' => $phoneNumber,
                 'service_code' => $serviceCode,
                 'service_type' => $serviceType,
-                'provider' => $provider,
+                'channel' => $provider,
                 'delivery_method' => $deliveryMethod
             ]); 
             
@@ -412,19 +412,11 @@ class VinnetController extends Controller
                             $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_TEMPORARY_ERROR);
                         }
 
-                        if($payItemData['code'] == 22){
-                            return response()->json([
-                                'status_code' => 998,
-                                'message' => $payItemData['message'],
-                                'error' => $payItemData['message']
-                            ], 404);
-                        } else {
-                            return response()->json([
-                                'status_code' => 998,
-                                'message' => ProjectRespondent::ERROR_RESPONDENT_GIFT_TEMPORARY,
-                                'error' => ProjectRespondent::ERROR_RESPONDENT_GIFT_TEMPORARY
-                            ], 404);
-                        }
+                        return response()->json([
+                            'status_code' => 998,
+                            'message' => ProjectRespondent::ERROR_RESPONDENT_GIFT_TEMPORARY,
+                            'error' => ProjectRespondent::ERROR_RESPONDENT_GIFT_TEMPORARY
+                        ], 404);
                     }
                 } catch (\Throwable $e) {
                     Log::error("Google Cloud: Pay Service API Exception [UUID: " . $payServiceUuid . "]: " . $e->getMessage());
