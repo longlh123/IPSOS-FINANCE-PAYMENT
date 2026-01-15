@@ -186,7 +186,7 @@ class VinnetController extends Controller
                 'phone_number' => $phoneNumber,
                 'service_code' => $serviceCode,
                 'service_type' => $serviceType,
-                'provider' => $provider,
+                'channel' => $provider,
                 'delivery_method' => $deliveryMethod
             ]); 
             
