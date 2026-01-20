@@ -156,7 +156,7 @@ class TransactionController extends Controller
                     'error' => Project::STATUS_PROJECT_NOT_SUITABLE_PRICES
                 ], 404);
             }
-
+            
             Log::info('Find the price by province: ' . intval($price));
 
             if($price == 0)
@@ -184,6 +184,31 @@ class TransactionController extends Controller
 
             $serviceItems = $vinnetService->get_service_items($price);
 
+            if(strtolower($interviewURL->location_id) === '_defaultsp'){
+                
+                Log::info('Staging Environment: ');
+
+                return response()->json([
+                    'status_code' => 996,
+                    'message' => TransactionStatus::STATUS_TRANSACTION_TEST . ' [Giá trị quà tặng: ' . $price . ']',
+                    'token' => 'Môi trường test',
+                    'service_items' => $serviceItems
+                ], 200);
+            }
+            
+            if($project->projectDetails->status === Project::STATUS_IN_COMING || $project->projectDetails->status === Project::STATUS_ON_HOLD || 
+                ($project->projectDetails->status === Project::STATUS_ON_GOING && !in_array(substr(strtolower($interviewURL->interviewer_id), 0, 2), ['hn', 'sg', 'dn', 'ct']))){
+                    
+                    Log::info('Staging Environment: ');
+
+                    return response()->json([
+                        'status_code' => 996,
+                        'message' => TransactionStatus::STATUS_TRANSACTION_TEST . ' [Giá trị quà tặng: ' . $price . ']',
+                        'token' => 'Môi trường test',
+                        'service_items' => $serviceItems
+                    ], 200);
+            } 
+
             try
             {
                 //Kiểm tra đáp viên đã thực hiện giao dịch nhận quà trước đó hay chưa?
@@ -210,6 +235,7 @@ class TransactionController extends Controller
                 try{
                     $projectRespondent = $project->createProjectRespondents([
                         'project_id' => $project->id,
+                        'location_id' => $interviewURL->location_id,
                         'shell_chainid' => $interviewURL->shell_chainid,
                         'respondent_id' => $interviewURL->shell_chainid . '-' . $interviewURL->respondent_id,
                         'employee_id' => $interviewURL->employee->id,

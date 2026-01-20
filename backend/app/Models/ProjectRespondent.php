@@ -41,6 +41,7 @@ class ProjectRespondent extends Model
 
     protected $fillable = [
         'project_id',
+        'location_id',
         'shell_chainid',
         'respondent_id',
         'employee_id',
@@ -50,6 +51,7 @@ class ProjectRespondent extends Model
         'respondent_phone_number',
         'phone_number',
         'service_type',
+        'delivery_method',
         'service_code',
         'reject_message',
         'price_level',
