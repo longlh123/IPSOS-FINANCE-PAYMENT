@@ -526,6 +526,82 @@ class VinnetService
         }
     }
 
+    public function merchantinfo()
+    {
+        try{
+            Log::info("Merchant Information");
+            
+            $envObject = new ENVObject();
+            $environment = $envObject->environment;
+            $merchantInfo = $envObject->merchantInfo;
+            $url = $envObject->url;
+
+            $tokenData = $this->authenticate_token();
+
+            $uuid = $this->generate_formated_uuid();
+
+            $dataRequest = [];
+
+            $reqData = $this->encrypt_data(json_encode($dataRequest));
+
+            $signature = $this->generate_signature(str_replace('"', '', $merchantInfo['VINNET_MERCHANT_CODE']) . $uuid . $reqData);
+
+            $postData = [
+                'merchantCode' => str_replace('"', '', $merchantInfo['VINNET_MERCHANT_CODE']),
+                'reqUuid' => $uuid,
+                'reqData' => $reqData,
+                'sign' => $signature
+            ];
+
+            Log::info('Merchant Information [$postData]: ' . json_encode($postData));
+
+            $response = $this->post_vinnet_request(str_replace('"', '', $url) . '/merchantinfo', $tokenData['token'], $postData);
+
+            $decodedResponse = json_decode($response, true);
+
+            if ($decodedResponse === null && json_last_error() !== JSON_ERROR_NONE) {
+                Log::error('JSON Decode Error: ' . json_last_error_msg());
+                throw new \Exception('JSON Decode Error: ' . json_last_error_msg());
+            }
+
+            if (!is_array($decodedResponse)) {
+                throw new \Exception('Decoded services data is not an array');
+            }
+
+            if($decodedResponse['resCode'] == '00')
+            {
+                Log::info('Merchant Info: ' . $decodedResponse['resData']);
+
+                $decryptedData = $this->decrypt_data($decodedResponse['resData']);
+
+                Log::info('Decrypted Merchant Info data: ' . $decryptedData);
+                
+                $decodedData = json_decode($decryptedData, true);
+
+                if ($decodedData === null && json_last_error() !== JSON_ERROR_NONE) {
+                    Log::error('JSON Decode Error: ' . json_last_error_msg());
+                    throw new \Exception('JSON Decode Error: ' . json_last_error_msg());
+                }
+
+                Log::info('Pay item array: ' . print_r($decodedData, true));
+
+                return [
+                    'reqUuid' => $uuid,
+                    'data' => $decodedData,
+                    'code' => (int)$decodedResponse['resCode'],
+                    'message' => $decodedResponse['resMesg']
+                ];
+            } else {
+                throw new \Exception($decodedResponse['resMesg']);
+            }
+        } catch (Exception $e) {
+            //Log the exception message
+            Log::error('Merchant Information failed: ' . $e->getMessage());
+
+            throw $e;
+        }
+    }
+
     /**
      * 
      * Authenticate Token: Lấy access token sử dụng cho các bản tin nghiệp vụ.
