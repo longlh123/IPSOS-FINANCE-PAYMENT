@@ -134,6 +134,8 @@ class Project extends Model
             $property = 'price_' . str_replace('boosters', 'boosters', $priceLevel);
         } elseif(str_starts_with($priceLevel, 'booster')){
             $property = 'price_' . str_replace('booster', 'boosters', $priceLevel);
+        }elseif(str_starts_with($priceLevel, 'none')) {
+            $property = 'price_' . str_replace('none', 'non', $priceLevel);
         }elseif(str_starts_with($priceLevel, 'non')) {
             $property = 'price_' . $priceLevel;
         } else {
