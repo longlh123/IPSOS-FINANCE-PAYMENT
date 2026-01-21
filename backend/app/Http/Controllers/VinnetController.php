@@ -674,10 +674,15 @@ class VinnetController extends Controller
         }
     }
 
-    public function check_transaction(CheckTransactionRequest $request, VinnetService $vinnetService)
+    public function check_transaction(CheckTransactionRequest $request, ProjectRespondentTokenService $tokenService, VinnetService $vinnetService)
     {
         try
         {
+            $validatedRequest = $request->validated();
+
+            $token = $validatedRequest['token'] ?? null;
+            $transaction_id = $validatedRequest['transaction_id'] ?? null;
+
             try
             {
                 $tokenData = $vinnetService->authenticate_token();
@@ -701,11 +706,6 @@ class VinnetController extends Controller
                     'error' => TransactionStatus::STATUS_NOT_RECEIVED
                 ], 404);
             }
-
-            $validatedRequest = $request->validated();
-
-            $token = $validatedRequest['token'] ?? null;
-            $transaction_id = $validatedRequest['transaction_id'] ?? null;
 
             try
             {

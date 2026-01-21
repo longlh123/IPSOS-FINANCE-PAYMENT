@@ -215,6 +215,7 @@ class TransactionController extends Controller
                         $environment = 'test';
                     }
             
+            Log::info('Environment: ' . $environment);
 
             // Tìm thông tin của Project Respondent
             $projectRespondent = ProjectRespondent::findProjectRespondent($project, $interviewURL);
