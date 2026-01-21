@@ -154,28 +154,21 @@ class VinnetController extends Controller
 
             Log::info('Price item by province: ' . intval($price));
             
-            if(strtolower($projectRespondent->location_id) === '_defaultsp'){
-                
+            if($projectRespondent->environment === 'test'){
+
                 Log::info('Staging Environment: ');
+
+                $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED);
+
+                $tokenRecord->update([
+                    'status' => 'blocked'
+                ]);
 
                 return response()->json([
                     'status_code' => 996,
                     'message' => TransactionStatus::STATUS_TRANSACTION_TEST . ' [Giá trị quà tặng: ' . $price . ']'
                 ], 200);
             }
-            
-            $employee = $projectRespondent->employee;
-            
-            if($project->projectDetails->status === Project::STATUS_IN_COMING || $project->projectDetails->status === Project::STATUS_ON_HOLD || 
-                ($project->projectDetails->status === Project::STATUS_ON_GOING && !in_array(substr(strtolower($employee->employee_id), 0, 2), ['hn', 'sg', 'dn', 'ct']))){
-                    
-                    Log::info('Staging Environment: ');
-
-                    return response()->json([
-                        'status_code' => 996,
-                        'message' => TransactionStatus::STATUS_TRANSACTION_TEST . ' [Giá trị quà tặng: ' . $price . ']'
-                    ], 200);
-            } 
 
             Log::info('Live Environment:');
 

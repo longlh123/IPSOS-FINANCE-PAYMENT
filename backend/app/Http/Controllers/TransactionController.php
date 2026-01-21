@@ -183,32 +183,7 @@ class TransactionController extends Controller
             }
 
             $serviceItems = $vinnetService->get_service_items($price);
-
-            if(strtolower($interviewURL->location_id) === '_defaultsp'){
-                
-                Log::info('Staging Environment: ');
-
-                return response()->json([
-                    'status_code' => 996,
-                    'message' => TransactionStatus::STATUS_TRANSACTION_TEST . ' [Giá trị quà tặng: ' . $price . ']',
-                    'token' => 'Môi trường test',
-                    'service_items' => $serviceItems
-                ], 200);
-            }
             
-            if($project->projectDetails->status === Project::STATUS_IN_COMING || $project->projectDetails->status === Project::STATUS_ON_HOLD || 
-                ($project->projectDetails->status === Project::STATUS_ON_GOING && !in_array(substr(strtolower($interviewURL->interviewer_id), 0, 2), ['hn', 'sg', 'dn', 'ct']))){
-                    
-                    Log::info('Staging Environment: ');
-
-                    return response()->json([
-                        'status_code' => 996,
-                        'message' => TransactionStatus::STATUS_TRANSACTION_TEST . ' [Giá trị quà tặng: ' . $price . ']',
-                        'token' => 'Môi trường test',
-                        'service_items' => $serviceItems
-                    ], 200);
-            } 
-
             try
             {
                 //Kiểm tra đáp viên đã thực hiện giao dịch nhận quà trước đó hay chưa?
@@ -224,6 +199,22 @@ class TransactionController extends Controller
                     'error' => $e->getMessage()
                 ], 409);
             }
+
+            $environment = 'live';
+
+            if($project->projectDetails->status === Project::STATUS_IN_COMING || $project->projectDetails->status === Project::STATUS_ON_HOLD || 
+                ($project->projectDetails->status === Project::STATUS_ON_GOING && !in_array(substr(strtolower($interviewURL->interviewer_id), 0, 2), ['hn', 'sg', 'dn', 'ct', 'ma'])))
+                {
+                    $environment = 'test';
+                }
+
+            if(strlen($interviewURL->location_id) == 0 || 
+                strtolower($interviewURL->location_id) === '_defaultsp' || 
+                    !in_array(substr(strtolower($interviewURL->location_id), 0, 2), ['hn', 'sg', 'dn', 'ct', 'ma']))
+                    {
+                        $environment = 'test';
+                    }
+            
 
             // Tìm thông tin của Project Respondent
             $projectRespondent = ProjectRespondent::findProjectRespondent($project, $interviewURL);
@@ -246,7 +237,8 @@ class TransactionController extends Controller
                         'phone_number' => $phoneNumber,
                         'service_code' => $serviceCode,
                         'price_level' => $interviewURL->price_level,
-                        'status' => ProjectRespondent::STATUS_RESPONDENT_PENDING
+                        'status' => ProjectRespondent::STATUS_RESPONDENT_PENDING,
+                        'environment' => $environment,
                     ]);
                     
                     DB::commit();
@@ -305,14 +297,25 @@ class TransactionController extends Controller
             }
 
             $token = $tokenService->createOrReuseToken($projectRespondent);
+            
+            if($environment === 'test'){
+                    
+                    Log::info('Staging Environment: ');
 
-            return response()->json([
-                'status_code' => 900,
-                'message' => ProjectRespondent::STATUS_RESPONDENT_QUALIFIED,
-                'token' => $token,
-                'service_items' => $serviceItems
-            ], 200);
-
+                    return response()->json([
+                        'status_code' => 996,
+                        'message' => TransactionStatus::STATUS_TRANSACTION_TEST . ' [Giá trị quà tặng: ' . $price . ']',
+                        'token' => $token,
+                        'service_items' => $serviceItems
+                    ], 200); 
+            } else {
+                return response()->json([
+                    'status_code' => 900,
+                    'message' => ProjectRespondent::STATUS_RESPONDENT_QUALIFIED,
+                    'token' => $token,
+                    'service_items' => $serviceItems
+                ], 200);
+            }
         } catch(\Exception $e){
             Log::error($e->getMessage());
             

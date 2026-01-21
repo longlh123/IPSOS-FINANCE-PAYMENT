@@ -57,6 +57,7 @@ class ProjectRespondent extends Model
         'price_level',
         'channel',
         'status',
+        'environment',
     ];
 
     public const STATUSES = [
@@ -136,6 +137,7 @@ class ProjectRespondent extends Model
     {
         $exists = $project->projectRespondents()
                         ->where('respondent_id', $interviewURL->shell_chainid . '-' . $interviewURL->respondent_id)
+                        ->where('environment', 'live')
                         ->where(function($query) {
                             $query->where('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED)
                                 ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_NOT_RECEIVED)
@@ -154,6 +156,7 @@ class ProjectRespondent extends Model
         //Kiểm tra shell_chainid của đáp viên đã được thực hiện giao dịch trước đó hay chưa?
         $exists = $project->projectRespondents()
                         ->where('shell_chainid', $interviewURL->shell_chainid)
+                        ->where('environment', 'live')
                         ->where(function($query) {
                             $query->where('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED)
                                 ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_NOT_RECEIVED)
@@ -172,6 +175,7 @@ class ProjectRespondent extends Model
         //Kiểm tra số điện thoại của đáp viên đã được thực hiện giao dịch trước đó hay chưa?
         $exists = $project->projectRespondents()
                     ->where('respondent_phone_number', $interviewURL->respondent_phone_number)
+                    ->where('environment', 'live')
                     ->where(function($query) {
                             $query->where('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED)
                                 ->orWhere('status', ProjectRespondent::STATUS_RESPONDENT_GIFT_NOT_RECEIVED)
@@ -192,6 +196,7 @@ class ProjectRespondent extends Model
     {
         //Kiểm tra số điện thoại đáp viên nhập đã được nhận quà trước đó chưa?
         $exists = $project->projectRespondents()
+                        ->where('environment', 'live')
                         ->where(function($query) use ($phone_number) {
                             $query->where('respondent_phone_number', $phone_number)
                                 ->orWhere('phone_number', $phone_number);
