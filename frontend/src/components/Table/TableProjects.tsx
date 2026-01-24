@@ -315,7 +315,7 @@ const TableProjects = () => {
                           align="center"
                         > 
                           {
-                            (project.total_respondents || 0)
+                            (project.count_respondents || 0)
                           } /
                           {
                             project.provinces.reduce((sum: number, p: any) => {

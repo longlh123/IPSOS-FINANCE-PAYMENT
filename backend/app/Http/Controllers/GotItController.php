@@ -167,16 +167,17 @@ class GotItController extends Controller
             ]); 
 
             //Tìm loại voucher tương ứng với mức giá quà tặng
+            // 17940 => 40000,
+            // 6832 => 60000,
+            // 9369 => 70000,
+            // 9343 => 80000,
+            // 6546 => 90000,
+
             $priceMap = [
                 3088 => 10000,
                 3090 => 20000,
                 3555 => 30000,
-                17940 => 40000,
                 2991 => 50000,
-                6832 => 60000,
-                9369 => 70000,
-                9343 => 80000,
-                6546 => 90000,
                 2992 => 100000,
                 2993 => 200000,
                 6440 => 300000,
@@ -208,7 +209,7 @@ class GotItController extends Controller
             if(count($selectedPrices) == 1){
                 $voucher_link_type = 'v'; 
             } else {
-                if(count($selectedPrices) >= 2 && count($selectedPrices) <= 4){
+                if(count($selectedPrices) >= 2 && count($selectedPrices) <= 5){
                     $voucher_link_type = 'g'; 
                 } else {
                     $voucher_link_type = 'e';
@@ -500,12 +501,7 @@ class GotItController extends Controller
             3088 => 10000,
             3090 => 20000,
             3555 => 30000,
-            17940 => 40000,
             2991 => 50000,
-            6832 => 60000,
-            9369 => 70000,
-            9343 => 80000,
-            6546 => 90000,
             2992 => 100000,
             2993 => 200000,
             6440 => 300000,
