@@ -67,10 +67,10 @@ class EmployeeController extends Controller
             
             $employees = $query->paginate($perPage);
 
-            Log::info('Employee Query Debug: ', [
-                'sql' => $query->toSql(),
-                'bindings' => $query->getBindings()
-            ]);
+            // Log::info('Employee Query Debug: ', [
+            //     'sql' => $query->toSql(),
+            //     'bindings' => $query->getBindings()
+            // ]);
 
             return response()->json([
                 'status_code' => Response::HTTP_OK,

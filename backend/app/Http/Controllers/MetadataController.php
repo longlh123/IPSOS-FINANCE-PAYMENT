@@ -20,6 +20,7 @@ class MetadataController extends Controller
             
             $teams = Team::where('department_id', 3)->get(['id', 'name']);
 
+            // $lastestYear = ProjectDetail::selectRaw('YEAR()')
 
             return response()->json([
                 'status_code' => 200,
