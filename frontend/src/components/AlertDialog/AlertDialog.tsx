@@ -36,7 +36,7 @@ const AlertDialog: React.FC<AlertDialogProps> = ({
           {title}
         </DialogTitle>
         <DialogContent>
-          <DialogContentText id="alert-dialog-description">
+          <DialogContentText id="alert-dialog-description" sx={{ whiteSpace: "pre-line" }}>
             {message}
           </DialogContentText>
         </DialogContent>

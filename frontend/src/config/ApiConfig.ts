@@ -14,6 +14,10 @@ export const ApiConfig = {
     viewEmployees: `${host}/api/project-management/{projectId}/employees`,
     addEmployees: `${host}/api/project-management/projects/{projectId}/employees/store`,
     removeEmployee: `${host}/api/project-management/projects/{projectId}/employees/{employeeId}/destroy`,
+    viewOfflineProjectRespondents: `${host}/api/project-management/projects/{projectId}/offline/respondents/show`,
+    addOfflineProjectRespondents: `${host}/api/project-management/projects/{projectId}/offline/respondents/store`,
+    removeProjectRespondent: `${host}/api/project_management/projects/{projectId}/offline/respondents/{projectRespondentId}/destroy`,
+    offlineTransactionSending: `${host}/api/project-management/projects/{projectId}/offline/respondents/{projectRespondentId}/transaction`,
     verifyTransactionToken: `${host}/api/project-management/project/verify_token`,
   },
   respondent: {

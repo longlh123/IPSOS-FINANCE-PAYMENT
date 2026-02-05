@@ -9,8 +9,14 @@ export const BaseVisibility = {
       visible_add_new_project: false,
       visible_change_status_of_project: false,
       visible_edit_project: false,
-      visible_view_gift_manager: false,
+      visible_view_gifts: false,
+      visible_view_transactions: false,
       visible_view_parttime_employees: false
+    }
+  },
+  gifts: {
+    functions: {
+      visible_import_respondents: false
     }
   },
   employees: {
@@ -43,8 +49,14 @@ export const VisibilityConfig = {
           visible_add_new_project: true,
           visible_change_status_of_project: true,
           visible_edit_project: true,
-          visible_view_gift_manager: true,
+          visible_view_gifts: true,
+          visible_view_transactions: true,
           visible_view_parttime_employees: true
+        }
+      },
+      gifts: {
+        functions: {
+          visible_import_respondents: true
         }
       },
       employees: {
@@ -86,7 +98,8 @@ export const VisibilityConfig = {
           visible_add_new_project: true,
           visible_change_status_of_project: true,
           visible_edit_project: true,
-          visible_view_gift_manager: false,
+          visible_view_gifts: true,
+          visible_view_transactions: false,
           visible_view_parttime_employees: true
         }
       },
