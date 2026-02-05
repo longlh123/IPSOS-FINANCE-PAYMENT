@@ -75,7 +75,7 @@ class GotItController extends Controller
         try
         {
             Log::info("A");
-            
+
             $validatedRequest = $request->validated();
 
             $token = $validatedRequest['token'] ?? null;
@@ -926,7 +926,7 @@ class GotItController extends Controller
                 "transactionRefId" => $apiObject->getTransactionRefId(),
                 "use_otp" => 0,
                 // "otp_type" => 1,    
-                "phone" => $phone_number,
+                // "phone" => $phone_number,
             ];
 
             if($voucher_link_type === 'e')
