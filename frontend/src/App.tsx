@@ -39,9 +39,9 @@ const App: React.FC = () => {
             {/* ✅ Public routes (không yêu cầu đăng nhập) */}
             <Route path="/" element={<Login />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/vinnet-management/project/:serviceType/:token" element={<VinnetRequest/>} />
+            {/* <Route path="/vinnet-management/project/:serviceType/:token" element={<VinnetRequest/>} />
             <Route path="/got-it-management/project/:url" element={<GotItRequest/>} />
-            <Route path="/gift-management/rejection/:url" element={<GiftRejectionRequest/>} />
+            <Route path="/gift-management/rejection/:url" element={<GiftRejectionRequest/>} /> */}
             <Route path="/page200" element={<Page200 messageSuccess="" />} />
             <Route path="/gift/response" element={<GiftResponse/>} />
             <Route path="/error" element={<ErrorPage />} />

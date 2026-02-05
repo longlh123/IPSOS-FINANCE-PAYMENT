@@ -12,7 +12,7 @@ import TextsmsIcon from "@mui/icons-material/Textsms";
 import SendIcon from "@mui/icons-material/Send";
 import SmsIcon from "@mui/icons-material/Sms";
 
-const GiftManagement: React.FC = () => {
+const Transactions: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const projectId = Number(id) || 0;
   const [ projectSelected, setProjectSelected ] = useState<ProjectData | null>(null);
@@ -146,4 +146,4 @@ const GiftManagement: React.FC = () => {
   )
 }
 
-export default GiftManagement;
+export default Transactions;

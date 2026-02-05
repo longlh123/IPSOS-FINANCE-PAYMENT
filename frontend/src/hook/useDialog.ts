@@ -5,6 +5,7 @@ interface DialogOptions {
   title?: string;
   message?: string;
   onConfirm?: () => void;
+  onClose?: () => void;
   showConfirmButton?: boolean;
 }
 
@@ -21,6 +22,7 @@ const useDialog = () => {
   };
 
   const closeDialog = (): void => {
+    if(options.onClose) options.onClose(); 
     setOpen(false);
   };
 

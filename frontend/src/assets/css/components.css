@@ -115,6 +115,11 @@ h4 span {
 .on-hold { background-color: var(--status-on-hold-color); }
 .cancelled { background-color: var(--status-cancelled-color); }
 
+.success { background-color: var(--status-completed-color); }
+.pending { background-color: var(--status-in-coming-color); }
+.suppended { background-color: var(--status-on-hold-color); }
+.refused { background-color: var(--status-cancelled-color); }
+
 .box-status-button{
     font-size: 0.8125rem;
     padding: 0.3125rem;

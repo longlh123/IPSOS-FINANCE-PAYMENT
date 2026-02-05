@@ -115,11 +115,14 @@ const TableProjects = () => {
   const handleAction = (action: string) => {
     handleMenuActionsClose();
     switch (action) {
-      case 'gift_management':
-        navigate(`/project-management/projects/${selectedProject.id}/gift-management`);
-        break;
       case 'edit_project':
         navigate(`/project-management/projects/${selectedProject.id}/settings`);
+        break;
+      case 'gifts':
+        navigate(`/project-management/projects/${selectedProject.id}/gifts`);
+        break;
+      case 'transactions':
+        navigate(`/project-management/projects/${selectedProject.id}/transactions`);
         break;
       case 'parttime-employees':
         navigate(`/project-management/projects/${selectedProject.id}/parttime-employees`);
@@ -404,10 +407,19 @@ const TableProjects = () => {
                               )
                             }
                             {
-                              canView("projects.functions.visible_view_gift_manager") && (
-                                <MenuItem onClick={() => handleAction('gift_management')}>
+                              canView("projects.functions.visible_view_gifts") && project.status != STATUS_COMPLETED && (
+                                <MenuItem onClick={() => handleAction('gifts')}>
+                                  <div className="actions-menu-item" style={{color: "rgb(99, 91, 255)"}}>
+                                    <IconEdit /><span className="text">Gifts</span>
+                                  </div>
+                                </MenuItem>    
+                              )
+                            }
+                            {
+                              canView("projects.functions.visible_view_transactions") && (
+                                <MenuItem onClick={() => handleAction('transactions')}>
                                   <div className="actions-menu-item" style={{color: "var(--text-fifth-color)"}}>
-                                    <GiftIcon fontSize="small" /><span className="text">Gift Management</span>
+                                    <GiftIcon fontSize="small" /><span className="text">Transactions</span>
                                   </div>
                                 </MenuItem>
                               )

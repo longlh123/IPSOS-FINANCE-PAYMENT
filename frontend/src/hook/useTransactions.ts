@@ -71,6 +71,8 @@ export function useTransactions(projectId: number){
         loading,
         error,
         message,
-        fetchTransactions
+        fetchTransactions,
+
+        refetch: fetchTransactions
     }
 }

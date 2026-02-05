@@ -18,7 +18,8 @@ function usePostRequest<T = any>(): UsePostRequestReturn<T> {
         setIsLoading(true);
         setMessageError(null);
 
-        try{
+        try
+        {
             // Create headers object
             const headers: any = {
                 'Content-Type': 'application/json',

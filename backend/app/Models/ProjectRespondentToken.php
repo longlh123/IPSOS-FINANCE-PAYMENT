@@ -17,7 +17,8 @@ class ProjectRespondentToken extends Model
         'token_hash',
         'attempts',
         'expires_at',
-        'status'
+        'status',
+        'batch_id'
     ];
 
     protected $casts = [
