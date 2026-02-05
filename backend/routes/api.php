@@ -12,12 +12,12 @@ use App\Http\Controllers\AdministrativeDivisionsController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\MetadataController;
 use App\Http\Controllers\DepartmentController;
-use App\Http\Controllers\RespondentController;
 use App\Http\Controllers\TechcombankPanelController;
 use App\Http\Controllers\TechcombankSurveysController;
 use App\Http\Controllers\GotItController;
 use App\Http\Controllers\QrCodeController;
 use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\ProjectRespondentController;
 use App\Http\Middleware\EnsureUserHasRole;
 
 Route::post('/login', [LoginController::class, 'login'])
@@ -54,11 +54,14 @@ Route::middleware(['auth:sanctum'])->group(function(){
 
     Route::get('project-management/projects/{projectId}/transactions/show', [TransactionController::class, 'show'])->middleware('ensureUserHasRole:Admin,Scripter');
 
-    Route::get('/project-management/projects/{projectId}/respondents/show', [RespondentController::class, 'show'])->middleware('ensureUserHasRole:admin');
-
     Route::get('/project-management/projects/{projectId}/employees/show', [EmployeeController::class, 'index'])->middleware('ensureUserHasRole:admin,Field Manager,Finance');
     Route::post('/project-management/projects/{projectId}/employees/store', [ProjectController::class, 'bulkAddEmployees'])->middleware('ensureUserHasRole:Admin');
     Route::delete('/project-management/projects/{projectId}/employees/{employeeId}/destroy', [ProjectController::class, 'bulkRemoveEmployee'])->middleware('ensureUserHasRole:Admin');
+
+    Route::post('/project-management/projects/{projectId}/offline/respondents/store', [ProjectRespondentController::class, 'bulkImportOfflineProjectRespondents'])->middleware('ensureUserHasRole:Admin');
+    Route::get('/project-management/projects/{projectId}/offline/respondents/show', [ProjectRespondentController::class, 'show'])->middleware('ensureUserHasRole:Admin');
+    Route::delete('/project_management/projects/{projectId}/offline/respondents/{projectRespondentId}/destroy', [ProjectRespondentController::class, 'bulkRemoveProjectRespondent'])->middleware('ensureUserHasRole:Admin');
+    Route::post('/project-management/projects/{projectId}/offline/respondents/{projectRespondentId}/transaction', [GotItController::class, 'perform_offline_transaction'])->middleware('ensureUserHasRole:Admin');
 
     Route::get('/project-management/vinnet/merchant/view', [VinnetController::class, 'get_merchant_info'])->middleware('ensureUserHasRole:admin,Finance');
     Route::post('/project-management/vinnet/change-key', [VinnetController::class, 'change_key'])->middleware('ensureUserHasRole:admin,Finance');

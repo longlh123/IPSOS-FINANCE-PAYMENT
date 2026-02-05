@@ -20,12 +20,15 @@ use App\Models\Province;
 use App\Models\ProjectUUID;
 use App\Models\Employee;
 use App\Models\ProjectEmployee;
+use App\Models\ProjectRespondent;
 use App\Http\Requests\StoreProjectVinnetTokenRequest;
 use App\Http\Requests\StoreProjectRequest;
 use App\Http\Requests\UpdateProjectRequest;
 use App\Http\Requests\UpdateProjectStatusRequest;
 use App\Http\Requests\UpdateProjectDisabledRequest;
 use App\Http\Requests\ImportEmployeesRequest;
+use App\Http\Requests\ImportProjectRespondentsRequest;
+use App\Services\ProjectRespondentTokenService;
 use Carbon\Carbon;
 
 class ProjectController extends Controller
@@ -530,8 +533,10 @@ class ProjectController extends Controller
         }
     }
     
-    public function bulkAddEmployees(ImportEmployeesRequest $request, $projectId){
-        try{
+    public function bulkAddEmployees(ImportEmployeesRequest $request, $projectId)
+    {
+        try
+        {
             $logged_in_user = Auth::user()->id;
 
             if(!in_array(Auth::user()->userDetails->role->name, ['Admin', 'Scripter'])){
@@ -638,7 +643,8 @@ class ProjectController extends Controller
         }
     }
 
-    public function bulkRemoveEmployee(Request $request, $projectId, $employeeId){
+    public function bulkRemoveEmployee(Request $request, $projectId, $employeeId)
+    {
         try{
             $logged_in_user = Auth::user()->id;
 
