@@ -5,7 +5,6 @@ import { ProjectData } from "../../config/ProjectFieldsConfig";
 import { useProjects } from "../../hook/useProjects";
 import { OfflineProjectRespondentCellConfig, OfflineProjectRespondentData, OfflineProjectRespondentImportData } from "../../config/OfflineProjectRespondentFieldsConfig";
 import { ColumnFormat } from "../../config/ColumnConfig";
-import { useTransactions } from "../../hook/useTransactions";
 import SearchTextBox from "../../components/SearchTextBox";
 import ReusableTable from "../../components/Table/ReusableTable";
 import { useVisibility } from "../../hook/useVisibility";
@@ -16,13 +15,6 @@ import { useOfflineProjectRespondents } from "../../hook/useOfflineProjectRespon
 import DeleteIcon from "@mui/icons-material/Delete";
 import LoadingButton from '@mui/lab/LoadingButton';
 import SendIcon from '@mui/icons-material/Send';
-
-const statusColors: { [key: string]: string } = {
-    'pending': '#FFD700', // Gold
-    'success': '#00BFFF', // DeepSkyBlue
-    'suppended': '#FF6347', // Tomato
-    'refused': '#B22222', // FireBrick
-};
 
 const Gifts: React.FC = () => {
     const { id } = useParams<{id: string}>();
@@ -37,7 +29,7 @@ const Gifts: React.FC = () => {
     const [ offlineProjectRespondentCellConfig, setOfflineProjectRespondentCellConfig ] = useState(OfflineProjectRespondentCellConfig);
 
     const { offineProjectRespondents, removeProjectRespondent, offlineTransactionSending, importOfflineProjectRespondents, loading: loadingOfflineProjectRespondents, error: errorOfflineProjectRespondents, message: messageOfflineProjectRespondents, page, rowsPerPage, searchTerm, total, setSearchTerm, setPage, setRowsPerPage } = useOfflineProjectRespondents(projectId);
-    const [ loadingButton, setLoadingButton ] = useState<boolean>(false);
+    const [ loadingRowId, setLoadingRowId ] = useState<string | null>(null);
 
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     
@@ -68,12 +60,12 @@ const Gifts: React.FC = () => {
     const handleSendGiftClick = async (row: OfflineProjectRespondentData) => {
         try
         {
-            setLoadingButton(true);
+            setLoadingRowId(row.respondent_id);
             await offlineTransactionSending(projectId, row);
         }catch(error){
             console.error('Failed to send SMS', error);
         } finally {
-            setLoadingButton(false);
+            setLoadingRowId(null);
         }
     }
 
@@ -144,7 +136,7 @@ const Gifts: React.FC = () => {
                         onClick={() => handleSendGiftClick(row)}
                         size="small"
                         endIcon={<SendIcon />}
-                        loading={loadingButton}
+                        loading={(loadingRowId === row.respondent_id)}
                         loadingPosition="end"
                         variant="contained"
                         disabled={disabled}
@@ -194,7 +186,7 @@ const Gifts: React.FC = () => {
             }
 
             const REQUIRED_COLUMNS = [
-                "InstanceiID",	"Shell_ChainID", "SamplePoint",	"Province",	"InterviewerID", "RespondentPhoneNumber", "PhoneNumber"
+                "InstanceID",	"Shell_ChainID", "SamplePoint",	"Province",	"InterviewerID", "RespondentPhoneNumber", "PhoneNumber"
             ]
 
             const hearders = Object.keys(jsonData[0]);
@@ -223,7 +215,7 @@ const Gifts: React.FC = () => {
 
     const importRespondents = async (rows:  OfflineProjectRespondentImportData[]) => {
         const payload = rows.map(r => ({
-            instance_id: r.InstanceiID.toString(),
+            instance_id: r.InstanceID.toString(),
             shell_chainid: r.Shell_ChainID.toString(),
             location_id: r.SamplePoint.toString(),
             province_name: r.Province.toString(),

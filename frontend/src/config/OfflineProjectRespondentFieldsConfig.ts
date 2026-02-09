@@ -1,7 +1,7 @@
 import { ColumnFormat } from "./ColumnConfig";
 
 export interface OfflineProjectRespondentImportData {
-    InstanceiID: string,
+    InstanceID: string,
     Shell_ChainID: string, 
     SamplePoint: string,
     Province: string,

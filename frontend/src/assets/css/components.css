@@ -119,13 +119,15 @@ h4 span {
 .pending { background-color: var(--status-in-coming-color); }
 .suppended { background-color: var(--status-on-hold-color); }
 .refused { background-color: var(--status-cancelled-color); }
-
+.failed { background-color: var(--status-planned-color); }
+  
 .box-status-button{
     font-size: 0.8125rem;
     padding: 0.3125rem;
     border-radius: 0.3125rem;
     color: #fff;
     font-weight: 600;
+    min-width: 0.8125rem;
 }
 
 .box-status-button:hover{

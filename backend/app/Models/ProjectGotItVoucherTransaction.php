@@ -11,6 +11,8 @@ class ProjectGotItVoucherTransaction extends Model
 
     const STATUS_PENDING_VERIFICATION = 'Giao dịch đang chờ xác thực.';
     const STATUS_VOUCHER_SUCCESS = 'Voucher được cập nhật thành công.';
+    const STATUS_VOUCHER_PENDING = 'Voucher đang chờ xác thực.';
+    const STATUS_VOUCHER_ERROR = 'Voucher xác thực không thành công.';
     const STATUS_PRODUCT_NOT_ALLOWED = 'Product ID này không được phép request.';
     const STATUS_MIN_VOUCHER_E_VALUE = 'Price ID này không được phép request.';
     const STATUS_TRANSACTION_ALREADY_EXISTS = 'Voucher Ref Id đã tồn tại/ trùng lặp.';
