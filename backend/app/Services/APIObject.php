@@ -36,7 +36,7 @@ class APIObject
 
         $this->transactionRefId = $this->envObject->gotitInfo['TRANSACTIONREFID_PREFIX'] ."_". $uuid;
 
-        Log::info('Transaction RefId: ' . $this->transactionRefId);
+        // Log::info('Transaction RefId: ' . $this->transactionRefId);
     }
 
     public function setSignatureData($signature_type, $order_name, $expiry_date){
@@ -80,7 +80,7 @@ class APIObject
 
     public function check_transaction($refid){
         
-        $this->setTransactionRefId();
+        // $this->setTransactionRefId();
         $this->signatureData = $this->envObject->gotitInfo['API_KEY'] . '|' . $refid;
 
         $signature = $this->generate_signature();
@@ -434,7 +434,8 @@ class APIObject
         }
     }
 
-    private function json_validator($data) { 
+    private function json_validator($data) 
+    { 
         if (!empty($data)) { 
             return is_string($data) &&  
               is_array(json_decode($data, true)) ? true : false; 
