@@ -53,7 +53,7 @@ class ProjectResource extends JsonResource
                     'name' => Province::where('id', $item->province_id)->pluck('name')[0],
                     'sample_size_main' => $item->sample_size_main,
                     'price_main' => $item->price_main,
-                    'sample_size_booters' => $item->sample_size_booters,
+                    'sample_size_booters' => $item->sample_size_boosters,
                     'price_boosters' => $item->price_boosters
                 ];
             })->values(),
