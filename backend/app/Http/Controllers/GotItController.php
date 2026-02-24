@@ -601,7 +601,7 @@ class GotItController extends Controller
                     ], 409);
                 }
             }
-            
+
             $projectRespondent->update([
                 'phone_number' => $phoneNumber,
                 'service_code' => $serviceCode,
@@ -886,15 +886,9 @@ class GotItController extends Controller
                 );
             }
 
-            Log::info('Generate a SMS request');
-            
-            $smsTransaction = $voucherTransaction->createGotitSMSTransaction([
-                'voucher_transaction_id' => $voucherTransaction->id,
-                'transaction_ref_id' => $transactionRefId,
-                'sms_status' => SMSStatus::PENDING
-            ]);
-
             $updateRespondentStatus = $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_DISPATCHED);
+
+            Log::info('Generate a SMS request');
 
             $projectRespondent->token()->update([
                 'status' => 'blocked'
@@ -907,6 +901,12 @@ class GotItController extends Controller
             
             if($continueTransacton && $deliveryMethod === 'sms')
             {   
+                $smsTransaction = $voucherTransaction->createGotitSMSTransaction([
+                    'voucher_transaction_id' => $voucherTransaction->id,
+                    'transaction_ref_id' => $transactionRefId,
+                    'sms_status' => SMSStatus::PENDING
+                ]);
+                
                 $apiCMCObject = new APICMCObject();
 
                 try{
