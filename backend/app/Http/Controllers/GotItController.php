@@ -74,8 +74,6 @@ class GotItController extends Controller
     {
         try
         {
-            Log::info("A");
-
             $validatedRequest = $request->validated();
 
             $token = $validatedRequest['token'] ?? null;
@@ -589,19 +587,21 @@ class GotItController extends Controller
 
             Log::info('Live Environment:');
 
-            try
-            {
-                //Kiểm tra số điện thoại đáp viên nhập đã được nhận quà trước đó hay chưa?
-                ProjectRespondent::checkGiftPhoneNumber($project, $phoneNumber);
+            if($deliveryMethod === 'sms'){
+                try
+                {
+                    //Kiểm tra số điện thoại đáp viên nhập đã được nhận quà trước đó hay chưa?
+                    ProjectRespondent::checkGiftPhoneNumber($project, $phoneNumber);
 
-            } catch(\Exception $e){
-                return response()->json([
-                    'status_code' => 905,
-                    'message' => $e->getMessage() . ' Vui lòng liên hệ Admin để biết thêm thông tin.',
-                    'error' => $e->getMessage()
-                ], 409);
+                } catch(\Exception $e){
+                    return response()->json([
+                        'status_code' => 905,
+                        'message' => $e->getMessage() . ' Vui lòng liên hệ Admin để biết thêm thông tin.',
+                        'error' => $e->getMessage()
+                    ], 409);
+                }
             }
-
+            
             $projectRespondent->update([
                 'phone_number' => $phoneNumber,
                 'service_code' => $serviceCode,
@@ -691,19 +691,52 @@ class GotItController extends Controller
                                                 ->exists();
 
                 if($hasSuccess){
-                    Log::warning(
-                        ProjectRespondent::ERROR_DUPLICATE_RESPONDENT . ' [Trường hợp Đáp viên đã tồn tại và đã có thực hiện giao dịch]',
-                        [
-                            'respondent_id' => $projectRespondent->id
-                        ]
-                    );
+                    // Log::warning(
+                    //     ProjectRespondent::ERROR_DUPLICATE_RESPONDENT . ' [Trường hợp Đáp viên đã tồn tại và đã có thực hiện giao dịch]',
+                    //     [
+                    //         'respondent_id' => $projectRespondent->id
+                    //     ]
+                    // );
 
-                    //Nếu đã thực hiện giao dịch => không cho thực hiện
-                    return response()->json([
-                        'status_code' => 905,
-                        'message' => ProjectRespondent::ERROR_DUPLICATE_RESPONDENT,
-                        'error' => ProjectRespondent::ERROR_DUPLICATE_RESPONDENT . ' [Trường hợp Đáp viên đã tồn tại và đã có thực hiện giao dịch]'
-                    ], 500);
+                    // //Nếu đã thực hiện giao dịch => không cho thực hiện
+                    // return response()->json([
+                    //     'status_code' => 905,
+                    //     'message' => ProjectRespondent::ERROR_DUPLICATE_RESPONDENT,
+                    //     'error' => ProjectRespondent::ERROR_DUPLICATE_RESPONDENT . ' [Trường hợp Đáp viên đã tồn tại và đã có thực hiện giao dịch]'
+                    // ], 500);
+
+                    $voucherTransaction = $projectRespondent->gotitVoucherTransactions()
+                                                            ->where('voucher_status', ProjectGotItVoucherTransaction::STATUS_VOUCHER_SUCCESS)
+                                                            ->first();
+                    
+                    $transactionRefId = $voucherTransaction->transaction_ref_id;   
+                    
+                    // Kiểm tra Transaction Ref Id có được thực hiện tiếp lệnh bên GotIt không?
+                    $responsedVoucher = $apiObject->check_transaction($transactionRefId);
+
+                    Log::info('Checked Transaction Ref Id with GotIt: ' . json_encode($responsedVoucher));
+
+                    if($responsedVoucher['statusCode'] == 200 && intval($responsedVoucher['error']) == 2007)
+                    {
+                        $voucherRequest = $this->generate_voucher_request($apiObject, $voucher_link_type, $phoneNumber, $selectedPrices);
+
+                        $voucherTransaction->update([
+                            'transaction_ref_id' => $voucherRequest['transactionRefId'],
+                            'expiry_date' => $voucherRequest['expiryDate'],
+                            'order_name' => $voucherRequest['orderName'],
+                            'voucher_status' => ProjectGotItVoucherTransaction::STATUS_VOUCHER_PENDING
+                        ]);
+
+                        $transactionRefId = $voucherRequest['transactionRefId'];
+
+                        $continueTransacton = true;
+                    } else {
+                        Log::info('Responsed Voucher (old): ' . json_encode($responsedVoucher));
+
+                        $voucherData = $responsedVoucher['data'][0]['vouchers'][0];
+
+                        Log::info('Voucher Link (old): ' .  json_encode($voucherData));
+                    }
                 } else {
                     $voucherTransaction = $projectRespondent->gotitVoucherTransactions()
                                                             ->where('voucher_status', '!=', ProjectGotItVoucherTransaction::STATUS_VOUCHER_SUCCESS)
@@ -872,7 +905,7 @@ class GotItController extends Controller
                 $messagesToSend ?? 'N/A'
             );
             
-            if($deliveryMethod === 'sms')
+            if($continueTransacton && $deliveryMethod === 'sms')
             {   
                 $apiCMCObject = new APICMCObject();
 

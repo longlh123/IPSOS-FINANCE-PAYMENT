@@ -122,12 +122,17 @@ class ProjectRespondent extends Model
         return $projectRespondent;
     }
     
-    public static function findProjectRespondent(Project $project, $interviewURL){
+    public static function findProjectRespondent(Project $project, $interviewURL, $phoneNumber){
 
         $projectRespondent = $project->projectRespondents()
                                 ->where('respondent_id', $interviewURL->shell_chainid . '-' . $interviewURL->respondent_id)
                                 ->where('shell_chainid', $interviewURL->shell_chainid)
-                                ->where('respondent_phone_number', $interviewURL->respondent_phone_number)
+                                ->where(function($query) use($interviewURL, $phoneNumber){
+                                    $query->where('respondent_phone_number', $interviewURL->respondent_phone_number)
+                                            ->orWhere('respondent_phone_number', $phoneNumber)
+                                            ->orWhere('phone_number', $interviewURL->respondent_phone_number)
+                                            ->orWhere('phone_number', $phoneNumber) ;
+                                })
                                 ->first();
 
         return $projectRespondent;

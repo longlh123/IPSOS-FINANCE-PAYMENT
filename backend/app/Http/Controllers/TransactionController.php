@@ -218,7 +218,9 @@ class TransactionController extends Controller
             Log::info('Environment: ' . $environment);
 
             // Tìm thông tin của Project Respondent
-            $projectRespondent = ProjectRespondent::findProjectRespondent($project, $interviewURL);
+            $projectRespondent = ProjectRespondent::findProjectRespondent($project, $interviewURL, $phoneNumber);
+
+            Log::info('Project Respondent:' . $projectRespondent);
 
             if(!$projectRespondent){
                 //Thông tin mới => Cập nhật thông tin vào hệ thống
@@ -268,6 +270,7 @@ class TransactionController extends Controller
                 //Thông tin cũ
                 //Kiểm tra xem Project Respondent có thực hiện bất kỳ giao dịch nào chưa?
                 //Nếu chưa => xem như thông tin mới => cập nhật lại status cho Project Respondent
+                
                 $vinnetTransactions = $projectRespondent->vinnetTransactions;
 
                 if($vinnetTransactions->isNotEmpty()){
@@ -293,7 +296,33 @@ class TransactionController extends Controller
                         ], 500);
                     }
                 } else {
-                    $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_PENDING);
+                    $gotitTransactions = $projectRespondent->gotitVoucherTransactions;
+
+                    if($gotitTransactions->isNotEmpty()){
+                        $numberOfSuccess = $gotitTransactions
+                                                        ->where('voucher_status', ProjectGotItVoucherTransaction::STATUS_VOUCHER_SUCCESS)
+                                                        ->exists();
+                        
+                        if($numberOfSuccess == 0){
+                            $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_PENDING);    
+                        } else {
+                            Log::warning(
+                                ProjectRespondent::ERROR_DUPLICATE_RESPONDENT . ' [Trường hợp Đáp viên đã tồn tại và đã có thực hiện giao dịch]',
+                                [
+                                    'respondent_id' => $projectRespondent->id
+                                ]
+                            );
+
+                            //Nếu đã thực hiện giao dịch => không cho thực hiện
+                            return response()->json([
+                                'status_code' => 905,
+                                'message' => ProjectRespondent::ERROR_DUPLICATE_RESPONDENT,
+                                'error' => ProjectRespondent::ERROR_DUPLICATE_RESPONDENT . ' [Trường hợp Đáp viên đã tồn tại và đã có thực hiện giao dịch]'
+                            ], 500);
+                        }
+                    } else {
+                        $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_PENDING);
+                    }
                 }
             }
 
