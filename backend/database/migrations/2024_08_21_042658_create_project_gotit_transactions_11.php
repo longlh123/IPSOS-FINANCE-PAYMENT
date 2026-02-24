@@ -33,6 +33,22 @@ return new class extends Migration
             $table->unique(['project_id', 'respondent_id'], 'unique_project_resp_id');
         });
 
+        Schema::create('project_respondent_tokens', function(Blueprint $table) {
+            
+            $table->id();
+            $table->foreignId('project_respondent_id')->constrained('project_respondents')->onDelete('cascade');
+            $table->string('token_public')->unique();
+            $table->string('token_hash');
+            $table->unsignedTinyInteger('attempts')->default(0);
+            $table->timestamp('expires_at');
+            $table->string('batch_id');
+            $table->enum('status', ['active','blocked'])->default('active');
+
+            $table->timestamps();
+
+            $table->unique('project_respondent_id');
+        });
+
         Schema::create('project_gotit_voucher_transactions', function(Blueprint $table) {
             
             $table->id();

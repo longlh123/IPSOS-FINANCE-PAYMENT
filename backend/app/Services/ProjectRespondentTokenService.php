@@ -9,6 +9,7 @@ use Ramsey\Uuid\Uuid;
 use Carbon\Carbon;
 use App\Models\ProjectRespondent;
 use App\Models\ProjectRespondentToken;
+use App\Models\ProjectGotItVoucherTransaction;
 use App\Constants\TransactionStatus;
 
 class ProjectRespondentTokenService
@@ -72,17 +73,42 @@ class ProjectRespondentTokenService
         
         [$public, $secret] = explode('.', $token);
 
-        $record = ProjectRespondentToken::where('token_public', $public)
-                                            ->where('status', 'active')
-                                            ->first();
+        $record = ProjectRespondentToken::where('token_public', $public)->first();
 
-        if(!$record){
+        if(!$record || !Hash::check($secret, $record->token_hash)){
+            $record->increment('attempts');
             throw new \Exception(TransactionStatus::STATUS_INVALID, 501);
         }
 
         if($record->status === 'blocked'){
-            throw new \Exception(TransactionStatus::STATUS_EXPIRED, 502);
+            $projectRespondent = $record->projectRespondent;
+
+            $hasSuccess = false;
+
+            if($projectRespondent->channel === 'vinnet'){
+                $hasSuccess = $projectRespondent->vinnetTransactions()
+                                                            ->where('vinnet_token_status', TransactionStatus::STATUS_VERIFIED)
+                                                            ->exists();
+            } else if($projectRespondent->channel === 'gotit'){
+                $hasSuccess = $projectRespondent->gotitVoucherTransactions()
+                                                    ->where('voucher_status', ProjectGotItVoucherTransaction::STATUS_VOUCHER_SUCCESS)
+                                                    ->exists();
+            } else {
+                throw new \Exception(TransactionStatus::STATUS_INVALID, 501);
+            }
+
+            if($hasSuccess){
+                return $record;
+            }
         }
+        
+        // if(!$record){
+        //     throw new \Exception(TransactionStatus::STATUS_INVALID, 501);
+        // }
+
+        // if($record->status === 'blocked'){
+        //     throw new \Exception(TransactionStatus::STATUS_EXPIRED, 502);
+        // }
 
         if($record->expires_at->isPast()){
             $record->update([
@@ -96,11 +122,6 @@ class ProjectRespondentTokenService
                 'status' => 'blocked'
             ]);
             throw new \Exception(TransactionStatus::STATUS_SUSPENDED, 503);
-        }
-
-        if(!Hash::check($secret, $record->token_hash)){
-            $record->increment('attempts');
-            throw new \Exception(TransactionStatus::STATUS_INVALID, 501);
         }
 
         return $record;

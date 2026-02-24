@@ -156,7 +156,7 @@ class VinnetController extends Controller
             
             if($projectRespondent->environment === 'test'){
 
-                Log::info('Staging Environment: ');
+                Log::info('Environment: Staging');
 
                 $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED);
 
@@ -170,19 +170,21 @@ class VinnetController extends Controller
                 ], 200);
             }
 
-            Log::info('Live Environment:');
+            Log::info('Environment: Live');
 
-            try
-            {
-                //Kiểm tra số điện thoại đáp viên nhập đã được nhận quà trước đó hay chưa?
-                ProjectRespondent::checkGiftPhoneNumber($project, $phoneNumber);
+            if($deliveryMethod === 'sms'){
+                try
+                {
+                    //Kiểm tra số điện thoại đáp viên nhập đã được nhận quà trước đó hay chưa?
+                    ProjectRespondent::checkGiftPhoneNumber($project, $phoneNumber);
 
-            } catch(\Exception $e){
-                return response()->json([
-                    'status_code' => 905,
-                    'message' => $e->getMessage() . ' Vui lòng liên hệ Admin để biết thêm thông tin.',
-                    'error' => $e->getMessage()
-                ], 409);
+                } catch(\Exception $e){
+                    return response()->json([
+                        'status_code' => 905,
+                        'message' => $e->getMessage() . ' Vui lòng liên hệ Admin để biết thêm thông tin.',
+                        'error' => $e->getMessage()
+                    ], 409);
+                }
             }
 
             $projectRespondent->update([
@@ -313,19 +315,25 @@ class VinnetController extends Controller
                                                         ->exists();
 
                 if($hasSuccess){
-                    Log::warning(
-                        ProjectRespondent::ERROR_DUPLICATE_RESPONDENT . ' [Trường hợp Đáp viên đã tồn tại và đã có thực hiện giao dịch]',
-                        [
-                            'respondent_id' => $projectRespondent->id
-                        ]
-                    );
+                    $vinnetTransaction = $projectRespondent->vinnetTransactions()
+                                                        ->where('vinnet_token_status', TransactionStatus::STATUS_VERIFIED)
+                                                        ->first();
+                    
+                    $payServiceUuid = $vinnetTransaction->vinnet_payservice_requuid;
 
-                    //Nếu đã thực hiện giao dịch => không cho thực hiện
-                    return response()->json([
-                        'status_code' => 905,
-                        'message' => ProjectRespondent::ERROR_DUPLICATE_RESPONDENT,
-                        'error' => ProjectRespondent::ERROR_DUPLICATE_RESPONDENT . ' [Trường hợp Đáp viên đã tồn tại và đã có thực hiện giao dịch]'
-                    ], 500);
+                    // Log::warning(
+                    //     ProjectRespondent::ERROR_DUPLICATE_RESPONDENT . ' [Trường hợp Đáp viên đã tồn tại và đã có thực hiện giao dịch]',
+                    //     [
+                    //         'respondent_id' => $projectRespondent->id
+                    //     ]
+                    // );
+
+                    // //Nếu đã thực hiện giao dịch => không cho thực hiện
+                    // return response()->json([
+                    //     'status_code' => 905,
+                    //     'message' => ProjectRespondent::ERROR_DUPLICATE_RESPONDENT,
+                    //     'error' => ProjectRespondent::ERROR_DUPLICATE_RESPONDENT . ' [Trường hợp Đáp viên đã tồn tại và đã có thực hiện giao dịch]'
+                    // ], 500);
                 } else {
                     $vinnetTransaction = $projectRespondent->vinnetTransactions()
                                                         ->where('vinnet_token_status', '!=', TransactionStatus::STATUS_VERIFIED)
@@ -457,80 +465,80 @@ class VinnetController extends Controller
                 $tokenRecord->update([
                     'status' => 'blocked'
                 ]);
-            }
 
-            $messagesToSend = sprintf(
-                "%s:Code:%s,Seri:%s,Exp:%s",
-                number_format($payItem['totalAmt'] / 1000, 0) . 'K',
-                $payItem['cardItems'][0]['pinCode'] ?? 'N/A',
-                $payItem['cardItems'][0]['serialNo'] ?? 'N/A',
-                $payItem['cardItems'][0]['expiryDate'] ?? 'N/A'
-            );
+                $messagesToSend = sprintf(
+                    "%s:Code:%s,Seri:%s,Exp:%s",
+                    number_format($payItem['totalAmt'] / 1000, 0) . 'K',
+                    $payItem['cardItems'][0]['pinCode'] ?? 'N/A',
+                    $payItem['cardItems'][0]['serialNo'] ?? 'N/A',
+                    $payItem['cardItems'][0]['expiryDate'] ?? 'N/A'
+                );
 
-            $messageCard = sprintf(
-                "IPSOS cam on ban. Tang ban ma dien thoai:\n%s",
-                $messagesToSend ?? 'N/A'
-            );
+                $messageCard = sprintf(
+                    "IPSOS cam on ban. Tang ban ma dien thoai:\n%s",
+                    $messagesToSend ?? 'N/A'
+                );
 
-            if($deliveryMethod === 'sms')
-            {
-                $smsTransaction = $vinnetTransaction->createVinnetSMSTransaction([
-                    'vinnet_transaction_id' => $vinnetTransaction->id,
-                    'sms_status' => SMSStatus::PENDING
-                ]);
-
-                $apiCMCObject = new APICMCObject();
-                
-                try
+                if($deliveryMethod === 'sms')
                 {
-                    $responseSMSData = $apiCMCObject->send_sms($phoneNumber, $messageCard);
-                
-                } catch(\Exception $e){
-                    Log::error("CMC Telecom API Error: " . $e->getMessage());
-                
-                    if(isset($smsTransaction)){
-                        $smsTransaction->update([
-                            'sms_status' => $e->getMessage()
-                        ]);
+                    $smsTransaction = $vinnetTransaction->createVinnetSMSTransaction([
+                        'vinnet_transaction_id' => $vinnetTransaction->id,
+                        'sms_status' => SMSStatus::PENDING
+                    ]);
+
+                    $apiCMCObject = new APICMCObject();
+                    
+                    try
+                    {
+                        $responseSMSData = $apiCMCObject->send_sms($phoneNumber, $messageCard);
+                    
+                    } catch(\Exception $e){
+                        Log::error("CMC Telecom API Error: " . $e->getMessage());
+                    
+                        if(isset($smsTransaction)){
+                            $smsTransaction->update([
+                                'sms_status' => $e->getMessage()
+                            ]);
+                        }
+
+                        if(isset($projectRespondent)){
+                            $projectRespondent->updateStatus(ProjectRespondent::STATUS_API_FAILED);
+                        }
+
+                        return response()->json([
+                            'status_code' => 997,
+                            'transaction_id' => $payServiceUuid,
+                            'message' => ProjectRespondent::ERROR_RESPONDENT_GIFT_SYSTEM,
+                            'error' => ProjectRespondent::ERROR_RESPONDENT_GIFT_SYSTEM
+                        ], 404);
                     }
 
-                    if(isset($projectRespondent)){
-                        $projectRespondent->updateStatus(ProjectRespondent::STATUS_API_FAILED);
+                    if(intval($responseSMSData['status']) == 1){
+                        $smsTransactionStatus = $smsTransaction->updateStatus(SMSStatus::SUCCESS, intval($responseSMSData['countSms']));
+
+                        $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED);
+
+                        return response()->json([
+                            'status_code' => 900,
+                            'transaction_id' => $payServiceUuid,
+                            'message' => TransactionStatus::SUCCESS
+                        ], 200);
+                    } else {
+                        $smsTransactionStatus = $smsTransaction->updateStatus($responseSMSData['statusDescription'], 0);
+
+                        $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_NOT_RECEIVED);
+
+                        return response()->json([
+                            'status_code' => 997,
+                            'transaction_id' => $payServiceUuid,
+                            'message' => SMSStatus::ERROR,
+                            'error' => SMSStatus::ERROR
+                        ], 400);
                     }
-
-                    return response()->json([
-                        'status_code' => 997,
-                        'transaction_id' => $payServiceUuid,
-                        'message' => ProjectRespondent::ERROR_RESPONDENT_GIFT_SYSTEM,
-                        'error' => ProjectRespondent::ERROR_RESPONDENT_GIFT_SYSTEM
-                    ], 404);
                 }
 
-                if(intval($responseSMSData['status']) == 1){
-                    $smsTransactionStatus = $smsTransaction->updateStatus(SMSStatus::SUCCESS, intval($responseSMSData['countSms']));
-
-                    $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED);
-
-                    return response()->json([
-                        'status_code' => 900,
-                        'transaction_id' => $payServiceUuid,
-                        'message' => TransactionStatus::SUCCESS
-                    ], 200);
-                } else {
-                    $smsTransactionStatus = $smsTransaction->updateStatus($responseSMSData['statusDescription'], 0);
-
-                    $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_NOT_RECEIVED);
-
-                    return response()->json([
-                        'status_code' => 997,
-                        'transaction_id' => $payServiceUuid,
-                        'message' => SMSStatus::ERROR,
-                        'error' => SMSStatus::ERROR
-                    ], 400);
-                }
+                $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED);
             }
-
-            $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED);
             
             return response()->json([
                 'status_code' => 900,

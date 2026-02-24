@@ -91,11 +91,19 @@ class ProjectController extends Controller
                     'projectDetails', 
                     'projectDetails.createdBy'
                 ])
-                ->withCount('projectRespondents as count_respondents')
+                ->withCount([
+                    'projectRespondents as count_respondents' => function($q) {
+                        $q->where('environment', 'live');
+                    }
+                ])
                 ->withCount('projectEmployees as count_employees');
             } else {
                 $query = Project::with(['projectDetails', 'projectDetails.createdBy'])
-                    ->withCount('projectRespondents as total_respondents')
+                    ->withCount([
+                        'projectRespondents as count_respondents' => function($q) {
+                            $q->where('environment', 'live');
+                        }
+                    ])
                     ->withCount('projectEmployees as count_employees')
                     ->whereHas('projectPermissions', function($q) use ($logged_in_user) {
                         $q->where('user_id', $logged_in_user);
