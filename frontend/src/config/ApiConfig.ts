@@ -2,6 +2,9 @@ const host = "https://dev.ippay.vn"
 //const host = "http://127.0.0.1:8000"
 
 export const ApiConfig = {
+  schema: {
+    quotationSchema: `${host}/api/quotation-template`,
+  },
   project: {
     viewProjects: `${host}/api/project-management/projects`,
     viewProject: `${host}/api/project-management/projects?platform=ifield&created_user_id=`,
@@ -20,6 +23,14 @@ export const ApiConfig = {
     removeProjectRespondent: `${host}/api/project_management/projects/{projectId}/offline/respondents/{projectRespondentId}/destroy`,
     offlineTransactionSending: `${host}/api/project-management/projects/{projectId}/offline/respondents/{projectRespondentId}/transaction`,
     verifyTransactionToken: `${host}/api/project-management/project/verify_token`,
+    viewQuotation: `${host}/api/project-management/projects/{projectId}/quotation/{versionId}/view`,
+    viewQuotationVersions: `${host}/api/project-management/projects/{projectId}/quotation/versions`,
+    addQuotation: `${host}/api/project-management/projects/{projectId}/quotation`,
+    updateQuotation: `${host}/api/project-management/projects/{projectId}/quotation/{versionId}/update`,
+    destroyQuotation: `${host}/api/project-management/projects/{projectId}/quotation/{versionId}/destroy`,
+    submitQuotation: `${host}/api/project-management/projects/{projectId}/quotation/{versionId}/submit`,
+    approveQuotation: `${host}/api/project-management/projects/{projectId}/quotation/{versionId}/approve`,
+    rejectQuotation: `${host}/api/project-management/projects/{projectId}/quotation/reject`
   },
   respondent: {
     viewRespondents: `${host}/api/project-management/projects/{projectId}/respondents/show`,

@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 use App\Http\Resources\ProjectResource;
 use App\Http\Resources\EmployeeResource;
@@ -201,13 +202,22 @@ class ProjectController extends Controller
 
                 $user = Auth::user();
 
+                $tempInternalCode = 'TMP-' . Str::uuid();
+
                 $project = Project::create([
-                    'internal_code' => $validatedRequest['internal_code'],
-                    'project_name' => $validatedRequest['project_name'],
+                    'internal_code' => $tempInternalCode,
+                    'project_name' => $validatedRequest['project_name']
+                ]);
+
+                $year = date('Y');
+
+                $internalCode = $year . '-' . str_pad($project->id, 4, '0', STR_PAD_LEFT);
+
+                $project->update([
+                    'internal_code' => $internalCode
                 ]);
 
                 $project->projectDetails()->create([
-                    'symphony' => $validatedRequest['symphony'],
                     'created_user_id' => $user->id,
                     'platform' => strtolower($validatedRequest['platform']),
                     'planned_field_start' => $validatedRequest['planned_field_start'],

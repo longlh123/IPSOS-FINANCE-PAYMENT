@@ -16,8 +16,6 @@ import {
   ListItem,
   ListItemText,
   CircularProgress,
-  Menu,
-  MenuItem,
 } from "@mui/material";
 import ModalAddProject from "../Modals/Project/ModalAddProject";
 import SdCardAlertOutlinedIcon from '@mui/icons-material/SdCardAlertOutlined';
@@ -25,10 +23,6 @@ import { useNavigate } from "react-router-dom";
 import { formatDate } from "../../utils/DateUtils";
 import logo from "../../assets/img/Ipsos logo.svg";
 import { toProperCase } from "../../utils/format-text-functions";
-import MoreVertIcon from '@mui/icons-material/MoreVert';
-import GiftIcon from '@mui/icons-material/CardGiftcard';
-import { IconEdit } from "../Icon/IconEdit";
-import { STATUS_COMPLETED } from "../../constants/statusProjectConstants";
 import { useProjects } from "../../hook/useProjects";
 import { useMetadata } from "../../hook/useMetadata";
 import { useVisibility } from "../../hook/useVisibility";
@@ -39,6 +33,7 @@ import SearchTextBox from "../SearchTextBox";
 import dayjs, { Dayjs } from 'dayjs';
 import SearchDatePickerFromTo from "../SearchDatePickerFromTo";
 import { TableCellConfig } from "../../config/ProjectFieldsConfig";
+import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 
 const TableProjects = () => {
   const navigate = useNavigate();
@@ -69,13 +64,8 @@ const TableProjects = () => {
     'cancelled' : ['on going', 'on hold', 'cancelled']
   };
 
-  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [anchorElStatus, setAnchorElStatus] = useState<HTMLElement | null>(null);
   const [selectedProject, setSelectedProject] = useState<any | null>(null);
-
-  const opendStatusOfProject = Boolean(anchorEl);
-  const idStatusOfProject = opendStatusOfProject ? "simple-popover" : undefined;
-
 
   const { projects, page, rowsPerPage, total, setPage, setRowsPerPage, searchTerm, setSearchTerm, searchFromDate, setSearchFromDate, searchToDate, setSearchToDate, updateProjectStatus, loading: projectsLoading, error: projectError } = useProjects();
   const { metadata, loading: metadataLoading, error: metadataError } = useMetadata();
@@ -101,38 +91,6 @@ const TableProjects = () => {
   const handleMenuStatusClick = (event: React.MouseEvent<HTMLElement>, project: any) => {
     setAnchorElStatus(event.currentTarget);
     setSelectedProject(project);
-  };
-
-  const handleMenuActionsClick = (event: React.MouseEvent<HTMLButtonElement>, project: any) => {
-    setAnchorEl(event.currentTarget);
-    setSelectedProject(project);
-  };
-
-  const handleMenuActionsClose = () => {
-    setAnchorEl(null);
-  };
-
-  const handleAction = (action: string) => {
-    handleMenuActionsClose();
-    switch (action) {
-      case 'edit_project':
-        navigate(`/project-management/projects/${selectedProject.id}/settings`);
-        break;
-      case 'gifts':
-        navigate(`/project-management/projects/${selectedProject.id}/gifts`);
-        break;
-      case 'transactions':
-        navigate(`/project-management/projects/${selectedProject.id}/transactions`);
-        break;
-      case 'parttime-employees':
-        navigate(`/project-management/projects/${selectedProject.id}/parttime-employees`);
-        break;
-      case 'delete':
-        setOpenModalConfirm(true);
-        break;
-      default:
-        break;
-    }
   };
 
   const handleUpdateStatus = async (project: any, status: string) => {
@@ -379,7 +337,9 @@ const TableProjects = () => {
                         >
                           <IconButton
                             aria-label="actions"
-                            onClick={(event) => handleMenuActionsClick(event, project)}
+                            onClick={() =>
+                              navigate(`/project-management/projects/${project.id}/quotation`)
+                            }
                             sx={{
                               backgroundColor: '#f6f6f6', 
                               borderRadius: '8px',
@@ -390,50 +350,8 @@ const TableProjects = () => {
                               padding: '5px',
                             }}
                           >
-                            <MoreVertIcon />
+                            <ArrowForwardIosIcon />
                           </IconButton>
-                          <Menu
-                            anchorEl={anchorEl}
-                            open={Boolean(anchorEl) && selectedProject?.id === project.id}
-                            onClose={handleMenuActionsClose}
-                          >
-                            {
-                              canView("projects.functions.visible_edit_project") && project.status != STATUS_COMPLETED && (
-                                <MenuItem onClick={() => handleAction('edit_project')}>
-                                  <div className="actions-menu-item" style={{color: "rgb(99, 91, 255)"}}>
-                                    <IconEdit /><span className="text">Edit Project</span>
-                                  </div>
-                                </MenuItem>    
-                              )
-                            }
-                            {
-                              canView("projects.functions.visible_view_gifts") && project.status != STATUS_COMPLETED && (
-                                <MenuItem onClick={() => handleAction('gifts')}>
-                                  <div className="actions-menu-item" style={{color: "rgb(99, 91, 255)"}}>
-                                    <IconEdit /><span className="text">Gifts</span>
-                                  </div>
-                                </MenuItem>    
-                              )
-                            }
-                            {
-                              canView("projects.functions.visible_view_transactions") && (
-                                <MenuItem onClick={() => handleAction('transactions')}>
-                                  <div className="actions-menu-item" style={{color: "var(--text-fifth-color)"}}>
-                                    <GiftIcon fontSize="small" /><span className="text">Transactions</span>
-                                  </div>
-                                </MenuItem>
-                              )
-                            }
-                            {
-                              canView("projects.functions.visible_view_parttime_employees") && (
-                                <MenuItem onClick={() => handleAction('parttime-employees')}>
-                                  <div className="actions-menu-item" style={{color: "var(--text-fifth-color)"}}>
-                                    <GiftIcon fontSize="small" /><span className="text">Parttime Employees</span>
-                                  </div>
-                                </MenuItem>
-                              )
-                            }
-                          </Menu>
                         </TableCell>
                       </TableRow>
                     ))}

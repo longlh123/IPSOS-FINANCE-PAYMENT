@@ -130,20 +130,36 @@ const Gifts: React.FC = () => {
             flex: 1,
             renderAction: (row: OfflineProjectRespondentData) => {
                 const disabled = (row.status != 'pending');
+                const view_disabled = row.status == 'success';
 
                 return (
-                    <LoadingButton
-                        onClick={() => handleSendGiftClick(row)}
-                        size="small"
-                        endIcon={<SendIcon />}
-                        loading={(loadingRowId === row.respondent_id)}
-                        loadingPosition="end"
-                        variant="contained"
-                        disabled={disabled}
-                        className='btn bg-vinnet-primary'
-                        >
-                            <span>TẶNG QUÀ</span>
-                    </LoadingButton>
+                    <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+                        <LoadingButton
+                            onClick={() => handleSendGiftClick(row)}
+                            size="small"
+                            endIcon={<SendIcon />}
+                            loading={(loadingRowId === row.respondent_id)}
+                            loadingPosition="end"
+                            variant="contained"
+                            disabled={disabled}
+                            className='btn bg-vinnet-primary'
+                            >
+                                <span>TẶNG QUÀ</span>
+                        </LoadingButton>
+                        <LoadingButton
+                            onClick={() => handleSendGiftClick(row)}
+                            size="small"
+                            endIcon={<SendIcon />}
+                            loading={(loadingRowId === row.respondent_id)}
+                            loadingPosition="end"
+                            variant="contained"
+                            disabled={view_disabled}
+                            className='btn bg-vinnet-secondary'
+                            >
+                                <span>VIEW</span>
+                        </LoadingButton>
+                    </div>
+                    
                 )
             }
         }

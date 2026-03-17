@@ -22,8 +22,6 @@ class StoreProjectRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'internal_code' => 'required|string',
-            'symphony' => 'required|string',
             'project_name' => 'required|string',
             'platform' => 'required|string|in:ifield,dimensions,other,iField,Dimensions,Other',
             'planned_field_start' => 'required|date',
@@ -37,12 +35,6 @@ class StoreProjectRequest extends FormRequest
 
     public function messages(){
         return [
-            'internal_code.required' => 'The internal code is required.',
-            'internal_code.string' => 'The internal code must be a string.',
-            
-            'symphony.required' => 'The symphony is required.',
-            'symphony.string' => 'The symphony must be a string.',
-
             'project_name.required' => 'The project name is required.',
             'project_name.string' => 'The project name must be a string.',
 

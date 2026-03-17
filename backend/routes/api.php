@@ -18,6 +18,9 @@ use App\Http\Controllers\GotItController;
 use App\Http\Controllers\QrCodeController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\ProjectRespondentController;
+use App\Http\Controllers\QuotationTemplateController;
+use App\Http\Controllers\QuotationController;
+use App\Http\Controllers\CatiController;
 use App\Http\Middleware\EnsureUserHasRole;
 
 Route::post('/login', [LoginController::class, 'login'])
@@ -66,6 +69,15 @@ Route::middleware(['auth:sanctum'])->group(function(){
     Route::get('/project-management/vinnet/merchant/view', [VinnetController::class, 'get_merchant_info'])->middleware('ensureUserHasRole:admin,Finance');
     Route::post('/project-management/vinnet/change-key', [VinnetController::class, 'change_key'])->middleware('ensureUserHasRole:admin,Finance');
     Route::get('/project-management/vinnet/merchantinfo', [VinnetController::class, 'merchantinfo'])->middleware('ensureUserHasRole:admin,Finance');
+
+    //Quotation
+    Route::get('project-management/projects/{projectId}/quotation/{versionId}/view', [QuotationController::class, 'getQuotation'])->middleware('ensureUserHasRole:Admin,Field Manager');
+    Route::get('project-management/projects/{projectId}/quotation/versions', [QuotationController::class, 'getQuotationVersions'])->middleware('ensureUserHasRole:Admin,Field Manager');
+    Route::post('project-management/projects/{projectId}/quotation', [QuotationController::class, 'store'])->middleware('ensureUserHasRole:Admin,Field Manager');
+    Route::put('project-management/projects/{projectId}/quotation/{versionId}/update', [QuotationController::class, 'update'])->middleware('ensureUserHasRole:Admin,Field Manager');
+    Route::delete('project-management/projects/{projectId}/quotation/{versionId}/destroy', [QuotationController::class, 'destroy'])->middleware('ensureUserHasRole:Admin,Field Manager');
+    Route::post('project-management/projects/{projectId}/quotation/{versionId}/approve', [QuotationController::class, 'approve'])->middleware('ensureUserHasRole:Admin,Field Manager');
+    Route::post('project-management/projects/{projectId}/quotation/reject', [QuotationController::class, 'reject'])->middleware('ensureUserHasRole:Admin,Field Manager');
 });
 
 Route::get('/project-management/project/verify_token', [TransactionController::class, 'verify']);
@@ -102,11 +114,14 @@ Route::get('/techcombank-panel/panellist', [TechcombankPanelController::class, '
 Route::get('/techcombank-panel/surveys', [TechcombankSurveysController::class, 'index']);
 
 Route::post('/cmc-telecom/sendsms', [VinnetController::class, 'cmc_telecom_send_sms']);
-
-
-
-
+Route::get('/quotation-template', [QuotationTemplateController::class, 'parse']);
 
 Route::get('/generate-qr', [QrCodeController::class, 'generate']);
 Route::get('/test_sms', [VinnetController::class, 'test_sms']);
+
+
+Route::post('/next', [CatiController::class, 'next']);
+Route::post('/update-status', [CatiController::class, 'updateStatus']);
+Route::get('/filters', [CatiController::class, 'filters']);
+
 

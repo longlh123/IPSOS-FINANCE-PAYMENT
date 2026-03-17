@@ -37,6 +37,7 @@ class ProjectResource extends JsonResource
             'planned_field_end' => $this->projectDetails->planned_field_end ?? null,
             'actual_field_start' => $this->projectDetails->actual_field_start ?? null,
             'actual_field_end' => $this->projectDetails->actual_field_end ?? null,
+            'project_objectives' => $this->projectDetails->project_objectives ?? null,
             'created_user_id' => $this->projectDetails->createdBy->userDetails,
             'project_types' => $this->projectTypes->map(function($projectType){
                 return $projectType->name;

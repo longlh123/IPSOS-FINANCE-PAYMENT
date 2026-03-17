@@ -6,7 +6,7 @@ import axios from "axios";
 
 import { TextField, Button } from "@mui/material";
 import { ApiConfig } from "../../config/ApiConfig";
-import GuestLayout from '../../Layouts/GuestLayout';
+import GuestLayout from '../../Layouts/ProjectLayout';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';

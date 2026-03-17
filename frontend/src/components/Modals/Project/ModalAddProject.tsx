@@ -41,8 +41,6 @@ const ModalAddProject: React.FC<ModalProps> = ({ openModal, onClose, metadata })
 
   const [formFieldsConfig, setFormFieldsConfig] = useState(ProjectGeneralFieldsConfig);
   const [formValues, setFormValues] = useState<ProjectData>({
-    internal_code: '',
-    symphony: '',
     project_name: '',
     platform: '',
     teams: [],
@@ -158,7 +156,7 @@ const ModalAddProject: React.FC<ModalProps> = ({ openModal, onClose, metadata })
       const new_project = await addProject(formValues);
       console.log("Add successful");
       onClose();
-      navigate(`/project-management/projects/${new_project.id}/settings`);
+      navigate(`/project-management/projects/${new_project.id}/quotation`);
     } catch (error) {
       if (axios.isAxiosError(error)) {
         setStatusMessage(error.response?.data.message ?? error.message);
