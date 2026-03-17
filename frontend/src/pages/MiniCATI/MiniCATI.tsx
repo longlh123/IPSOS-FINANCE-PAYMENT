@@ -25,7 +25,7 @@ export default function MiniCATI() {
 
   // 🔥 Load options từ API
   useEffect(() => {
-    axios.get("http://localhost:8000/api/filters").then((res) => {
+    axios.get("https://dev.ippay.vn/api/filters").then((res) => {
       setOptions(res.data);
     });
   }, []);
@@ -37,7 +37,7 @@ export default function MiniCATI() {
 
   const getNext = async () => {
     try {
-      const res = await axios.post("http://localhost:8000/api/next", {
+      const res = await axios.post("https://dev.ippay.vn/api/next", {
         user: employeeId,
         ...filters
       });
@@ -48,7 +48,7 @@ export default function MiniCATI() {
   };
 
   const updateStatus = async (status: string) => {
-    await axios.post("http://localhost:8000/api/update-status", {
+    await axios.post("https://dev.ippay.vn/api/update-status", {
       id: current.id,
       status
     });
