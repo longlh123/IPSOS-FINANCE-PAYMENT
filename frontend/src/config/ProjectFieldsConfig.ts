@@ -40,9 +40,10 @@ export const TableCellConfig: ColumnFormat[] = [
 ];
 
 export interface ProjectData {
-    internal_code: string;
-    symphony: string;
+    id?: number,
+    internal_code?: string;
     project_name: string;
+    symphony?: string;
     platform: string;
     teams: string[];
     project_types: string[];
@@ -51,27 +52,12 @@ export interface ProjectData {
     planned_field_end: string;
     actual_field_start?: string;
     actual_field_end?: string;
+    project_objectives?: string,
     remember_token?: string,
     remember_uuid?: string
 };
 
 export const ProjectGeneralFieldsConfig: ColumnFormat[] = [
-  {
-    label: "Internal Code",
-    name: "internal_code",
-    type: "string",
-    grid: 6,
-    order: 1,
-    visible: true
-  },
-  {
-    label: "Symphony",
-    name: "symphony",
-    type: "string",
-    grid: 6,
-    order: 2,
-    visible: true
-  },
   {
     label: "Project Name",
     name: "project_name",

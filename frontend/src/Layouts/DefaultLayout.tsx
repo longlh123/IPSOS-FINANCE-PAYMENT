@@ -1,13 +1,9 @@
 import { useState } from "react";
 import Navbar from "../components/Navbar/Navbar";
 import Sidebar from "../components/Sidebar/Sidebar";
-import { truncate } from "fs";
+import { Outlet } from "react-router-dom";
 
-type children = {
-  children: React.ReactNode;
-};
-
-const DefaultLayout: React.FC<children> = ({ children }) => {
+const DefaultLayout: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
 
   const toggleSidebar = () => {
@@ -23,7 +19,9 @@ const DefaultLayout: React.FC<children> = ({ children }) => {
             navbarFullWidth={isSidebarOpen}
             toggleSidebar={toggleSidebar}
           />
-          <div className="content-detail">{children}</div>
+          <div className="content-detail">
+            <Outlet />
+          </div>
         </div>
       </div>
     </>

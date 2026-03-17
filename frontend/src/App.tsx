@@ -7,21 +7,19 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
-import { DefaultRoute } from "./routes/Route";
 import { AuthProvider } from "./contexts/AuthContext";
 
 import axios from "axios";
 import DefaultLayout from "./Layouts/DefaultLayout";
 
 import ProtectedRoute from "./routes/ProtectedRoute";
-import VinnetRequest from "./pages/VinnetAPI/VinnetRequest";
 import ErrorPage from "./pages/ErrorPage/ErrorPage";
 import Page200 from "./pages/Page200/Page200";
-import TechcombankLayout from "./Layouts/TechcombankLayout";
-import { TechcombankRoutes } from "./routes/TechcombankRoutes";
-import GotItRequest from "./pages/GotItAPI/GotItRequest";
-import GiftRejectionRequest from "./pages/VinnetAPI/GiftRejectionRequest";
-import GiftResponse from "./pages/VinnetAPI/GiftResponse";
+import ProjectLayout from "./Layouts/ProjectLayout";
+import Projects from "./pages/Project/Projects";
+import Quotation from "./pages/Project/Quotation/Quotation";
+import ParttimeEmployees from "./pages/Project/ParttimeEmployees";
+import MiniCATI from "./pages/MiniCATI/MiniCATI";
 
 // Fetch the CSRF token from the meta tag
 const csrfToken = document
@@ -36,55 +34,48 @@ const App: React.FC = () => {
       <Router>
         <AuthProvider>
           <Routes>
-            {/* ✅ Public routes (không yêu cầu đăng nhập) */}
+            {/* ================= PUBLIC ROUTES ================= */}
             <Route path="/" element={<Login />} />
             <Route path="/login" element={<Login />} />
-            {/* <Route path="/vinnet-management/project/:serviceType/:token" element={<VinnetRequest/>} />
-            <Route path="/got-it-management/project/:url" element={<GotItRequest/>} />
-            <Route path="/gift-management/rejection/:url" element={<GiftRejectionRequest/>} /> */}
             <Route path="/page200" element={<Page200 messageSuccess="" />} />
-            <Route path="/gift/response" element={<GiftResponse/>} />
             <Route path="/error" element={<ErrorPage />} />
 
-            {/* ✅ Protected routes (yêu cầu đăng nhập) */}
-            <Route path="/techcombank/home" element={<Navigate to="/techcombank/dashboard" replace />} />
+            <Route path="/mini-cati" element={<MiniCATI />} />
 
-            { 
-              DefaultRoute.map((item, index) => {
-                if (item.path !== '/login') {
-                  return (
-                    <Route 
-                      key={index}
-                      path={item.path}
-                      element={ 
-                        <ProtectedRoute allowedRoles={item.roles}>
-                          <DefaultLayout>
-                            <item.component />
-                          </DefaultLayout>
-                        </ProtectedRoute> 
-                      }
-                    /> 
-                  )
-                }
-              })
-            }
-            {
-              TechcombankRoutes.map((item, index) => {
-                return (
-                  <Route 
-                    key={index}
-                    path={item.path}
-                    element={
-                      <TechcombankLayout>
-                        <item.component/>
-                      </TechcombankLayout>
-                    }
-                  />
-                )
-              })
-            }
+            {/* ================= DEFAULT LAYOUT GROUP ================= */}
+            <Route
+              element={
+                <ProtectedRoute>
+                  <DefaultLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route
+                path="/project-management/projects"
+                element={<Projects />}
+              />
+            </Route>
 
-            {/* ✅ 404 fallback */}
+            {/* ================= PROJECT LAYOUT GROUP ================= */}
+            <Route
+              path="/project-management/projects/:id"
+              element={
+                <ProtectedRoute allowedRoles={["admin", "scripter"]}>
+                  <ProjectLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route
+                path="quotation"
+                element={<Quotation />}
+              />
+              <Route
+                path="parttime-employees"
+                element={<ParttimeEmployees />}
+              />
+            </Route>
+            
+            {/* ================= 404 ================= */}
             <Route 
               path="*" 
               element={
