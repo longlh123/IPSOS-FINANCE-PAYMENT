@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('cati_respondents', function (Blueprint $table) {
             $table->id();
+            $table->string('respondent_id')->unique();
             $table->string('phone');
             $table->string('name')->nullable();
             $table->string('link')->nullable();
@@ -21,6 +22,7 @@ return new class extends Migration
             $table->string('filter_3')->nullable();
             $table->string('filter_4')->nullable();
             $table->string('status')->default('New'); // New, Calling, Done...
+            $table->text('comment')->nullable();
             $table->string('assigned_to')->nullable();
             $table->timestamp('locked_at')->nullable();
             $table->timestamps();
