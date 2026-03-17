@@ -71,13 +71,40 @@ class CatiController extends Controller
 
     public function updateStatus(Request $request)
     {
+        $request->validate([
+            'id' => 'required|integer',
+            'status' => 'required|string',
+            'comment' => 'nullable|string'
+        ]);
+        
         DB::table('cati_respondents')
             ->where('id', $request->id)
             ->update([
                 'status' => $request->status,
+                'comment' => $request->comment,
+                'updated_at' => now()
             ]);
 
         return response()->json(['success' => true]);
     }
     
+    public function getSuspended(Request $request)
+    {
+        $employeeId = $request->employee_id;
+
+        $data = DB::table('cati_respondents')
+            ->where('status', 'Suspended')
+            ->where('assigned_to', $employeeId)
+            ->orderBy('updated_at', 'desc')
+            ->get([
+                'id',
+                'respondent_id',
+                'name',
+                'phone',
+                'link',
+                'comment'
+            ]);
+
+        return response()->json($data);
+    }
 }

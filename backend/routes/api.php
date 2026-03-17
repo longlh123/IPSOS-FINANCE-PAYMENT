@@ -123,5 +123,6 @@ Route::get('/test_sms', [VinnetController::class, 'test_sms']);
 Route::post('/next', [CatiController::class, 'next']);
 Route::post('/update-status', [CatiController::class, 'updateStatus']);
 Route::get('/filters', [CatiController::class, 'filters']);
+Route::get('/suspended', [CatiController::class, 'getSuspended']);
 
 
