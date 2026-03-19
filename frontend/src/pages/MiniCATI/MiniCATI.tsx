@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { Select, MenuItem, Box, Button, Card, CardContent, Typography, TextField, Menu, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, Paper } from "@mui/material";
 import { useSearchParams } from "react-router-dom";
+import { ApiConfig } from "../../config/ApiConfig";
 
 export default function MiniCATI() {
   const [current, setCurrent] = useState<any>(null);
@@ -31,7 +32,7 @@ export default function MiniCATI() {
         { value: "Reject_NoTransaction", label: "Không có giao dịch" },
         { value: "Reject_Refuse", label: "Từ chối tham gia" },
         { value: "Reject_WrongPhone", label: "Số điện thoại sai" },
-        { value: "Reject_NoAnswer", label: "Không nghe máy" },
+        // { value: "Reject_NoAnswer", label: "Không nghe máy" },
     ];
 
     const [status, setStatus] = useState("");
@@ -40,7 +41,7 @@ export default function MiniCATI() {
     const [suspendedList, setSuspendedList] = useState<any[]>([]);
 
     const getSuspendedList = async () => {
-        const res = await axios.get("http://localhost:8000/api/suspended", {
+        const res = await axios.get(ApiConfig.minicati.getSuspendedList, {
             params: { employee_id: employeeId }
         });
 
@@ -53,7 +54,7 @@ export default function MiniCATI() {
 
   // 🔥 Load options từ API
   useEffect(() => {
-    axios.get("http://localhost:8000/api/filters").then((res) => {
+    axios.get(ApiConfig.minicati.filters).then((res) => {
       setOptions(res.data);
     });
   }, []);
@@ -65,7 +66,7 @@ export default function MiniCATI() {
 
   const getNext = async () => {
     try {
-      const res = await axios.post("http://localhost:8000/api/next", {
+      const res = await axios.post(ApiConfig.minicati.next, {
         user: employeeId,
         ...filters
       });
@@ -90,7 +91,7 @@ export default function MiniCATI() {
             finalComment = selected?.label || "";
         }
 
-        await axios.post("http://localhost:8000/api/update-status", {
+        await axios.post(ApiConfig.minicati.updateStatus, {
             id: current.id,
             status: finalStatus,
             comment: finalComment
@@ -163,8 +164,12 @@ export default function MiniCATI() {
           ))}
         </Select>
 
-        <Button variant="contained" onClick={getNext}>
-          Next
+        <Button 
+            disabled={current}
+            variant="contained" 
+            onClick={getNext}
+        >
+            Next
         </Button>
       </Box>
 
@@ -188,10 +193,6 @@ export default function MiniCATI() {
 
                         <Typography>
                             <strong>Phone:</strong> {current.phone}
-                        </Typography>
-
-                        <Typography>
-                            <strong>Name:</strong> {current.name || "-"}
                         </Typography>
 
                         <Typography>
@@ -266,7 +267,6 @@ export default function MiniCATI() {
                 <TableHead>
                     <TableRow>
                     <TableCell><strong>ID</strong></TableCell>
-                    <TableCell><strong>Name</strong></TableCell>
                     <TableCell><strong>Phone</strong></TableCell>
                     <TableCell><strong>Comment</strong></TableCell>
                     <TableCell align="center"><strong>Action</strong></TableCell>
@@ -279,13 +279,12 @@ export default function MiniCATI() {
                         <TableRow key={item.id}>
                         
                         <TableCell>{item.respondent_id}</TableCell>
-                        <TableCell>{item.name}</TableCell>
                         <TableCell>{item.phone}</TableCell>
 
                         <TableCell>
-                            <a href={item.link} target="_blank" rel="noopener noreferrer">
+                            {/* <a href={item.link} target="_blank" rel="noopener noreferrer"> */}
                             {item.comment}
-                            </a>
+                            {/* </a> */}
                         </TableCell>
 
                         <TableCell align="center">
