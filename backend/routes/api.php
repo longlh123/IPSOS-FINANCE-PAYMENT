@@ -21,6 +21,7 @@ use App\Http\Controllers\ProjectRespondentController;
 use App\Http\Controllers\QuotationTemplateController;
 use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\CatiController;
+use App\Http\Controllers\CustomVouchersController;
 use App\Http\Middleware\EnsureUserHasRole;
 
 Route::post('/login', [LoginController::class, 'login'])
@@ -119,7 +120,10 @@ Route::get('/quotation-template', [QuotationTemplateController::class, 'parse'])
 Route::get('/generate-qr', [QrCodeController::class, 'generate']);
 Route::get('/test_sms', [VinnetController::class, 'test_sms']);
 
+//CUSTOM VOUCHER
+Route::post('/custom-voucher/assign', [CustomVouchersController::class, 'assignVoucher']);
 
+//Mini-CATI
 Route::post('/next', [CatiController::class, 'next']);
 Route::post('/update-status', [CatiController::class, 'updateStatus']);
 Route::get('/filters', [CatiController::class, 'filters']);

@@ -99,7 +99,6 @@ class CatiController extends Controller
             ->get([
                 'id',
                 'respondent_id',
-                'name',
                 'phone',
                 'link',
                 'comment'

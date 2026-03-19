@@ -70,4 +70,10 @@ export const ApiConfig = {
     forgotPassword: `${host}/api/forgot-password`,
     resetPassword: `${host}/api/reset-password`,
   },
+  minicati: {
+    getSuspendedList: `${host}/api/suspended`,
+    filters: `${host}/api/filters`,
+    next: `${host}/api/next`,
+    updateStatus: `${host}/api/update-status`,
+  }
 };
