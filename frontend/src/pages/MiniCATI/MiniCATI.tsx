@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { Select, MenuItem, Box, Button, Card, CardContent, Typography, TextField, Menu, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, Paper } from "@mui/material";
+import { Select, MenuItem, Box, Button, Card, CardContent, Typography, TextField, Menu, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, Paper, FormControl, InputLabel, Grid } from "@mui/material";
 import { useSearchParams } from "react-router-dom";
 import { ApiConfig } from "../../config/ApiConfig";
 
@@ -100,70 +100,101 @@ export default function MiniCATI() {
         // reset
         setStatus("");
         setComment("");
+        setCurrent(null);
 
         await getSuspendedList();
-        
-        getNext();
     };
 
   return (
     <Box p={3}>
       
       {/* ================= FILTER ================= */}
-      <Box display="flex" gap={2} mb={2}>
+      <Grid container spacing={2}>
+        <Grid item xs={12} sm={6} md={3}>
+          <div style={{ marginBottom: "1rem" }}>
+            <Typography variant="body2" gutterBottom>
+                Filter 1
+            </Typography>
+            <Select
+              value={filters.filter_1}
+              displayEmpty
+              fullWidth
+              onChange={(e) =>
+                setFilters({ ...filters, filter_1: e.target.value })
+              }
+            >
+              <MenuItem value="">All</MenuItem>
+              {options.filter_1.map((item: any) => (
+                <MenuItem key={item} value={item}>{item}</MenuItem>
+              ))}
+            </Select>
+          </div>
+        </Grid>
         
-        <Select
-          value={filters.filter_1}
-          displayEmpty
-          onChange={(e) =>
-            setFilters({ ...filters, filter_1: e.target.value })
-          }
-        >
-          <MenuItem value="">All</MenuItem>
-          {options.filter_1.map((item: any) => (
-            <MenuItem key={item} value={item}>{item}</MenuItem>
-          ))}
-        </Select>
+        <Grid item xs={12} sm={6} md={3}>
+          <div style={{ marginBottom: "1rem" }}>
+            <Typography variant="body2" gutterBottom>
+                Filter 2
+            </Typography>
+            <Select
+              value={filters.filter_2}
+              displayEmpty
+              fullWidth
+              onChange={(e) =>
+                setFilters({ ...filters, filter_2: e.target.value })
+              }
+            >
+              <MenuItem value="">All</MenuItem>
+              {options.filter_2.map((item: any) => (
+                <MenuItem key={item} value={item}>{item}</MenuItem>
+              ))}
+            </Select>
+          </div>
+        </Grid>
 
-        <Select
-          value={filters.filter_2}
-          displayEmpty
-          onChange={(e) =>
-            setFilters({ ...filters, filter_2: e.target.value })
-          }
-        >
-          <MenuItem value="">All</MenuItem>
-          {options.filter_2.map((item: any) => (
-            <MenuItem key={item} value={item}>{item}</MenuItem>
-          ))}
-        </Select>
+        <Grid item xs={12} sm={6} md={3}>
+          <div style={{ marginBottom: "1rem" }}>
+            <Typography variant="body2" gutterBottom>
+                Filter 3
+            </Typography>
+            <Select
+              value={filters.filter_3}
+              displayEmpty
+              fullWidth
+              onChange={(e) =>
+                setFilters({ ...filters, filter_3: e.target.value })
+              }
+            >
+              <MenuItem value="">All</MenuItem>
+              {options.filter_3.map((item: any) => (
+                <MenuItem key={item} value={item}>{item}</MenuItem>
+              ))}
+            </Select>
+          </div>
+        </Grid>
 
-        <Select
-          value={filters.filter_3}
-          displayEmpty
-          onChange={(e) =>
-            setFilters({ ...filters, filter_3: e.target.value })
-          }
-        >
-          <MenuItem value="">All</MenuItem>
-          {options.filter_3.map((item: any) => (
-            <MenuItem key={item} value={item}>{item}</MenuItem>
-          ))}
-        </Select>
-
-        <Select
-          value={filters.filter_4}
-          displayEmpty
-          onChange={(e) =>
-            setFilters({ ...filters, filter_4: e.target.value })
-          }
-        >
-          <MenuItem value="">All</MenuItem>
-          {options.filter_4.map((item: any) => (
-            <MenuItem key={item} value={item}>{item}</MenuItem>
-          ))}
-        </Select>
-
+        <Grid item xs={12} sm={6} md={3}>
+          <div style={{ marginBottom: "1rem" }}>
+            <Typography variant="body2" gutterBottom>
+                Filter 4
+            </Typography>
+            <Select
+              value={filters.filter_4}
+              displayEmpty
+              fullWidth
+              onChange={(e) =>
+                setFilters({ ...filters, filter_4: e.target.value })
+              }
+            >
+              <MenuItem value="">All</MenuItem>
+              {options.filter_4.map((item: any) => (
+                <MenuItem key={item} value={item}>{item}</MenuItem>
+              ))}
+            </Select>
+          </div>
+        </Grid>
+      </Grid>
+      <Box display="flex" gap={2} mb={2}>
         <Button 
             disabled={current}
             variant="contained" 
@@ -243,7 +274,7 @@ export default function MiniCATI() {
                             disabled={!status}
                             onClick={handleSubmit}
                         >
-                            Submit & Next
+                            Submit
                         </Button>
 
                     </Box>

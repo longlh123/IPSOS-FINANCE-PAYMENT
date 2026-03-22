@@ -12,6 +12,7 @@ class CustomVoucher extends Model
     protected $table = 'custom_vouchers';
 
     protected $fillable = [
+        'token_id',
         'uuid',
         'code',
         'expired_from',
@@ -27,6 +28,9 @@ class CustomVoucher extends Model
         'sent_at' => 'datetime'
     ];
 
-
+    public function token()
+    {
+        return $this->belongsTo(CustomVoucherToken::class, 'token_id');
+    }
 
 }

@@ -23,7 +23,8 @@ class ProjectRespondentTokenRequest extends FormRequest
     {
         return [
             'url' => 'required|string',
-            'phone_number' => 'required|string|digits_between:10,11'
+            'phone_number' => 'required|string|digits_between:10,11',
+            'link' => 'nullable|string'
         ];
     }
 
