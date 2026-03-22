@@ -44,12 +44,12 @@ return new class extends Migration
             //$table->unique(['external_id', 'email'], 'unique_external_id_email');
         });
 
-        // Schema::create('techcombank_channels', function(Blueprint $table) {
-        //     $table->id();
-        //     $table->string('name');
-        //     $table->string('chart_label')->nullable();
-        //     $table->timestamps();
-        // });
+        Schema::create('techcombank_channels', function(Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('chart_label')->nullable();
+            $table->timestamps();
+        });
 
         Schema::create('techcombank_channels_summarizes', function(Blueprint $table) {
             $table->id();
@@ -62,12 +62,12 @@ return new class extends Migration
             $table->unique(['panel_id', 'bank_id', 'channel_id'], 'unique_channels_panel_bank');
         });
 
-        // Schema::create('techcombank_products', function(Blueprint $table) {
-        //     $table->id();
-        //     $table->string('name');
-        //     $table->string('chart_label')->nullable();
-        //     $table->timestamps();
-        // });
+        Schema::create('techcombank_products', function(Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('chart_label')->nullable();
+            $table->timestamps();
+        });
 
         Schema::create('techcombank_products_summarizes', function(Blueprint $table) {
             $table->id();
@@ -104,11 +104,11 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('techcombank_panel');
-        //Schema::dropIfExists('techcombank_channels');
         Schema::dropIfExists('techcombank_channels_summarizes');
-        //Schema::dropIfExists('techcombank_products');
         Schema::dropIfExists('techcombank_products_summarizes');
+        Schema::dropIfExists('techcombank_channels');
+        Schema::dropIfExists('techcombank_products');
+        Schema::dropIfExists('techcombank_panel');
         //Schema::dropIfExists('techcombank_surveys');
         
     }

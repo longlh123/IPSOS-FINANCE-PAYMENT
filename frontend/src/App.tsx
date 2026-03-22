@@ -19,6 +19,7 @@ import ProjectLayout from "./Layouts/ProjectLayout";
 import Projects from "./pages/Project/Projects";
 import Quotation from "./pages/Project/Quotation/Quotation";
 import ParttimeEmployees from "./pages/Project/ParttimeEmployees";
+import TravelExpense from "./pages/Project/TravelExpense";
 import MiniCATI from "./pages/MiniCATI/MiniCATI";
 
 // Fetch the CSRF token from the meta tag
@@ -72,6 +73,10 @@ const App: React.FC = () => {
               <Route
                 path="parttime-employees"
                 element={<ParttimeEmployees />}
+              />
+              <Route
+                path="travel_expense"
+                element={<TravelExpense />}
               />
             </Route>
             

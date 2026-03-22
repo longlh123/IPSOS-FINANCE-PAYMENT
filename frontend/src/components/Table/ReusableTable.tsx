@@ -80,7 +80,7 @@ const ReusableTable: React.FC<ReusableTableProps> = ({
                                         textOverflow: "ellipsis",
                                         width: col.name == "actions" ? 120 : "auto"
                                     }}
-                                    align="left"
+                                    align={col.align ?? "left"}
                                 >
                                     { col.renderHeader ? col.renderHeader() : col.label }
                                 </TableCell>

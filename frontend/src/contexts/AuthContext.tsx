@@ -27,9 +27,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     React.useEffect(() => {
         const storedToken = localStorage.getItem("authToken");
         const storedUser = localStorage.getItem("user");
-        
-        if (storedToken) setToken(storedToken);
-        if (storedUser) setUser(JSON.parse(storedUser));
+        const devAuthEnabled = process.env.REACT_APP_DEV_AUTH === "true";
+
+        if (storedToken) {
+            setToken(storedToken);
+        } else if (process.env.NODE_ENV === "development" && devAuthEnabled) {
+            const devToken = "dev-token";
+            setToken(devToken);
+            localStorage.setItem("authToken", devToken);
+        }
+
+        if (storedUser) {
+            setUser(JSON.parse(storedUser));
+        } else if (process.env.NODE_ENV === "development" && devAuthEnabled) {
+            const devUser = { first_name: "Dev", last_name: "User", role: "admin" };
+            setUser(devUser);
+            localStorage.setItem("user", JSON.stringify(devUser));
+        }
 
         setLoading(false);
     }, []);

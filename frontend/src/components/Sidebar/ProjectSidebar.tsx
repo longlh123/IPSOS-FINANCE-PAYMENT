@@ -88,6 +88,19 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({ projectId, isOpen, togg
                     <span className="text nav-text">Interviewers</span>
                 </NavLink>
             </li>
+                <li className="nav-link">
+                  <NavLink
+                    to={`/project-management/projects/${projectId}/travel_expense`}
+                    onClick={() => {
+                    if (isSmallScreen) toggleSidebar(); // chỉ đóng nếu là mobile
+                    }}
+                  >
+                    <i className="icon">
+                    <LibraryBooks style={{ fontSize: "18px" }} />
+                    </i>
+                    <span className="text nav-text">Travel Expense</span>
+                  </NavLink>
+                </li>
         </ul>
         <Divider style={{ margin: "18px 0" }} />
       </div>

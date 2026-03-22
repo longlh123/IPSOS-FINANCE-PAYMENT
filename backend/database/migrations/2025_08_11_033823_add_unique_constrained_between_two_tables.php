@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -11,10 +10,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('project_respondents', function(Blueprint $table){
-
-            $table->unique(['project_id', 'respondent_id'], 'unique_project_resp_id');
-        });
+        // No-op: the unique index already exists in
+        // 2024_08_21_042658_create_project_gotit_transactions_11.php.
     }
 
     /**
@@ -22,8 +19,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('project_respondents', function (Blueprint $table) {
-            $table->dropUnique('unique_project_resp_id');
-        });
+        // No-op for symmetry with up().
     }
 };

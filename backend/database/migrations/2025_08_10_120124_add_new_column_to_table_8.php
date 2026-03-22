@@ -12,23 +12,41 @@ return new class extends Migration
     public function up(): void
     {
         //Thêm column
-        Schema::table('provinces', function(Blueprint $table){
+        if (!Schema::hasColumn('provinces', 'codename')) {
+            Schema::table('provinces', function(Blueprint $table){
+                $table->string('codename')->after('area_code');
+            });
+        }
 
-            $table->string('codename')->after('area_code');
-            $table->string('short_codename')->after('codename');
-        });
+        if (!Schema::hasColumn('provinces', 'short_codename')) {
+            Schema::table('provinces', function(Blueprint $table){
+                $table->string('short_codename')->after('codename');
+            });
+        }
 
-        Schema::table('districts', function(Blueprint $table){
+        if (!Schema::hasColumn('districts', 'codename')) {
+            Schema::table('districts', function(Blueprint $table){
+                $table->string('codename')->after('population');
+            });
+        }
 
-            $table->string('codename')->after('population');
-            $table->string('short_codename')->after('population');
-        });
+        if (!Schema::hasColumn('districts', 'short_codename')) {
+            Schema::table('districts', function(Blueprint $table){
+                $table->string('short_codename')->after('codename');
+            });
+        }
 
-        Schema::table('wards', function(Blueprint $table){
+        if (!Schema::hasColumn('wards', 'codename')) {
+            Schema::table('wards', function(Blueprint $table){
+                $table->string('codename')->after('population');
+            });
+        }
 
-            $table->string('codename')->after('population');
-            $table->string('short_codename')->after('population');
-        });
+        if (!Schema::hasColumn('wards', 'short_codename')) {
+            Schema::table('wards', function(Blueprint $table){
+                $table->string('short_codename')->after('codename');
+            });
+        }
     }
 
     /**
@@ -37,19 +55,40 @@ return new class extends Migration
     public function down(): void
     {
         //Xoá column 
-        Schema::table('provinces', function (Blueprint $table) {
-            $table->dropColumn('codename');
-            $table->dropColumn('short_codename');
-        });
+        if (Schema::hasColumn('provinces', 'codename')) {
+            Schema::table('provinces', function (Blueprint $table) {
+                $table->dropColumn('codename');
+            });
+        }
 
-        Schema::table('districts', function (Blueprint $table) {
-            $table->dropColumn('codename');
-            $table->dropColumn('short_codename');
-        });
+        if (Schema::hasColumn('provinces', 'short_codename')) {
+            Schema::table('provinces', function (Blueprint $table) {
+                $table->dropColumn('short_codename');
+            });
+        }
 
-        Schema::table('wards', function (Blueprint $table) {
-            $table->dropColumn('codename');
-            $table->dropColumn('short_codename');
-        });
+        if (Schema::hasColumn('districts', 'codename')) {
+            Schema::table('districts', function (Blueprint $table) {
+                $table->dropColumn('codename');
+            });
+        }
+
+        if (Schema::hasColumn('districts', 'short_codename')) {
+            Schema::table('districts', function (Blueprint $table) {
+                $table->dropColumn('short_codename');
+            });
+        }
+
+        if (Schema::hasColumn('wards', 'codename')) {
+            Schema::table('wards', function (Blueprint $table) {
+                $table->dropColumn('codename');
+            });
+        }
+
+        if (Schema::hasColumn('wards', 'short_codename')) {
+            Schema::table('wards', function (Blueprint $table) {
+                $table->dropColumn('short_codename');
+            });
+        }
     }
 };
