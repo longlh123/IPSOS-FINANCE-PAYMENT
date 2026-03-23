@@ -91,8 +91,7 @@ Route::post('/project-management/vinnet/check-transaction', [VinnetController::c
 Route::post('/project-management/gotit/transaction', [GotItController::class, 'perform_transaction']);
 Route::post('/project-management/gotit/check-transaction', [GotItController::class, 'check_transaction']);
 
-//delete Route::get('/project-management/project/verify-vinnet-token/{internal_code}/{project_name}/{respondent_id}/{remember_token}', [ProjectController::class, 'verify_vinnet_token']);
-// Route::post('/project-management/vinnet/change-key', [VinnetController::class, 'change_key']);
+
 
 
 
@@ -121,6 +120,7 @@ Route::get('/generate-qr', [QrCodeController::class, 'generate']);
 Route::get('/test_sms', [VinnetController::class, 'test_sms']);
 
 //CUSTOM VOUCHER
+Route::post('/custom-voucher/authenticate-token', [CustomVouchersController::class, 'authenticateToken']);
 Route::post('/custom-voucher/assign', [CustomVouchersController::class, 'assignVoucher']);
 
 //Mini-CATI

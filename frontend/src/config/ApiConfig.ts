@@ -75,5 +75,9 @@ export const ApiConfig = {
     filters: `${host}/api/filters`,
     next: `${host}/api/next`,
     updateStatus: `${host}/api/update-status`,
+  },
+  customvoucher: {
+    authenticateToke: `${host}/api/custom-voucher/authenticate-token`, 
+    assignVoucher: `${host}/api/custom-voucher/assign`
   }
 };

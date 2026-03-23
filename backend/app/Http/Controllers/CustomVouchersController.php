@@ -4,40 +4,156 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
-use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use Endroid\QrCode\Builder\Builder;
+use Endroid\QrCode\Encoding\Encoding;
+use Endroid\QrCode\Writer\PngWriter;
 use App\Models\CustomVoucher;
+use App\Models\CustomVoucherToken;
+use App\Models\Employee;
 
 class CustomVouchersController extends Controller
 {
+    public function authenticateToken(Request $request)
+    {
+        $respondentId = $request->respondent_id ?? null;
+        $phoneNumber = $request->phone_number ?? null;
+        $employeeId = $request->employee_id ?? null;
+        $batchId = $request->batch_id ?? null;
+        $link = $request->link ?? null;
+
+        $employee = Employee::where('employee_id', $employeeId)->first();
+
+        if(!$employee){
+            return response()->json([
+                'status_code' => 400,
+                'error' => 'Interviewer ID không tồn tại. Vui lòng kiểm tra.'
+            ]);
+        }
+
+        if(!$respondentId || !$phoneNumber || !$batchId || !$link){
+            return response()->json([
+                'status_code' => 400,
+                'error' => 'Respondent ID, Phone Number and Link should not be blank.'
+            ]);
+        }
+
+        $existingRespondentId = CustomVoucherToken::where('respondent_id', $respondentId)
+                                                    ->where('phone_number', '!=', $phoneNumber)
+                                                    ->first();
+
+        if($existingRespondentId)
+        {
+            return response()->json([
+                'status_code' => 400,
+                'error' => 'Respondent ID đã được đăng ký trước đó. Vui lòng kiểm tra lại.'
+            ]);
+        } else {
+            $existingPhoneNumber = CustomVoucherToken::where('phone_number', $phoneNumber)
+                                                        -> where('respondent_id', '!=', $respondentId)
+                                                        ->first();
+
+            if($existingPhoneNumber){
+                return response()->json([
+                    'status_code' => 400,
+                    'error' => 'Phone Number đã được đăng ký trước đó. Vui lòng kiểm tra lại.'
+                ]);
+            }
+        }
+
+        $existing = CustomVoucherToken::where('respondent_id', $respondentId)
+                                        ->where('phone_number', $phoneNumber)
+                                        ->first();
+        
+        if($existing){
+            $token = $existing->token;
+        } else {
+            $token = Str::random(64);
+
+            CustomVoucherToken::create([
+                'employee_id' => $employee->id,
+                'respondent_id' => $respondentId,
+                'phone_number' => $phoneNumber,
+                'token' => $token,
+                'attempts' => 0, 
+                'expires_at' => now()->addHours(24),
+                'batch_id' => $batchId,
+                'status' => 'active'
+            ]);
+        }
+
+        $query = http_build_query([
+            'id' => $respondentId,
+            'I.User1' => $token
+        ]);
+
+        $linkFinal = $link . '?' . $query;
+
+        return response()->json([
+            'status_code' => 200,
+            'link' => $linkFinal
+        ]);
+    }
+
     public function assignVoucher(Request $request)
     {
         DB::beginTransaction();
 
         try
         {
-            $request->validate([
-                'respondent_id' => 'string|required'
-            ]);
+            $tokenStr = $request->token ?? null;
 
-            //Check đã có voucher chưa?
-            $existing = CustomVoucher::where('respondent_id', $request->respondent_id)->first();
+            if (!$tokenStr) {
+                throw new \Exception('Missing token');
+            }
+            
+            $token = CustomVoucherToken::where('token', $tokenStr)
+                        ->lockForUpdate()
+                        ->first();
+
+            if(!$token){
+                throw new \Exception('Invalid token');
+            }
+
+            if($token->status !== 'active'){
+                throw new \Exception('Token is blocked');
+            }
+
+            if($token->expires_at && $token->expires_at < now()){
+                throw new \Exception('Token expired');
+            }
+
+            $existing = CustomVoucher::where('token_id', $token->id)->first();
 
             if($existing){
                 DB::commit();
+
+                $qr = Builder::create()
+                    ->writer(new PngWriter())
+                    ->data($existing->code)        // nội dung QR
+                    ->encoding(new Encoding('UTF-8'))
+                    ->size(300)                   // kích thước
+                    ->margin(10)
+                    ->build();
+
+                // chuyển sang base64
+                $qrBase64 = base64_encode($qr->getString());
+                
                 return response()->json([
                     'status_code' => 200,
-                    'voucher' => $existing
+                    'uuid' => $existing->uuid,
+                    'qr' => $qrBase64
                 ]);
-            }
+            } 
 
-            $voucher = CustomVoucher::where('status', 'unused')
+            $voucher = CustomVoucher::whereNull('token_id')
+                                ->where('batch_id', $token->batch_id)
+                                ->where('status', 'unused')
                                 ->where(function($q) {
                                     $q->whereNull('expired_to')
                                         ->orWhere('expired_to', '>=', now());
@@ -47,6 +163,7 @@ class CustomVouchersController extends Controller
 
             if(!$voucher){
                 DB::rollBack();
+
                 return response()->json([
                     'status_code' => 400,
                     'error' => 'Out of vouchers'
@@ -59,25 +176,47 @@ class CustomVouchersController extends Controller
             }
 
             $voucher->status = 'used';
-            $voucher->respondent_id = $request->respondent_id;
+            $voucher->token_id = $token->id;
             $voucher->sent_at = now();
             $voucher->save();
 
-            $qr = base64_encode(
-                QrCode::format('png')->size(300)->generate($voucher->code)
-            );
+            $token->attempts += 1;
+
+            if ($token->attempts > 5) {
+                $token->status = 'blocked';
+                $token->save();
+
+                DB::rollBack();
+                throw new \Exception('Token blocked due to too many attempts');
+            }
+
+            $token->save();
+
+            $qr = Builder::create()
+                ->writer(new PngWriter())
+                ->data($voucher->code)        // nội dung QR
+                ->encoding(new Encoding('UTF-8'))
+                ->size(300)                   // kích thước
+                ->margin(10)
+                ->build();
+
+            // chuyển sang base64
+            $qrBase64 = base64_encode($qr->getString());
 
             DB::commit();
 
             return response()->json([
                 'status_code' => 200,
                 'uuid' => $voucher->uuid,
-                'qr' => $qr
+                'qr' => $qrBase64
             ]);
         } catch(\Exception $e){
+            Log::error($e);
+
             DB::rollBack();
+
             return response()->json([
-                'status_code' => 500,
+                'status_code' => 400,
                 'error' => 'Server error - ' . $e->getMessage()
             ]);
         }
