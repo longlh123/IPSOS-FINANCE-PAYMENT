@@ -5,6 +5,8 @@ import HighlandLogo from "../../assets/img/highland/highland_logo.png";
 import { ApiConfig } from "../../config/ApiConfig";
 import { Box, Button, Card, Typography } from "@mui/material";
 import { useParams } from "react-router-dom";
+import * as htmlToImage from 'html-to-image';
+import { useRef } from 'react';
 
 export default function CustomVoucher() {
     const [ qrBase64, setQrBase64 ] = useState<string | null>(null);
@@ -13,6 +15,7 @@ export default function CustomVoucher() {
     const [ message, setMessage ] = useState("");
 
     const { token } = useParams<{token: string}>()
+    const voucherRef = useRef<HTMLDivElement>(null);
 
     const handleGetCustomVoucher = async () => {
         setLoading(true);
@@ -42,6 +45,23 @@ export default function CustomVoucher() {
         }
     }
 
+    const handleDownloadVoucher = async () => {
+        if(!voucherRef.current) return;
+        
+        try{
+            const dataUrl = await htmlToImage.toPng(voucherRef.current, {
+                cacheBust: true,
+            });
+
+            const link = document.createElement("a");
+            link.download = `voucher-${uuid}.png`;
+            link.href = dataUrl;
+            link.click();
+        }catch(err){
+            console.log("Lỗi khi tạo ảnh: ", err);
+        }
+    }
+
     return (
         <div>
             <Box
@@ -55,7 +75,21 @@ export default function CustomVoucher() {
                     backgroundColor: "#f5f5f5",
                 }}
                 >
-                
+                <Typography
+                    variant="body1"
+                    align="center"
+                    sx={{ mb: 2, color: "success.main" }}
+                >
+                    Cảm ơn bạn đã tham gia khảo sát của chúng tôi.
+                </Typography>
+
+                <Typography variant="body2" align="center" sx={{ mb: 1 }}>
+                    Nhấn <b>LẤY VOUCHER</b> để xem phần quà.
+                </Typography>
+
+                <Typography variant="body2" align="center" sx={{ mb: 2 }}>
+                    Vui lòng nhấn <b>LƯU VOUCHER</b> để lưu lại phần quà.
+                </Typography>
                 <Button
                     variant="contained"
                     onClick={handleGetCustomVoucher}
@@ -75,14 +109,10 @@ export default function CustomVoucher() {
                     {message}
                     </Typography>
                 )}
-                {/* {uuid && qrBase64 && (
-                    <Typography variant="subtitle1" sx={{ mt: 1 }}>
-                        Mã Voucher: <strong>{uuid}</strong>
-                    </Typography>
-                )} */}
-
+                
                 {uuid && qrBase64 && (
                     <Card
+                        ref={voucherRef}
                         sx={{
                             maxWidth: 550,
                             width: "100%",
@@ -110,33 +140,31 @@ export default function CustomVoucher() {
                             style={{ width: "200px", height: "200px" }}
                             />
                         </Box>
-
-                        {/* Nội dung voucher */}
-                        <Box sx={{
-                            width: "100%",
-                            textAlign: "justify",
-                            fontFamily: "Roboto, sans-serif",
-                            fontSize: 14,
+                        
+                        <Box
+                        sx={{
                             position: "relative",
+                            width: "100%",
                             padding: 2,
                             backgroundColor: "#fff",
                             overflow: "hidden",
-
-                            "&::before": {
-                            content: '""',
-                            position: "absolute",
-                            top: "50%",
-                            left: "50%",
-                            transform: "translate(-50%, -50%)",
-                            width: "400px",
-                            height: "400px",
-                            backgroundImage: `url(${HighlandLogo})`,
-                            backgroundRepeat: "no-repeat",
-                            backgroundSize: "contain",
-                            opacity: 0.1, // 👈 độ mờ logo
-                            zIndex: 0,
-                            },
-                        }}>
+                        }}
+                        >
+                            <Box
+                                component="img"
+                                src={HighlandLogo}
+                                alt="logo"
+                                sx={{
+                                position: "absolute",
+                                top: "50%",
+                                left: "50%",
+                                transform: "translate(-50%, -50%)",
+                                width: 300,
+                                opacity: 0.1,
+                                zIndex: 0,
+                                pointerEvents: "none",
+                                }}
+                            />
                             <Box sx={{ position: "relative", zIndex: 1, width: "100%", textAlign: "justify", fontFamily: 'Roboto, sans-serif', fontSize: 14 }}>
                                 <Typography sx={{ fontFamily: 'Roboto, sans-serif', fontSize: 15, fontWeight: 600, color: "#4d372b", paddingBottom: '1rem' }}>
                                     Điều kiện áp dụng
@@ -158,6 +186,15 @@ export default function CustomVoucher() {
                             </Box>
                         </Box>
                     </Card>
+                )}
+                {uuid && qrBase64 && (
+                    <Button
+                        variant="outlined"
+                        onClick={handleDownloadVoucher}
+                        sx={{ mt: 2 }}
+                    >
+                        Lưu voucher
+                    </Button>
                 )}
             </Box>
         </div>

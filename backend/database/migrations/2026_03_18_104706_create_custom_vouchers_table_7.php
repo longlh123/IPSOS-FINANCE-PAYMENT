@@ -14,12 +14,12 @@ return new class extends Migration
         Schema::create('custom_vouchers_token', function(Blueprint $table) {
             $table->id();
             $table->foreignId('employee_id')->constrained('employees')->onDelete('cascade');
-            $table->string('respondent_id')->unique();
             $table->string('phone_number')->unique();
             $table->string('token')->unique();
             $table->unsignedTinyInteger('attempts')->default(0);
             $table->timestamp('expires_at');
             $table->string('batch_id');
+            $table->string('link')->nullable();
             $table->enum('status', ['active','blocked'])->default('active');
             $table->timestamps();
         });

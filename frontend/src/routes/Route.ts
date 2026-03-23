@@ -2,7 +2,7 @@ import ConfirmPassword from "../pages/Auth/ConfirmPassword";
 import Projects from "../pages/Project/Projects";
 import VinnetManagement from "../pages/VinnetAPI/VinnetManagement";
 import Transactions from "../pages/Project/Transactions";
-import ParttimeEmployees from "../pages/Project/ParttimeEmployees";
+import ParttimeEmployees from "../pages/Project/ParttimeEmployees/ParttimeEmployees";
 import TransactionsManager from "../pages/Project/TransactionsManager";
 import Gifts from "../pages/Project/Gifts";
 

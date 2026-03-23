@@ -18,10 +18,11 @@ import Page200 from "./pages/Page200/Page200";
 import ProjectLayout from "./Layouts/ProjectLayout";
 import Projects from "./pages/Project/Projects";
 import Quotation from "./pages/Project/Quotation/Quotation";
-import ParttimeEmployees from "./pages/Project/ParttimeEmployees";
+import ParttimeEmployees from "./pages/Project/ParttimeEmployees/ParttimeEmployees";
 import MiniCATI from "./pages/MiniCATI/MiniCATI";
 import CustomVoucher from "./pages/CustomVoucher/CustomVoucher";
 import CustomVoucherLog from "./pages/CustomVoucher/CustomVoucherLog";
+import DashboardProject from "./pages/Project/ProgressReport";
 
 // Fetch the CSRF token from the meta tag
 const csrfToken = document
@@ -45,6 +46,8 @@ const App: React.FC = () => {
             <Route path="/mini-cati" element={<MiniCATI />} />
             <Route path="/custom-voucher/:token" element={<CustomVoucher />} />
             <Route path='/search-link' element={<CustomVoucherLog />} />
+
+            <Route path='/progress-report' element={<DashboardProject />} />
 
             {/* ================= DEFAULT LAYOUT GROUP ================= */}
             <Route

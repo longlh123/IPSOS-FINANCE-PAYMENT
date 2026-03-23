@@ -122,6 +122,7 @@ Route::get('/test_sms', [VinnetController::class, 'test_sms']);
 //CUSTOM VOUCHER
 Route::post('/custom-voucher/authenticate-token', [CustomVouchersController::class, 'authenticateToken']);
 Route::post('/custom-voucher/assign', [CustomVouchersController::class, 'assignVoucher']);
+Route::post('/custom-voucher/search-link', [CustomVouchersController::class, 'searchLink']);
 
 //Mini-CATI
 Route::post('/next', [CatiController::class, 'next']);
