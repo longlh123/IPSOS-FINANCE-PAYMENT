@@ -78,6 +78,7 @@ export const ApiConfig = {
   },
   customvoucher: {
     authenticateToke: `${host}/api/custom-voucher/authenticate-token`, 
-    assignVoucher: `${host}/api/custom-voucher/assign`
+    assignVoucher: `${host}/api/custom-voucher/assign`,
+    searchLink: `${host}/api/custom-voucher/search-link`
   }
 };

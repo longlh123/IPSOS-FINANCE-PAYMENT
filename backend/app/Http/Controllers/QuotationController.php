@@ -47,8 +47,6 @@ class QuotationController extends Controller
     {
         try
         {
-            Log::info("A");
-
             $quotation = Quotation::where('project_id', $projectId)
                             ->where('version', $versionId)
                             ->first();

@@ -2,17 +2,17 @@ import { Alert, Box, Button, IconButton, Paper, Snackbar } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { EmployeeCellConfig, EmployeeData } from "../../config/EmployeeFieldsConfig";
-import useDialog from "../../hook/useDialog";
-import UniversalInputDialog from "../../components/Dialogs/UniversalInputDialog";
-import AlertDialog from "../../components/AlertDialog/AlertDialog";
-import { useVisibility } from "../../hook/useVisibility";
-import SearchTextBox from "../../components/SearchTextBox";
-import { useEmployees } from "../../hook/useEmployees";
-import ReusableTable from "../../components/Table/ReusableTable";
-import { ColumnFormat } from "../../config/ColumnConfig";
-import { useProjects } from "../../hook/useProjects";
-import { ProjectData } from "../../config/ProjectFieldsConfig";
+import { EmployeeCellConfig, EmployeeData } from "../../../config/EmployeeFieldsConfig";
+import useDialog from "../../../hook/useDialog";
+import UniversalInputDialog from "../../../components/Dialogs/UniversalInputDialog";
+import AlertDialog from "../../../components/AlertDialog/AlertDialog";
+import { useVisibility } from "../../../hook/useVisibility";
+import SearchTextBox from "../../../components/SearchTextBox";
+import { useEmployees } from "../../../hook/useEmployees";
+import ReusableTable from "../../../components/Table/ReusableTable";
+import { ColumnFormat } from "../../../config/ColumnConfig";
+import { useProjects } from "../../../hook/useProjects";
+import { ProjectData } from "../../../config/ProjectFieldsConfig";
 
 const ParttimeEmployees = () => {
     const { id } = useParams<{id: string}>();
@@ -146,38 +146,34 @@ const ParttimeEmployees = () => {
     }, [projectId]);
 
     return (
-        <Box className="box-table">
-            <div className="filter">
-                <div className="filter-left">
-                    <div className="project-info">
-                        <div>
-                            <strong>Project Name:</strong> {projectSelected?.project_name}
-                        </div>
-                        <div>
-                            <strong>Symphony:</strong> {projectSelected?.symphony}
-                        </div>
-                    </div>
-                </div>
-                <div className="filter-right">
+        <Box>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+                {/* Project Info */}
+                <Box>
+                    <div><strong>Project Name:</strong> {projectSelected?.project_name}</div>
+                    <div><strong>Symphony:</strong> {projectSelected?.symphony}</div>
+                </Box>
+
+                {/* Add Employee Button */}
                 {canView("employees.functions.visible_import_employees") && (
-                    <Button className="btn btn-primary" onClick={() => setOpenImportEmployeesDialog(true)}>
-                        Import New Employees
+                    <Button variant="contained" color="primary" onClick={() => setOpenImportEmployeesDialog(true)}>
+                    Add / Import Employees
                     </Button>
                 )}
-                </div>
-            </div>
-            <div className="filter">
-                {/* LEFT: Add button */}
-                <div className="filter-left">
-                    
-                </div>
-    
-                {/* RIGHT: Search + Date filter */}
-                <div className="filter-right">
-                    <SearchTextBox placeholder="Search id, name,..." onSearchChange={handleSearchChange} />
-                </div>
-            </div>
-           
+                </Box>
+            <Box
+                sx={{
+                    p: 2,
+                    mb: 2,
+                    borderRadius: 2,
+                    backgroundColor: "#f5f5f5",
+                    display: "flex",
+                    gap: 2,
+                    flexWrap: "wrap"
+                }}
+            >
+                <SearchTextBox placeholder="Search id, name,..." onSearchChange={handleSearchChange} />
+            </Box>
             <ReusableTable
                 title="Employees"
                 columns={columns}
@@ -210,6 +206,40 @@ const ParttimeEmployees = () => {
                 placeholder="Paste codes here"
             />
         </Box>
+        // <Box className="box-table">
+        //     <div className="filter">
+        //         <div className="filter-left">
+        //             <div className="project-info">
+        //                 <div>
+        //                     <strong>Project Name:</strong> {projectSelected?.project_name}
+        //                 </div>
+        //                 <div>
+        //                     <strong>Symphony:</strong> {projectSelected?.symphony}
+        //                 </div>
+        //             </div>
+        //         </div>
+        //         <div className="filter-right">
+        //         {canView("employees.functions.visible_import_employees") && (
+        //             <Button className="btn btn-primary" onClick={() => setOpenImportEmployeesDialog(true)}>
+        //                 Import New Employees
+        //             </Button>
+        //         )}
+        //         </div>
+        //     </div>
+        //     <div className="filter">
+        //         {/* LEFT: Add button */}
+        //         <div className="filter-left">
+                    
+        //         </div>
+    
+        //         {/* RIGHT: Search + Date filter */}
+        //         <div className="filter-right">
+        //             <SearchTextBox placeholder="Search id, name,..." onSearchChange={handleSearchChange} />
+        //         </div>
+        //     </div>
+           
+            
+        // </Box>
     )
 }
 
