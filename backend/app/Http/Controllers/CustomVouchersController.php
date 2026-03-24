@@ -192,12 +192,12 @@ class CustomVouchersController extends Controller
 
             $token->attempts += 1;
 
-            if ($token->attempts > 5) {
+            if ($token->attempts > 3) {
                 $token->status = 'blocked';
                 $token->save();
 
                 DB::rollBack();
-                throw new \Exception('Token blocked due to too many attempts');
+                throw new \Exception('Bạn đã search thông tin quá 3 lần. Link phỏng vấn đã bị khoá.');
             }
 
             $token->save();
@@ -256,6 +256,26 @@ class CustomVouchersController extends Controller
 
             if(!$customVoucherToken){
                 throw new \Exception('Không tìm thấy thông tin.');
+            }
+
+            if ($customVoucherToken->status === 'blocked') {
+                throw new \Exception('Link đã bị khoá trước đó.');
+            }
+
+            $existingCustomVoucher = CustomVoucher::where('token_id', $customVoucherToken->id)->exists();
+
+            if($existingCustomVoucher){
+                throw new \Exception('Số điện thoại đã hoàn thành khảo sát.');
+            }
+
+            $customVoucherToken->increment('attempts');
+            $customVoucherToken->refresh();
+            
+            if ($customVoucherToken->attempts > 3) {
+                $customVoucherToken->status = 'blocked';
+                $customVoucherToken->save();
+
+                throw new \Exception('Bạn đã search thông tin quá 3 lần. Link phỏng vấn đã bị khoá.');
             }
 
             $query = http_build_query([
