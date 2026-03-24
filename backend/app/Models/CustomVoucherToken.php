@@ -19,6 +19,7 @@ class CustomVoucherToken extends Model
         'expires_at',
         'batch_id',
         'link',
+        'data_base64',
         'status'
     ];
 

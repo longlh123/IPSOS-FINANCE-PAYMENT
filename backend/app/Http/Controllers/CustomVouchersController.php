@@ -28,8 +28,6 @@ class CustomVouchersController extends Controller
         $link = $request->link ?? null;
         $data = $request->data ?? null;
 
-        Log::info($data);
-
         $employee = Employee::where('employee_id', $employeeId)->first();
 
         if(!$employee){
@@ -50,10 +48,38 @@ class CustomVouchersController extends Controller
 
         if($existingPhoneNumber){
             return response()->json([
-                'status_code' => 400,
+                'status_code' => 403,
                 'error' => 'Số điện thoại này đã tham gia khảo sát trước đó. Vui lòng kiểm tra.'
             ]);
         }
+
+        if(!$data){
+            return response()->json([
+                'status_code' => 400,
+                'error' => 'Dữ liệu truyền vào không hợp lệ.'
+            ]);
+        }
+
+        if(is_string($data)){
+            $data = json_decode($data, true);
+        }
+
+        if(!is_array($data)){
+            return response()->json([
+                'status_code' => 400,
+                'error' => 'Dữ liệu truyền vào không hợp lệ.'
+            ]);
+        }
+
+        $dataArr = [];
+
+        foreach($data as $key => $value){
+            $dataArr[] = $key . '=' . trim($value);
+        }
+
+        Log::info($dataArr);
+
+        $dataBase64 = base64_encode(implode(';', $dataArr));
 
         $token = Str::random(64);
 
@@ -65,36 +91,18 @@ class CustomVouchersController extends Controller
             'expires_at' => now()->addHours(24),
             'batch_id' => $batchId,
             'link' => $link,
+            'data_base64' => $dataBase64,
             'status' => 'active'
         ]);
 
-        if($data){
-            if(is_string($data)){
-                $data = json_decode($data);
-            }
-
-            $dataArr = [];
-
-            foreach($data as $key => $value){
-                $dataArr[] = $key . '=' . $value;
-            }
-
-            $dataBase64 = base64_encode(implode(';', $dataArr));
-
-            $query = http_build_query([
-                'id' => $customVoucherToken->id,
-                'I.User1' => $customVoucherToken->token,
-                'I.User2' => $dataBase64
-            ]);
-        } else {
-            $query = http_build_query([
-                'id' => $customVoucherToken->id,
-                'I.User1' => $customVoucherToken->token
-            ]);
-        }
+        $query = http_build_query([
+            'id' => $customVoucherToken->id,
+            'I.User1' => $customVoucherToken->token,
+            'I.User2' => $customVoucherToken->data_base64
+        ]);
         
-        $linkFinal = $link . '?' . $query;
-
+        $linkFinal = $link . '&' . $query;
+        
         return response()->json([
             'status_code' => 200,
             'respondent_id' => $customVoucherToken->id,
@@ -252,10 +260,11 @@ class CustomVouchersController extends Controller
 
             $query = http_build_query([
                 'id' => $customVoucherToken->id,
-                'I.User1' => $customVoucherToken->token
+                'I.User1' => $customVoucherToken->token,
+                'I.User2' => $customVoucherToken->data_base64
             ]);
 
-            $linkFinal = $customVoucherToken->link . '?' . $query;
+            $linkFinal = $customVoucherToken->link . '&' . $query;
 
             $qr = Builder::create()
                 ->writer(new PngWriter())
