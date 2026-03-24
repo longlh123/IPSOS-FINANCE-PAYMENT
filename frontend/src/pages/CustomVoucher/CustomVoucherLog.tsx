@@ -24,6 +24,9 @@ export default function CustomVoucherLog(){
             ...prev,
             [name]: value
         }));
+
+        setQrBase64(null);
+        setMessage("");
     } 
 
     const handleClick = async () => {

@@ -19,7 +19,7 @@ export default function CustomVoucher() {
 
     const handleGetCustomVoucher = async () => {
         setLoading(true);
-
+        
         try{
             const res = await axios.post(ApiConfig.customvoucher.assignVoucher, {
                 token: token
