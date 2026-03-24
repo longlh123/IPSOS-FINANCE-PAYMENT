@@ -30,7 +30,7 @@ export default function CustomVoucherLog(){
         setLoading(true);
         setMessage("");
         setQrBase64(null);
-        
+
         try{
             const res = await axios.post(ApiConfig.customvoucher.searchLink, formValues);
 
@@ -79,6 +79,7 @@ export default function CustomVoucherLog(){
                         </Typography>
                         <TextField
                             fullWidth
+                            autoComplete="off"
                             size="small"
                             type="string"
                             value={formValues['employee_id']}
@@ -92,6 +93,7 @@ export default function CustomVoucherLog(){
                         </Typography>
                         <TextField
                             fullWidth
+                            autoComplete="off"
                             size="small"
                             type="string"
                             value={formValues['phone_number']}
