@@ -19,7 +19,8 @@ return new class extends Migration
             $table->unsignedTinyInteger('attempts')->default(0);
             $table->timestamp('expires_at');
             $table->string('batch_id');
-            $table->string('link')->nullable();
+            $table->text('link')->nullable();
+            $table->text('data_base64')->nullable();
             $table->enum('status', ['active','blocked'])->default('active');
             $table->timestamps();
         });
