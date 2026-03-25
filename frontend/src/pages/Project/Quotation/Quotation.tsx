@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import axios from "../../../config/axiosInstance";
 import { ApiConfig } from "../../../config/ApiConfig";
 import QuotationDynamicForm from "./QuotationDynamicForm";
 import { useQuotation } from "../../../hook/useQuotation";
@@ -106,9 +106,7 @@ const Quotation: React.FC = () => {
                                 </IconButton>
                             }
                         >
-                            <span 
-                                dangerouslySetInnerHTML={{ __html: messageQuotation ?? "" }}
-                            ></span>
+                            {messageQuotation ?? ""}
                         </Alert>
                     )}
                     <Box

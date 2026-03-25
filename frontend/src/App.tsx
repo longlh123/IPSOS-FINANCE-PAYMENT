@@ -21,6 +21,7 @@ import Quotation from "./pages/Project/Quotation/Quotation";
 import ParttimeEmployees from "./pages/Project/ParttimeEmployees";
 import TravelExpense from "./pages/Project/TravelExpense";
 import MiniCATI from "./pages/MiniCATI/MiniCATI";
+import AccountInfo from "./pages/Account/AccountInfo";
 
 // Fetch the CSRF token from the meta tag
 const csrfToken = document
@@ -55,6 +56,10 @@ const App: React.FC = () => {
                 path="/project-management/projects"
                 element={<Projects />}
               />
+              <Route
+                path="/account-info"
+                element={<AccountInfo />}
+              />
             </Route>
 
             {/* ================= PROJECT LAYOUT GROUP ================= */}
@@ -88,7 +93,7 @@ const App: React.FC = () => {
                   to="/error"
                   state={{
                     errorCode: 4,
-                    errorMessage: "Sorry, the page you are looking for does not exist. Please contact the Admistrator for asistance."
+                    errorMessage: "Sorry, the page you are looking for does not exist. Please contact the Administrator for assistance."
                   }}
                   replace
                 />

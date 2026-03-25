@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import axios from "axios";
+import axios from "../config/axiosInstance";
 import { ApiConfig } from "../config/ApiConfig";
 
 export const useMetadata = () => {

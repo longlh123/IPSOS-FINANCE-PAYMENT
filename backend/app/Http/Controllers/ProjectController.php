@@ -18,9 +18,11 @@ use App\Models\Project;
 use App\Models\ProjectType;
 use App\Models\Team;
 use App\Models\Province;
+use App\Models\ProjectProvince;
 use App\Models\ProjectUUID;
 use App\Models\Employee;
 use App\Models\ProjectEmployee;
+use App\Models\ProjectTravelExpense;
 use App\Models\ProjectRespondent;
 use App\Http\Requests\StoreProjectVinnetTokenRequest;
 use App\Http\Requests\StoreProjectRequest;
@@ -189,7 +191,7 @@ class ProjectController extends Controller
 
             if ($validator->fails()) {
                 Log::error($validator->errors());
-                return response->json([
+                return response()->json([
                     'message' => $validator->errors()->first(),
                 ], 422); // Unprocessable Entity
             }
@@ -710,6 +712,201 @@ class ProjectController extends Controller
 
             return response()->json([
                 'message' => 'Unexpected error occurred while removing employee into project.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function addEmployeeToTravelExpense(Request $request, $projectId, $employeeId)
+    {
+        try {
+            $provinceId = intval($request->input('province_id'));
+
+            if (!in_array(Auth::user()->userDetails->role->name, ['Admin', 'Scripter'])) {
+                return response()->json([
+                    'status_code' => 403,
+                    'success' => false,
+                    'message' => 'You do not have permission.'
+                ], 403);
+            }
+
+            if ($provinceId <= 0) {
+                return response()->json([
+                    'status_code' => 422,
+                    'success' => false,
+                    'message' => 'Province is required.'
+                ], 422);
+            }
+
+            try {
+                Project::findOrFail($projectId);
+            } catch (\Exception $e) {
+                Log::error('The project not found: ' . $e->getMessage());
+
+                return response()->json([
+                    'status_code' => 404,
+                    'success' => false,
+                    'message' => Project::STATUS_PROJECT_NOT_FOUND
+                ], 404);
+            }
+
+            $projectEmployee = ProjectEmployee::where('project_id', $projectId)
+                ->where('employee_id', $employeeId)
+                ->first();
+
+            if (!$projectEmployee) {
+                return response()->json([
+                    'status_code' => 404,
+                    'success' => false,
+                    'message' => 'Employee not found in this project.'
+                ], 404);
+            }
+
+            $isProvinceInProject = ProjectProvince::where('project_id', $projectId)
+                ->where('province_id', $provinceId)
+                ->exists();
+
+            if (!$isProvinceInProject) {
+                return response()->json([
+                    'status_code' => 422,
+                    'success' => false,
+                    'message' => 'Selected province does not belong to this project.'
+                ], 422);
+            }
+
+            $alreadyExists = ProjectTravelExpense::where('project_id', $projectId)
+                ->where('employee_id', $employeeId)
+                ->exists();
+
+            if ($alreadyExists) {
+                return response()->json([
+                    'status_code' => 200,
+                    'success' => false,
+                    'message' => 'Employee already exists in travel expense list.'
+                ], 200);
+            }
+
+            ProjectTravelExpense::create([
+                'project_id' => $projectId,
+                'employee_id' => $employeeId,
+                'province_id' => $provinceId,
+            ]);
+
+            return response()->json([
+                'status_code' => 200,
+                'success' => true,
+                'message' => 'Employee added to travel expense list successfully.'
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Unexpected error: ' . $e->getMessage());
+
+            return response()->json([
+                'message' => 'Unexpected error occurred while adding employee to travel expense list.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function showTravelExpense(Request $request, $projectId)
+    {
+        try {
+            try {
+                Project::findOrFail($projectId);
+            } catch (\Exception $e) {
+                Log::error('The project not found: ' . $e->getMessage());
+
+                return response()->json([
+                    'status_code' => 404,
+                    'message' => Project::STATUS_PROJECT_NOT_FOUND
+                ], 404);
+            }
+
+            $rows = DB::table('travel_expsense as te')
+                ->join('employees as e', 'e.id', '=', 'te.employee_id')
+                ->leftJoin('provinces as p_selected', 'p_selected.id', '=', 'te.province_id')
+                ->leftJoin('provinces as p_employee', 'p_employee.id', '=', 'e.province_id')
+                ->leftJoin('project_respondents as pr', function ($join) {
+                    $join->on('pr.employee_id', '=', 'te.employee_id')
+                        ->on('pr.project_id', '=', 'te.project_id');
+                })
+                ->where('te.project_id', $projectId)
+                ->groupBy(
+                    'te.id',
+                    'e.employee_id',
+                    'e.first_name',
+                    'e.last_name',
+                    'p_selected.name',
+                    'p_employee.name'
+                )
+                ->orderBy('te.id', 'desc')
+                ->get([
+                    'te.id',
+                    'e.employee_id as employee_ids',
+                    DB::raw("CONCAT(e.first_name, ' ', e.last_name) as full_name"),
+                    DB::raw('COUNT(pr.id) as completed_samples'),
+                    DB::raw('NULL as working_days'),
+                    DB::raw('NULL as unit_price'),
+                    DB::raw('NULL as vehicle_ticket'),
+                    DB::raw('NULL as unit_price_2'),
+                    DB::raw('NULL as pickup_guests'),
+                    DB::raw('NULL as unit_price_3'),
+                    DB::raw('NULL as total_salary'),
+                    DB::raw('NULL as tax_deduction'),
+                    DB::raw('NULL as remaining_amount'),
+                    DB::raw('UPPER(COALESCE(p_selected.name, p_employee.name, "")) as region')
+                ]);
+
+            return response()->json([
+                'status_code' => 200,
+                'message' => 'Travel expenses fetched successfully.',
+                'data' => $rows
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Unexpected error while loading travel expenses: ' . $e->getMessage());
+
+            return response()->json([
+                'status_code' => 500,
+                'message' => 'Unexpected error occurred while loading travel expenses.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function removeTravelExpense(Request $request, $projectId, $travelExpenseId)
+    {
+        try {
+            if (!in_array(Auth::user()->userDetails->role->name, ['Admin', 'Scripter'])) {
+                return response()->json([
+                    'status_code' => 403,
+                    'success' => false,
+                    'message' => 'You do not have permission.'
+                ], 403);
+            }
+
+            $deleted = ProjectTravelExpense::where('project_id', $projectId)
+                ->where('id', $travelExpenseId)
+                ->delete();
+
+            if ($deleted === 0) {
+                return response()->json([
+                    'status_code' => 404,
+                    'success' => false,
+                    'message' => 'Travel expense record not found.'
+                ], 404);
+            }
+
+            return response()->json([
+                'status_code' => 200,
+                'success' => true,
+                'message' => 'Travel expense removed successfully.'
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Unexpected error while removing travel expense: ' . $e->getMessage());
+
+            return response()->json([
+                'status_code' => 500,
+                'success' => false,
+                'message' => 'Unexpected error occurred while removing travel expense.',
                 'error' => $e->getMessage()
             ], 500);
         }

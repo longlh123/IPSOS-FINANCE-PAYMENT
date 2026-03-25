@@ -67,9 +67,14 @@
   font-size: 14px;
   font-weight: 500;
   color: var(--main-color);
-  display: flex;
-  justify-content: end;
   cursor: pointer;
+}
+
+.forgot-password {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 @media (max-width: 600px) {

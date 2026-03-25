@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use App\Models\ProjectType;
 use App\Models\Department;
 use App\Models\Team;
@@ -32,7 +33,7 @@ class MetadataController extends Controller
                     'teams' => $teams
                 ]
             ]);
-        }catch(Exception $e){
+        }catch(\Exception $e){
             Log::error($e->getMessage());
             return response()->json([
                 'status_code' => 500,

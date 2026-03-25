@@ -30,7 +30,7 @@ function usePostRequest<T = any>(): UsePostRequestReturn<T> {
                 headers['Authorization'] = token;
             }
             
-            const response: AxiosResponse<T> = await axios.post(url, postData, headers);
+            const response: AxiosResponse<T> = await axios.post(url, postData, { headers });
             setData(response.data);
         } catch (error: any){
             if (axios.isAxiosError(error)) {

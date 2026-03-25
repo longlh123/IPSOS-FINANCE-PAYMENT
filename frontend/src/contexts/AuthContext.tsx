@@ -1,7 +1,7 @@
-import axios from "axios";
 import React from "react";
 import { createContext, ReactNode, useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { clearAuthData, getAuthToken, getStoredUser, saveAuthData } from "../utils/authStorage";
 
 interface UserDetail {
     first_name: string,
@@ -12,63 +12,48 @@ interface UserDetail {
 interface AuthContextType {
     user: UserDetail | null;  
     token: string | null;
-    login: (token: string, user: UserDetail) => void;
+    login: (token: string, user: UserDetail, rememberMe: boolean) => void;
     logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-    const [ token, setToken ] = useState<string | null>(localStorage.getItem('authToken'));
-    const [ user, setUser ] = useState<UserDetail | null>(null);
+    const [ token, setToken ] = useState<string | null>(() => getAuthToken());
+    const [ user, setUser ] = useState<UserDetail | null>(() => getStoredUser<UserDetail>());
     const [loading, setLoading] = useState<boolean>(true);
     const navigate = useNavigate();
 
     React.useEffect(() => {
-        const storedToken = localStorage.getItem("authToken");
-        const storedUser = localStorage.getItem("user");
+        const storedToken = getAuthToken();
         const devAuthEnabled = process.env.REACT_APP_DEV_AUTH === "true";
 
-        if (storedToken) {
-            setToken(storedToken);
-        } else if (process.env.NODE_ENV === "development" && devAuthEnabled) {
+        if (!storedToken && process.env.NODE_ENV === "development" && devAuthEnabled) {
             const devToken = "dev-token";
             setToken(devToken);
-            localStorage.setItem("authToken", devToken);
-        }
+            sessionStorage.setItem("authToken", devToken);
 
-        if (storedUser) {
-            setUser(JSON.parse(storedUser));
-        } else if (process.env.NODE_ENV === "development" && devAuthEnabled) {
             const devUser = { first_name: "Dev", last_name: "User", role: "admin" };
             setUser(devUser);
-            localStorage.setItem("user", JSON.stringify(devUser));
+            sessionStorage.setItem("user", JSON.stringify(devUser));
         }
 
         setLoading(false);
     }, []);
 
-    const login = (token: string, userData: UserDetail) => {
+    const login = (token: string, userData: UserDetail, rememberMe: boolean) => {
         setToken(token);
         setUser(userData);
+        saveAuthData(token, userData, rememberMe);
         
-        localStorage.setItem('authToken', token);
-        localStorage.setItem('user', JSON.stringify(userData))
-
-        const headers = {
-            Authorization: `Bearer ${token}`,
-            Accept: "application/json",
-        };
-        
-        navigate('/project-management/projects', { replace: true }); // Redirect to the desired page after login
+        navigate('/project-management/projects', { replace: true });
     };
 
     const logout = () => {
         setToken(null);
         setUser(null);
 
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('user');
+        clearAuthData();
 
         navigate('/login', { replace: true }); // Redirect to login page after logout
     };

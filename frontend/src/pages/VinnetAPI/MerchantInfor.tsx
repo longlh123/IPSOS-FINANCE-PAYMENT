@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import axios from '../../config/axiosInstance';
+import { isAxiosError } from 'axios';
 
 import {    
     Grid,
@@ -22,8 +23,6 @@ import { ApiConfig } from '../../config/ApiConfig';
 import { useInputContext } from '../../contexts/InputContext';
 
 const MerchantInfor = () => {
-    const token = localStorage.getItem("authToken");
-
     const [loading, setLoading] = useState(false);
     const [isError, setIsError] = useState(false);
     const [statusMessage, setStatusMessage] = useState('');
@@ -38,29 +37,19 @@ const MerchantInfor = () => {
 
         const fetchMerchantInfor = async () => {
             try {
-                const response = await axios.get(ApiConfig.vinnet.viewMerchantInfo, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`,
-                    }
-                });
-                
-                console.log(response.data.data);
+                const response = await axios.get(ApiConfig.vinnet.viewMerchantInfo);
                 
                 setInputValue("merchantCode", response.data.data.VINNET_MERCHANT_CODE || '');
                 setInputValue("merchantKey", response.data.data.VINNET_MERCHANT_KEY || '');
-            } catch (error) {
+            } catch (error: any) {
                 setIsError(true);
 
-                if (axios.isAxiosError(error)) {
+                if (isAxiosError(error)) {
                     const errorMessage = error.response?.data.message ?? error.message;
                     setStatusMessage(errorMessage);
-                    console.error('Error:', errorMessage);
                 } else {
                     const errorMessage = (error as Error).message;
                     setStatusMessage(errorMessage);
-                    console.error('Error:', errorMessage);
                 }
             } finally {
                 setLoading(false);
@@ -68,33 +57,26 @@ const MerchantInfor = () => {
         };
         
         fetchMerchantInfor();
-    }, [token]);
+    }, []);
 
     const handleChangeKey = async () => {
         try {
             setStatusMessage('');
             setIsError(false);
 
-            const response = await axios.post(ApiConfig.vinnet.changeMerchantKey, {}, {
-                headers : {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                }
-            });
+            const response = await axios.post(ApiConfig.vinnet.changeMerchantKey, {});
 
             setInputValue("merchantKey", response.data.data);
             
         } catch (error: any) {
             setIsError(true);
 
-            if (axios.isAxiosError(error)) {
+            if (isAxiosError(error)) {
                 const errorMessage = error.response?.data.message ?? error.message;
                 setStatusMessage(errorMessage);
-                console.error('Error:', errorMessage);
             } else {
                 const errorMessage = (error as Error).message;
                 setStatusMessage(errorMessage);
-                console.error('Error:', errorMessage);
             }
         }finally{
             setLoading(false);

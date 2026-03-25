@@ -87,7 +87,7 @@ const ConfirmPassword = () => {
                     This is a secure area of the application. Please confirm your password before continuing.
                 </Typography>
             </div>
-            {statusMessage.length != 0 && (
+            {statusMessage.length !== 0 && (
                 <div className='message-invalid'>
                     <span>{statusMessage}</span>
                 </div>

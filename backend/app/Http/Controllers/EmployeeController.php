@@ -22,6 +22,8 @@ class EmployeeController extends Controller
         {
             $perPage = $request->input('perPage', 10);
             $search = $request->input('searchTerm');
+            $sortBy = $request->input('sortBy', 'employee_id');
+            $sortDirection = strtolower($request->input('sortDirection', 'asc')) === 'desc' ? 'desc' : 'asc';
 
             try{
                 $project = Project::findOrFail($projectId);
@@ -56,6 +58,17 @@ class EmployeeController extends Controller
                                     'employees.first_name',
                                     'employees.last_name'
                                 );
+
+            $sortMap = [
+                'employee_id' => 'employees.employee_id',
+                'full_name' => 'employees.last_name',
+                'transaction_total' => 'transaction_total',
+                'vinnet_total' => 'vinnet_total',
+                'gotit_total' => 'gotit_total',
+                'other_total' => 'other_total',
+            ];
+
+            $sortColumn = $sortMap[$sortBy] ?? 'employees.employee_id';
             
             if($search){
                 $query->where(function($q) use ($search){
@@ -63,6 +76,13 @@ class EmployeeController extends Controller
                         ->orWhere('employees.last_name', 'LIKE', "%{$search}%")
                         ->orWhere('employees.employee_id', 'LIKE', "%{$search}%");
                 });
+            }
+
+            if ($sortBy === 'full_name') {
+                $query->orderBy('employees.last_name', $sortDirection)
+                    ->orderBy('employees.first_name', $sortDirection);
+            } else {
+                $query->orderBy($sortColumn, $sortDirection);
             }
             
             $employees = $query->paginate($perPage);

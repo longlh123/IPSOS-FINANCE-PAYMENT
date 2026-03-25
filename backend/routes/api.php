@@ -61,6 +61,9 @@ Route::middleware(['auth:sanctum'])->group(function(){
     Route::get('/project-management/projects/{projectId}/employees/show', [EmployeeController::class, 'index'])->middleware('ensureUserHasRole:admin,Field Manager,Finance');
     Route::post('/project-management/projects/{projectId}/employees/store', [ProjectController::class, 'bulkAddEmployees'])->middleware('ensureUserHasRole:Admin');
     Route::delete('/project-management/projects/{projectId}/employees/{employeeId}/destroy', [ProjectController::class, 'bulkRemoveEmployee'])->middleware('ensureUserHasRole:Admin');
+    Route::post('/project-management/projects/{projectId}/employees/{employeeId}/travel-expense/store', [ProjectController::class, 'addEmployeeToTravelExpense'])->middleware('ensureUserHasRole:Admin,Scripter');
+    Route::get('/project-management/projects/{projectId}/travel-expense/show', [ProjectController::class, 'showTravelExpense'])->middleware('ensureUserHasRole:Admin,Scripter,Field Manager,Finance');
+    Route::delete('/project-management/projects/{projectId}/travel-expense/{travelExpenseId}/destroy', [ProjectController::class, 'removeTravelExpense'])->middleware('ensureUserHasRole:Admin,Scripter');
 
     Route::post('/project-management/projects/{projectId}/offline/respondents/store', [ProjectRespondentController::class, 'bulkImportOfflineProjectRespondents'])->middleware('ensureUserHasRole:Admin');
     Route::get('/project-management/projects/{projectId}/offline/respondents/show', [ProjectRespondentController::class, 'show'])->middleware('ensureUserHasRole:Admin');

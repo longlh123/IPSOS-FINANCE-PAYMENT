@@ -5,7 +5,13 @@
 }
 
 *{
-  font-style: var(--main-font);
+    font-family: var(--main-font);
+}
+
+body {
+    font-size: var(--font-size-md);
+    line-height: var(--line-height-normal);
+    font-weight: var(--font-weight-regular);
 }
 
 .wrapper {
@@ -22,6 +28,7 @@
   margin-top: 3.75rem; /* 60px */
   border-radius: 1.25rem;
   padding: 1.875rem; /* 30px */
+    line-height: var(--line-height-normal);
 }
 
 .content-detail {
@@ -33,8 +40,10 @@
     background-color: var(--main-color) !important;
     color: #fff !important;
     border: 0 !important;
-    font-size: 0.9375rem !important;
-    font-weight: 500;
+    font-size: var(--font-size-md) !important;
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.01em;
+    line-height: var(--line-height-tight);
     border-radius: 0.5rem;
     box-shadow:
         0 0.1875rem 0.0625rem -0.125rem rgba(0, 0, 0, 0.2),
@@ -122,11 +131,11 @@ h4 span {
 .failed { background-color: var(--status-planned-color); }
   
 .box-status-button{
-    font-size: 0.8125rem;
+    font-size: var(--font-size-sm);
     padding: 0.3125rem;
     border-radius: 0.3125rem;
     color: #fff;
-    font-weight: 600;
+    font-weight: var(--font-weight-semibold);
     min-width: 0.8125rem;
 }
 

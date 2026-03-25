@@ -106,7 +106,7 @@ const Gifts: React.FC = () => {
                 );
             },
             renderAction: (row: any) => {
-                const disabled = (row.status != 'pending');
+                const disabled = (row.status !== 'pending');
 
                 return (
                     <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
@@ -129,8 +129,8 @@ const Gifts: React.FC = () => {
             align: "center",
             flex: 1,
             renderAction: (row: OfflineProjectRespondentData) => {
-                const disabled = (row.status != 'pending');
-                const view_disabled = row.status == 'success';
+                const disabled = (row.status !== 'pending');
+                const view_disabled = row.status === 'success';
 
                 return (
                     <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
@@ -205,10 +205,10 @@ const Gifts: React.FC = () => {
                 "InstanceID",	"Shell_ChainID", "SamplePoint",	"Province",	"InterviewerID", "RespondentPhoneNumber", "PhoneNumber"
             ]
 
-            const hearders = Object.keys(jsonData[0]);
+            const headers = Object.keys(jsonData[0]);
 
             const missingColumns = REQUIRED_COLUMNS.filter(
-                col => !hearders.includes(col)
+                col => !headers.includes(col)
             );
 
             if(missingColumns.length > 0){

@@ -29,7 +29,10 @@ class DepartmentDBSeeder extends Seeder
         ];
 
         foreach ($departments as $department) {
-            Department::create($department);
+            Department::updateOrCreate(
+                ['name' => $department['name']],
+                ['title' => $department['title']]
+            );
         }
 
         $teams = [
@@ -53,7 +56,13 @@ class DepartmentDBSeeder extends Seeder
         ];
 
         foreach ($teams as $team) {
-            Team::create($team);
+            Team::updateOrCreate(
+                ['name' => $team['name']],
+                [
+                    'title' => $team['title'],
+                    'department_id' => $team['department_id']
+                ]
+            );
         }
 
         $roles = [
@@ -74,7 +83,10 @@ class DepartmentDBSeeder extends Seeder
         ];
 
         foreach($roles as $role){
-            Role::create($role);
+            Role::updateOrCreate(
+                ['name' => $role['name']],
+                ['department_id' => $role['department_id']]
+            );
         }
     }
 }

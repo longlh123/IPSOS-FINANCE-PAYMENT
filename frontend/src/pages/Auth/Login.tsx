@@ -1,6 +1,6 @@
 import "./LoginForm.css";
 import ipsosLogo from "../../assets/img/Ipsos logo.svg"; // Assuming SVG file location
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 
 import {
@@ -10,6 +10,8 @@ import {
   OutlinedInput,
   IconButton,
   Button,
+  Checkbox,
+  FormControlLabel,
 } from "@mui/material";
 
 import Alert from "@mui/material/Alert";
@@ -25,14 +27,22 @@ const Login = () => {
   const [isError, setIsError] = useState<boolean | null>(null);
   const handleClickShowPassword = () => setShowPassword(!showPassword);
 
-  const { login } = useAuth();
+  const { login, token } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const fromPath = (location.state as any)?.from?.pathname || "/project-management/projects";
 
   const [inforLogin, setInforLogin] = useState({
     email: "",
     password: "",
   });
+  const [rememberMe, setRememberMe] = useState(false);
+
+  useEffect(() => {
+    if (token) {
+      navigate(fromPath, { replace: true });
+    }
+  }, [token, fromPath, navigate]);
   
   const handleChangeInput = (prev: string, value: string) => {
     setInforLogin({ ...inforLogin, [prev]: value });
@@ -46,14 +56,14 @@ const Login = () => {
       });
 
 
-      if (response.data.status_code != 200) {
+      if (response.data.status_code !== 200) {
         setStatusMessage(response.data.message);
         setIsError(true);
         throw new Error(response.data.message);
       }
 
       // Store token in local storage or cookies
-      login(response.data.token, response.data.user);
+      login(response.data.token, response.data.user, rememberMe);
 
       setIsError(false);
     } catch (error) {
@@ -110,6 +120,10 @@ const Login = () => {
             </FormControl>
           </div>
           <div className="forgot-password">
+            <FormControlLabel
+              control={<Checkbox checked={rememberMe} onChange={(event) => setRememberMe(event.target.checked)} />}
+              label="Ghi nhớ đăng nhập"
+            />
             <span onClick={handleForgotPassword}>Forgot Password ?</span>
           </div>
 

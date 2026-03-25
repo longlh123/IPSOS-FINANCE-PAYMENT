@@ -38,9 +38,6 @@ import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 const TableProjects = () => {
   const navigate = useNavigate();
 
-  const storedUser = localStorage.getItem('user');
-  const user = storedUser ? JSON.parse(storedUser) : null;
-
   const { canView } = useVisibility();
   const { open, title, message, showConfirmButton, openDialog, closeDialog, confirmDialog } = useDialog();
 
@@ -135,21 +132,9 @@ const TableProjects = () => {
   }
 
   const [openModalAdd, setOpenModalAdd] = useState<boolean>(false);
-  const [openModalEdit, setOpenModalEdit] = useState<boolean>(false);
-  const [openModalReport, setOpenModalReport] = useState<boolean>(false);
-  const [openModalConfirm, setOpenModalConfirm] = useState<boolean>(false);
   
   const handleCloseModal = () => {
-    //setOpenImportExcelModal(false);
     setOpenModalAdd(false);
-    setOpenModalEdit(false);
-    setOpenModalReport(false);
-    setOpenModalConfirm(false);
-  };
-
-  const handleOpenModalReport = (project: any) => {
-    setSelectedProject(project);
-    setOpenModalReport(true);
   };
   
   const renderContent = (item: any, project: any) => {

@@ -1,8 +1,6 @@
 // utils/crypto.ts
 import JSEncrypt from 'jsencrypt';
-import crypto from 'crypto';
-import CryptoJS from 'crypto-js';
-import { KJUR, KEYUTIL } from 'jsrsasign';
+import { KJUR } from 'jsrsasign';
 
 /**
  * Function to generate a signature
@@ -59,10 +57,7 @@ export function decryptData(encryptedData: string, privateKey: string): string {
         console.error('Encryption failed');
         return ''; // Or return another default value
     }
-    return decrypted; // Decrypted data format depends on the library
+    return decrypted;
 }
-
-
-
 
 

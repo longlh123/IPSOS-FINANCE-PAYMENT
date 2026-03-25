@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { OfflineProjectRespondentData } from "../config/OfflineProjectRespondentFieldsConfig";
 import { ApiConfig } from "../config/ApiConfig";
-import axios from "axios";
-import { DataArray } from "@mui/icons-material";
+import axios from "../config/axiosInstance";
+import { isAxiosError } from "axios";
 import { getServiceCode } from "../utils/VinnetFunctions";
 
 interface ImportErrorDetail {
@@ -32,16 +32,9 @@ export function useOfflineProjectRespondents(projectId: number) {
             setError(false);
             setMessage("");
 
-            const token = localStorage.getItem('authToken');
-            
-            const url = `${ApiConfig.project.viewOfflineProjectRespondents.replace("{projectId}", projectId.toString())}`;
+            const url = ApiConfig.project.viewOfflineProjectRespondents.replace("{projectId}", projectId.toString());
 
             const response = await axios.get(url, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
                 params: {
                     page: page + 1,
                     perPage: rowsPerPage,
@@ -59,7 +52,7 @@ export function useOfflineProjectRespondents(projectId: number) {
         }finally{
             setLoading(false);
         }
-    }, [projectId, page, rowsPerPage, searchTerm]);
+    }, [projectId]);
 
     const importOfflineProjectRespondents = useCallback(async(payload: any) => {
         try
@@ -68,18 +61,10 @@ export function useOfflineProjectRespondents(projectId: number) {
             setError(false);
             setMessage("");
 
-            const token = localStorage.getItem('authToken');
-
-            const url = `${ApiConfig.project.addOfflineProjectRespondents.replace("{projectId}", projectId.toString())}`;
+            const url = ApiConfig.project.addOfflineProjectRespondents.replace("{projectId}", projectId.toString());
 
             const response = await axios.post(url, {
                 project_respondents: payload
-            }, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
             });
 
             await fetchProjectRespondents(page, rowsPerPage, searchTerm);
@@ -89,8 +74,8 @@ export function useOfflineProjectRespondents(projectId: number) {
         } catch(error: any){
             setError(true);
 
-            if (axios.isAxiosError(error)) {
-                if(error.response?.status == 442){
+            if (isAxiosError(error)) {
+                if(error.response?.status === 442){
                     const errors = error.response.data.errors ?? [];
 
                     const grouped = errors.reduce((acc: Record<string, any[]>, e: ImportErrorDetail) => {
@@ -123,18 +108,12 @@ export function useOfflineProjectRespondents(projectId: number) {
     }, [fetchProjectRespondents, page, rowsPerPage, searchTerm]);
 
     const removeProjectRespondent = useCallback(async (project_id: number, data: OfflineProjectRespondentData) => {
-        const token = localStorage.getItem("authToken");
-
-        const url = `${ApiConfig.project.removeProjectRespondent.replace("{projectId}", project_id.toString()).replace("{projectRespondentId}", data.id.toString())}`;
+        const url = ApiConfig.project.removeProjectRespondent.replace("{projectId}", project_id.toString()).replace("{projectRespondentId}", data.id.toString());
 
         const response = await axios.delete(url, {
             data: {
                 shell_chainid: data.shell_chainid,
                 respondent_id: data.respondent_id
-            }, 
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
             }
         });
 
@@ -148,13 +127,11 @@ export function useOfflineProjectRespondents(projectId: number) {
     const offlineTransactionSending = useCallback(async (project_id: number, data: OfflineProjectRespondentData) => {
         try
         {
-            setLoading(false);
+            setLoading(true);
             setError(false);
             setMessage("");
 
-            const token = localStorage.getItem("authToken");
-
-            const url = `${ApiConfig.project.offlineTransactionSending.replace("{projectId}", project_id.toString()).replace("{projectRespondentId}", data.id.toString())}`;
+            const url = ApiConfig.project.offlineTransactionSending.replace("{projectId}", project_id.toString()).replace("{projectRespondentId}", data.id.toString());
 
             const response = await axios.post(url, {
                     token: data.token,
@@ -163,11 +140,6 @@ export function useOfflineProjectRespondents(projectId: number) {
                     phone_number: data.phone_number,
                     provider: "gotit",
                     delivery_method: "sms"
-                }, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    }
                 });
 
             await fetchProjectRespondents(page, rowsPerPage, searchTerm);
@@ -176,7 +148,7 @@ export function useOfflineProjectRespondents(projectId: number) {
         } catch(error: any){
             setError(true);
 
-            if (axios.isAxiosError(error)) {
+            if (isAxiosError(error)) {
                 setMessage(error.response?.data.message);
             } else {
                 setMessage(error.message);

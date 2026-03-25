@@ -1,4 +1,4 @@
-const host = "http://localhost:8000"
+const host = process.env.REACT_APP_API_URL || "http://localhost:8000";
 
 export const ApiConfig = {
   schema: {
@@ -17,6 +17,9 @@ export const ApiConfig = {
     viewEmployees: `${host}/api/project-management/{projectId}/employees`,
     addEmployees: `${host}/api/project-management/projects/{projectId}/employees/store`,
     removeEmployee: `${host}/api/project-management/projects/{projectId}/employees/{employeeId}/destroy`,
+    addEmployeeToTravelExpense: `${host}/api/project-management/projects/{projectId}/employees/{employeeId}/travel-expense/store`,
+    viewTravelExpenses: `${host}/api/project-management/projects/{projectId}/travel-expense/show`,
+    removeTravelExpense: `${host}/api/project-management/projects/{projectId}/travel-expense/{travelExpenseId}/destroy`,
     viewOfflineProjectRespondents: `${host}/api/project-management/projects/{projectId}/offline/respondents/show`,
     addOfflineProjectRespondents: `${host}/api/project-management/projects/{projectId}/offline/respondents/store`,
     removeProjectRespondent: `${host}/api/project_management/projects/{projectId}/offline/respondents/{projectRespondentId}/destroy`,

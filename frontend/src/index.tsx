@@ -2,9 +2,9 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import reportWebVitals from "./reportWebVitals";
-import "../src/assets/css/global.css";
-import "../src/assets/css/components.css";
-import "../src/assets/css/table.css";
+import "./assets/css/global.css";
+import "./assets/css/components.css";
+import "./assets/css/table.css";
 import { I18nextProvider } from "react-i18next";
 import i18n from "./i18n/i18n";
 

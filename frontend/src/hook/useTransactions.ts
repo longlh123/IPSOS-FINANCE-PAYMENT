@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { TransactionData } from "../config/TransactionFieldsConfig";
 import { ApiConfig } from "../config/ApiConfig";
-import axios from "axios";
+import axios from "../config/axiosInstance";
 
 export function useTransactions(projectId: number){
 
@@ -24,16 +24,9 @@ export function useTransactions(projectId: number){
             setError(false);
             setMessage("");
 
-            const token = localStorage.getItem('authToken');
-            
-            const url = `${ApiConfig.project.viewTransactions.replace("{projectId}", projectId.toString())}`;
+            const url = ApiConfig.project.viewTransactions.replace("{projectId}", projectId.toString());
 
             const response = await axios.get(url, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
                 params: {
                     page: page + 1,
                     perPage: rowsPerPage,
@@ -52,7 +45,7 @@ export function useTransactions(projectId: number){
             setLoading(false);
         }
 
-    }, [projectId, page, rowsPerPage, searchTerm]);
+    }, [projectId]);
 
     useEffect(() => {
         fetchTransactions(page, rowsPerPage, searchTerm)

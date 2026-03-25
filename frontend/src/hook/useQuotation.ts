@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { ApiConfig } from "../config/ApiConfig";
-import axios from "axios";
+import axios from "../config/axiosInstance";
 import { QuotationVersionData } from "../config/QuotationConfig";
 import { ProjectData } from "../config/ProjectFieldsConfig";
 
@@ -22,16 +22,9 @@ export function useQuotation(projectId?: number) {
             setError(false);
             setMessage("");
 
-            const token = localStorage.getItem('authToken');
-                        
-            const url = `${ApiConfig.project.viewQuotationVersions.replace("{projectId}", projectId.toString())}`;
+            const url = ApiConfig.project.viewQuotationVersions.replace("{projectId}", projectId.toString());
 
-            const response = await axios.get(url, {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                }
-            });
+            const response = await axios.get(url);
             
             setProject(response.data.project);
             setVersions(response.data.versions);
@@ -63,17 +56,10 @@ export function useQuotation(projectId?: number) {
             setError(false);
             setMessage("");
 
-            const token = localStorage.getItem('authToken');
-                        
-            const url = `${ApiConfig.project.addQuotation.replace("{projectId}", projectId.toString())}`;
+            const url = ApiConfig.project.addQuotation.replace("{projectId}", projectId.toString());
 
             const response = await axios.post(url, {
                 data: payload
-            }, {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                }
             });
 
             return response.data.quotation;
@@ -94,18 +80,11 @@ export function useQuotation(projectId?: number) {
             setLoading(true);
             setError(false);
             setMessage("");
-
-            const token = localStorage.getItem('authToken');
                         
-            const url = `${ApiConfig.project.updateQuotation.replace("{projectId}", projectId.toString()).replace("{versionId}", selectedVersion.id.toString())}`;
+            const url = ApiConfig.project.updateQuotation.replace("{projectId}", projectId.toString()).replace("{versionId}", selectedVersion.id.toString());
 
             const response = await axios.put(url, {
                 data: payload
-            }, {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                }
             });
 
             setSelectedVersion(response.data.quotation);
@@ -128,17 +107,10 @@ export function useQuotation(projectId?: number) {
             setLoading(true);
             setError(false);
             setMessage("");
-
-            const token = localStorage.getItem('authToken');
                         
-            const url = `${ApiConfig.project.destroyQuotation.replace("{projectId}", projectId.toString()).replace("{versionId}", selectedVersion.id.toString())}`;
+            const url = ApiConfig.project.destroyQuotation.replace("{projectId}", projectId.toString()).replace("{versionId}", selectedVersion.id.toString());
 
-            const response = await axios.delete(url, {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                }
-            });
+            const response = await axios.delete(url);
 
             await getQuotationVersions();
 

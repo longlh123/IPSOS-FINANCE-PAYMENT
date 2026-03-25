@@ -14,4 +14,6 @@ export interface ColumnFormat {
     renderHeader?: () => React.ReactNode,
     renderCell?: (row: any) => React.ReactNode,
     renderAction?: (row: any) => React.ReactNode,
+    sortable?: boolean,
+    sortKey?: string,
 }

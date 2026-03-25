@@ -1,5 +1,4 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
-import GridViewIcon from "@mui/icons-material/GridView";
 import "../Sidebar/Sidebar.css";
 import { Drawer, Divider } from "@mui/material";
 import { useState, useEffect } from "react";
@@ -15,9 +14,6 @@ interface SideBarProps {
 
 const Sidebar: React.FC<SideBarProps> = ({ isOpen, toggleSidebar }) => {
   const [isSmallScreen, setIsSmallScreen] = useState<boolean>(false);
-
-  const storedUser = localStorage.getItem("user");
-  const user = storedUser ? JSON.parse(storedUser) : null;
 
   const { canView } = useVisibility();
 
@@ -59,37 +55,6 @@ const Sidebar: React.FC<SideBarProps> = ({ isOpen, toggleSidebar }) => {
                   <LibraryBooks style={{ fontSize: "18px" }} />
                 </i>
                 <span className="text nav-text">Projects</span>
-              </NavLink>
-            </li>
-          )}
-          
-          {canView("sidebar.visible_transactions") && (
-            <li className="nav-link">
-              <NavLink
-                to="/vinnet-management/index"
-                onClick={() => {
-                  if (isSmallScreen) toggleSidebar();
-                }}
-              >
-                <i className="icon">
-                  <GridViewIcon style={{ fontSize: "18px" }} />
-                </i>
-                <span className="text nav-text">Transactions</span>
-              </NavLink>
-            </li>
-          )}
-          {canView("sidebar.visible_transactions") && (
-            <li className="nav-link">
-              <NavLink
-                to="/project-management/transactions"
-                onClick={() => {
-                  if (isSmallScreen) toggleSidebar();
-                }}
-              >
-                <i className="icon">
-                  <GridViewIcon style={{ fontSize: "18px" }} />
-                </i>
-                <span className="text nav-text">Transactions (New)</span>
               </NavLink>
             </li>
           )}

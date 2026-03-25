@@ -17,9 +17,6 @@ interface ProjectSidebarProps {
 const ProjectSidebar: React.FC<ProjectSidebarProps> = ({ projectId, isOpen, toggleSidebar }) => {
   const [isSmallScreen, setIsSmallScreen] = useState<boolean>(false);
 
-  const storedUser = localStorage.getItem("user");
-  const user = storedUser ? JSON.parse(storedUser) : null;
-
   const { canView } = useVisibility();
 
   useEffect(() => {

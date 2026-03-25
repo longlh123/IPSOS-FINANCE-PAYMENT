@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import axios from "axios";
+import axios from "../config/axiosInstance";
 import { ApiConfig } from "../config/ApiConfig";
 import { ProjectData } from "../config/ProjectFieldsConfig";
 import dayjs, { Dayjs } from "dayjs";
@@ -25,17 +25,12 @@ export function useProjects() {
             setLoading(true);
             setError(null);
 
-            const token = localStorage.getItem("authToken");
-
             const response = await axios.get(ApiConfig.project.viewProjects, {
-                method: 'GET',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
                     'Show-Only-Enabled': '1',
                 },
                 params: {
-                    page: page + 1,        // Laravel dùng page = 1,2,3...
+                    page: page + 1,
                     perPage: rowsPerPage,
                     searchTerm: searchTerm,
                     searchFromDate: searchFromDate.format("YYYY-MM-DD"),
@@ -53,18 +48,11 @@ export function useProjects() {
             setLoading(false);
         }
 
-    }, [page, rowsPerPage, searchTerm, searchFromDate, searchToDate]);
+    }, []);
 
     const addProject = useCallback(async (payload: Partial<ProjectData>) => {
         try{
-            const token = localStorage.getItem("authToken");
-
-            const response = await axios.post(ApiConfig.project.addProject, payload, {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                },
-            });
+            const response = await axios.post(ApiConfig.project.addProject, payload);
 
             await fetchProjects();
             return response.data.data;
@@ -74,18 +62,9 @@ export function useProjects() {
     }, [fetchProjects]);
     
     const updateProjectStatus = useCallback(async ( id: number, status: string) => {
-
-        const token = localStorage.getItem("authToken");
-
         const url = ApiConfig.project.updateStatusOfProject.replace('{projectId}', id.toString());
 
-        const response = await axios.put(url, { status: status }, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-        });
+        const response = await axios.put(url, { status });
 
         await fetchProjects();
         return response.data.data;
@@ -93,18 +72,9 @@ export function useProjects() {
     }, [fetchProjects]);
 
     const getProject = useCallback(async (id: number) => {
-        
-        const token = localStorage.getItem("authToken");
-        
-        const url = `${ApiConfig.project.viewProjects + "/" + id + '/show'}`;
+        const url = `${ApiConfig.project.viewProjects}/${id}/show`;
 
-        const response = await axios.get(url, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-        });
+        const response = await axios.get(url);
 
         return response.data.data;
 

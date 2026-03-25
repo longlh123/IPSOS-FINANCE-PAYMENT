@@ -9,19 +9,19 @@ import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import Tooltip from '@mui/material/Tooltip';
 import Logout from '@mui/icons-material/Logout';
+import AccountCircle from '@mui/icons-material/AccountCircle';
 import { useAuth } from '../../contexts/AuthContext';
-import { VisibilityConfig } from '../../config/RoleConfig';
+import { useNavigate } from 'react-router-dom';
+import { getStoredUser } from '../../utils/authStorage';
 
 export default function AccountMenu() {
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
     const open = Boolean(anchorEl);
+    const navigate = useNavigate();
     
     const { logout } = useAuth();
 
-    const storedUser = localStorage.getItem('user');
-    const user = storedUser ? JSON.parse(storedUser) : null;
-    
-    const visibilityConfig = VisibilityConfig[user.role as keyof typeof VisibilityConfig];
+    const user = getStoredUser<any>();
     
     const handleClick = (event: React.MouseEvent<HTMLElement>) => {
         setAnchorEl(event.currentTarget);
@@ -33,6 +33,10 @@ export default function AccountMenu() {
 
     const handleLogout = () => {
         logout();
+    };
+
+    const handleOpenAccountInfo = () => {
+        navigate('/account-info');
     };
     
     return (
@@ -62,6 +66,15 @@ export default function AccountMenu() {
             onClose={handleClose}
             onClick={handleClose}
         >
+            <MenuItem onClick={handleOpenAccountInfo}>
+                <ListItemIcon>
+                    <AccountCircle fontSize="small" />
+                </ListItemIcon>
+                Thông tin tài khoản
+            </MenuItem>
+
+            <Divider />
+
             <MenuItem onClick={handleLogout}>
                 <ListItemIcon>
                     <Logout fontSize="small" />

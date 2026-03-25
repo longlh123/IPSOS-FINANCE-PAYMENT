@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import axios from "../../config/axiosInstance";
+import { isAxiosError } from "axios";
 import { InputProvider } from "../../contexts/InputContext";
 import Directional from "../../components/Directional/Directional";
 import MerchantInfor from "./MerchantInfor";
@@ -9,7 +10,6 @@ import Grid from '@mui/material/Grid';
 import SummaryWidget from "../../components/Widgets/SummaryWidget";
 import { ApiConfig } from "../../config/ApiConfig";
 import numeral from "numeral";
-import { VisibilityConfig } from "../../config/RoleConfig";
 import { useVisibility } from "../../hook/useVisibility";
 
 interface VinnectAccountData {
@@ -19,13 +19,7 @@ interface VinnectAccountData {
 }
 
 const VinnetManagement = () => {
-  const token = localStorage.getItem('authToken');
-  const storedUser = localStorage.getItem('user');
-  const user = storedUser ? JSON.parse(storedUser) : null;
-
   const { canView } = useVisibility();
-  
-  const visibilityConfig = VisibilityConfig[user.role as keyof typeof VisibilityConfig];
   
   const [isError, setIsError] = useState(false);
   const [statusMessage, setStatusMessage] = useState(''); 
@@ -42,19 +36,11 @@ const VinnetManagement = () => {
 
     const fetchMerchantAccount = async () => {
       try {
-        const response = await axios.get(ApiConfig.vinnet.viewMerchantAccount, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
-            }
-        });
+        const response = await axios.get(ApiConfig.vinnet.viewMerchantAccount);
         
         const rawAccountData: string = response.data.data;
         const parsedData = JSON.parse(rawAccountData);
-        console.log(parsedData);
 
-        // "{"deposited":1.2E7,"spent":7317700.0,"balance":4682300.0}"
         const vinnetAccountData: VinnectAccountData = {
           deposited: Number(parsedData.deposited),
           spent: Number(parsedData.spent),
@@ -64,31 +50,25 @@ const VinnetManagement = () => {
         console.log("Fetched Vinnet Account Data:", vinnetAccountData);
 
         setVinnetAccount(vinnetAccountData);
-      } catch(error){
+      } catch(error: any){
         setIsError(true);
 
         let errorMessage = '';
 
-        if (axios.isAxiosError(error)) {
+        if (isAxiosError(error)) {
             errorMessage = error.response?.data.message ?? error.message;
         } else {
             errorMessage = (error as Error).message;
         }
 
         setStatusMessage(errorMessage);
-        console.error('Error:', errorMessage); 
       } finally {
         setLoading(false);
       }
     }
 
     fetchMerchantAccount();
-  }, [])
-
-  useEffect(() => {
-    console.log('State after update:', vinnetAccount);
-  }, [vinnetAccount]); // This effect runs whenever vinnetAccount is updated
-
+  }, []);
 
   return (
     <InputProvider>

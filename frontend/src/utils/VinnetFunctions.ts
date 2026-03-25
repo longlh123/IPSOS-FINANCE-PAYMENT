@@ -42,7 +42,7 @@ export function getServiceCode(phonenumber: string) : (string | null){
             }
         };
 
-        const prefix = phonenumber.substring(0, (phonenumber.length == 11 ? 4 : 3)); // Extract the first three digits
+        const prefix = phonenumber.substring(0, (phonenumber.length === 11 ? 4 : 3)); // Extract the first three digits
 
         for (const provider in providers) {
             const prefixes = providers[provider].subscriberNumberPrefix;
@@ -99,7 +99,7 @@ export function getServiceCodeForMobileCardPurchaseService(phonenumber: string) 
             }
         };
 
-        const prefix = phonenumber.substring(0, (phonenumber.length == 11 ? 4 : 3)); // Extract the first three digits
+        const prefix = phonenumber.substring(0, (phonenumber.length === 11 ? 4 : 3)); // Extract the first three digits
 
         for (const provider in providers) {
             const prefixes = providers[provider].subscriberNumberPrefix;
