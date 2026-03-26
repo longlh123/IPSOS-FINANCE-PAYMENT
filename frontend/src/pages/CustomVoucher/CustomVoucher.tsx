@@ -1,5 +1,5 @@
 import axios from "axios";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import HighlandBanner from "../../assets/img/highland/highland_banner.png";
 import HighlandLogo from "../../assets/img/highland/highland_logo.png";
 import { ApiConfig } from "../../config/ApiConfig";
@@ -7,16 +7,45 @@ import { Box, Button, Card, Typography } from "@mui/material";
 import { useParams } from "react-router-dom";
 import * as htmlToImage from 'html-to-image';
 import { useRef } from 'react';
+import dayjs from "dayjs";
 
 export default function CustomVoucher() {
     const [ qrBase64, setQrBase64 ] = useState<string | null>(null);
     const [ uuid, setUuid ] = useState<string | null>(null);
     const [ loading, setLoading ] = useState(false);
     const [ message, setMessage ] = useState("");
+    const [ expiredVoucher, setExpiredVoucher ] = useState({
+        from: "",
+        to: ""
+    });
 
     const { token } = useParams<{token: string}>()
     const voucherRef = useRef<HTMLDivElement>(null);
 
+    const [bannerBase64, setBannerBase64] = useState<string | null>(null);
+    const [logoBase64, setLogoBase64] = useState<string | null>(null);
+
+    useEffect(() => {
+        const toBase64 = async (url: string) => {
+            const res = await fetch(url, { mode: "cors" });
+            const blob = await res.blob();
+            return new Promise<string>((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result as string);
+                reader.readAsDataURL(blob);
+            });
+        };
+
+        const loadImages = async () => {
+            const banner = await toBase64(HighlandBanner);
+            const logo = await toBase64(HighlandLogo);
+            setBannerBase64(banner);
+            setLogoBase64(logo);
+        };
+
+        loadImages();
+    }, []);
+    
     const handleGetCustomVoucher = async () => {
         setLoading(true);
         
@@ -28,6 +57,10 @@ export default function CustomVoucher() {
             if(res.data.status_code == 200){
                 setQrBase64(res.data.qr);
                 setUuid(res.data.uuid);
+                setExpiredVoucher({
+                    from: dayjs(res.data.expired_from).format("DD/MM/YYYY"),
+                    to: dayjs(res.data.expired_to).format("DD/MM/YYYY")
+                });
                 setMessage("Voucher được cập nhật thành công!");
             } else {
                 setQrBase64(null);
@@ -45,14 +78,25 @@ export default function CustomVoucher() {
         }
     }
 
+    const waitForImages = async (element: HTMLElement) => {
+        const images = element.querySelectorAll("img");
+        await Promise.all(
+            Array.from(images).map((img) => {
+                if (img.complete) return Promise.resolve();
+                return new Promise((resolve) => {
+                    img.onload = resolve;
+                    img.onerror = resolve;
+                });
+            })
+        );
+    };
+
     const handleDownloadVoucher = async () => {
         if(!voucherRef.current) return;
         
         try{
-            const dataUrl = await htmlToImage.toPng(voucherRef.current, {
-                cacheBust: true,
-            });
-
+            await waitForImages(voucherRef.current);
+            const dataUrl = await htmlToImage.toPng(voucherRef.current, { cacheBust: true });
             const link = document.createElement("a");
             link.download = `voucher-${uuid}.png`;
             link.href = dataUrl;
@@ -110,7 +154,7 @@ export default function CustomVoucher() {
                     </Typography>
                 )}
                 
-                {uuid && qrBase64 && (
+                {uuid && qrBase64 && bannerBase64 && logoBase64 && (
                     <Card
                         ref={voucherRef}
                         sx={{
@@ -125,11 +169,7 @@ export default function CustomVoucher() {
                     >
                         {/* Banner trên cùng */}
                         <Box sx={{ width: "100%", mb: 2 }}>
-                            <img
-                            src={HighlandBanner}
-                            alt="Voucher Banner"
-                            style={{ width: "100%", objectFit: "cover" }}
-                            />
+                            <img src={bannerBase64} alt="Voucher Banner" style={{ width: "100%", objectFit: "cover" }} />
                         </Box>
 
                         {/* QR Code */}
@@ -152,7 +192,7 @@ export default function CustomVoucher() {
                         >
                             <Box
                                 component="img"
-                                src={HighlandLogo}
+                                src={logoBase64}
                                 alt="logo"
                                 sx={{
                                 position: "absolute",
@@ -181,7 +221,7 @@ export default function CustomVoucher() {
                                         Sense City, Aeon Mall, VinWonder, GrandWorld, SunWorld, trường RMIT, PVoil; <span style={{fontWeight: 600, color: "#4d372b"}}>Lào Cai</span>: Star Hotel, CIC, <span style={{fontWeight: 600, color: "#4d372b"}}>Hà Nội</span>: Bảo Tàng Lịch Sử Quốc Gia, Nhà Hát Lớn HN, Savico HN, Linh Đàm CT3, 169 Nguyễn Ngọc Vũ; <span style={{fontWeight: 600, color: "#4d372b"}}>Đà Nẵng</span>: VTV8 Bạch Đằng, 233 Nguyễn Văn Thoại, Nguyễn Kim; <span style={{fontWeight: 600, color: "#4d372b"}}>Nha Trang</span>: Viễn Đông Hotel 2, <span style={{fontWeight: 600, color: "#4d372b"}}>Tp. Hồ Chí Minh</span>: Bưu Điện Sài Gòn, Bưu Điện Chợ Lớn, Tôn Thất Thiệp, Foodcourt Menas Mall, VNGCampus, Trạm dừng Phúc Lộc - Tiền Giang và các quán khu vực sân bay trên toàn quốc.
                                     </li>
                                     <li style={{ marginBottom: '0.5em', fontWeight: 600, color: "#4d372b" }}>Không áp dụng các ngày Lễ, Tết như: 27/04; 30/04; 01/05.</li>
-                                    <li style={{ marginBottom: '0.5em' }}>Thời gian áp dụng: <span style={{fontWeight: 600, color: "#4d372b"}}>24/03/2026 – 31/05/2026</span></li>
+                                    <li style={{ marginBottom: '0.5em' }}>Thời gian áp dụng: <span style={{fontWeight: 600, color: "#4d372b"}}>{expiredVoucher.from} – {expiredVoucher.to}</span></li>
                                 </ul>
                             </Box>
                         </Box>

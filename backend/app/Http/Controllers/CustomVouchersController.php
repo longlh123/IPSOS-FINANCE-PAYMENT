@@ -157,7 +157,9 @@ class CustomVouchersController extends Controller
                 return response()->json([
                     'status_code' => 200,
                     'uuid' => $existing->uuid,
-                    'qr' => $qrBase64
+                    'qr' => $qrBase64,
+                    'expired_from' => $existing->expired_from,
+                    'expired_to' => $existing->expired_to
                 ]);
             } 
 
@@ -218,7 +220,9 @@ class CustomVouchersController extends Controller
             return response()->json([
                 'status_code' => 200,
                 'uuid' => $voucher->uuid,
-                'qr' => $qrBase64
+                'qr' => $qrBase64,
+                'expired_from' => $voucher->expired_from,
+                'expired_to' => $voucher->expired_to
             ]);
         } catch(\Exception $e){
             Log::error($e);
@@ -270,7 +274,7 @@ class CustomVouchersController extends Controller
 
             $customVoucherToken->increment('attempts');
             $customVoucherToken->refresh();
-            
+
             if ($customVoucherToken->attempts > 3) {
                 $customVoucherToken->status = 'blocked';
                 $customVoucherToken->save();
