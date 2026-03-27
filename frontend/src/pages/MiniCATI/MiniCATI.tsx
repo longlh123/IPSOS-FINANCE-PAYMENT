@@ -5,10 +5,10 @@ import { useSearchParams } from "react-router-dom";
 import { ApiConfig } from "../../config/ApiConfig";
 
 export default function MiniCATI() {
-  const [current, setCurrent] = useState<any>(null);
-
-    const [ searchParams ] = useSearchParams();
-    const employeeId = searchParams.get('employee_id');
+  const [ current, setCurrent ] = useState<any>(null);
+  
+  const [ searchParams ] = useSearchParams();
+  const employeeId = searchParams.get('employee_id');
 
   const [filters, setFilters] = useState({
     filter_1: "",
@@ -208,7 +208,7 @@ export default function MiniCATI() {
       {current?.id ? (
         
         <Box>
-            <Card sx={{ maxWidth: 720, margin: "auto", mt: 3, borderRadius: 3, boxShadow: 3 }}>
+            <Card sx={{ maxWidth: 900, margin: "auto", mt: 3, borderRadius: 3, boxShadow: 3 }}>
                 <CardContent>
 
                     {/* 🔥 Title */}
@@ -226,12 +226,28 @@ export default function MiniCATI() {
                             <strong>Phone:</strong> {current.phone}
                         </Typography>
 
-                        <Typography>
-                            <strong>Link:</strong>{" "}
-                            <a href={current.link} target="_blank" rel="noopener noreferrer">
-                            {current.link}
-                            </a>
+                        <Typography color="error">
+                            Vui lòng thực hiện phỏng vấn trực tiếp bên dưới (không mở link ngoài)
                         </Typography>
+                    </Box>
+
+                    <Box
+                      sx={{
+                        border: "1px solid #ddd",
+                        borderRadius: 2,
+                        overflow: "hidden",
+                        mb: 3
+                      }}
+                    >
+                      <iframe
+                        key={current.id}
+                        src={current.link}
+                        width="100%"
+                        height="600px"
+                        style={{
+                          border: "none"
+                        }}
+                      />
                     </Box>
 
                     {/* 🔥 Action buttons */}
@@ -320,9 +336,9 @@ export default function MiniCATI() {
 
                         <TableCell align="center">
                             <Button
-                            size="small"
-                            variant="outlined"
-                            onClick={() => setCurrent(item)}
+                              size="small"
+                              variant="outlined"
+                              onClick={() => setCurrent(item)}
                             >
                             Gọi lại
                             </Button>
