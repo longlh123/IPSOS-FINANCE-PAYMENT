@@ -202,7 +202,7 @@ const Gifts: React.FC = () => {
             }
 
             const REQUIRED_COLUMNS = [
-                "InstanceID",	"Shell_ChainID", "SamplePoint",	"Province",	"InterviewerID", "RespondentPhoneNumber", "PhoneNumber"
+                "InstanceID",	"Shell_ChainID", "SamplePoint",	"Province",	"InterviewerID", "RespondentPhoneNumber", "PhoneNumber", "Email"
             ]
 
             const hearders = Object.keys(jsonData[0]);
@@ -236,8 +236,9 @@ const Gifts: React.FC = () => {
             location_id: r.SamplePoint.toString(),
             province_name: r.Province.toString(),
             employee_id: r.InterviewerID.toString(),
-            respondent_phone_number: r.RespondentPhoneNumber.toString(),
-            phone_number: r.PhoneNumber.toString()
+            respondent_phone_number: r.RespondentPhoneNumber.toString() ?? null,
+            phone_number: r.PhoneNumber.toString() ?? null,
+            email: r.Email.toString() ?? null
         }));
 
         await importOfflineProjectRespondents(payload);

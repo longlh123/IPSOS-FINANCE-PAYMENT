@@ -27,7 +27,7 @@ class TransactionRequest extends FormRequest
             'service_type' => 'required|string|in:topup,card,voucher',
             'service_code' => 'required|string|max:10',
             'provider' => 'required|string|in:vinnet,gotit',
-            'delivery_method' => 'required|string|in:qr,sms'
+            'delivery_method' => 'required|string|in:qr,sms,email'
         ];
     }
 
@@ -36,7 +36,7 @@ class TransactionRequest extends FormRequest
             'token.required' => 'The token is required.', 
             'phone_number.required' => 'The phone number is required.',
             'phone_number.digits_between' => 'The phone number must be between 10 and 11 digits.',
-            
+
             'service_type.required' => 'Service Type is required',
             'service_type.in' => 'The service type must be one of the following: topup, card.',
 

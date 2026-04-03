@@ -43,6 +43,7 @@ class ProjectRespondentResource extends JsonResource
             'employee_id' => Employee::where('id', $this->employee_id)->pluck('employee_id')[0],
             'respondent_phone_number' => $this->respondent_phone_number,
             'phone_number' => $this->phone_number,
+            'email' => $this->email,
             'status_label' => $this->status,
             'status' => $this->mapStatusToFrontEnd($this->status),
             'environment' => $this->environment,

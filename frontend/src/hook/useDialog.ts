@@ -36,6 +36,7 @@ const useDialog = () => {
     title: options.title || "Xác nhận hành động",
     message: options.message || "Bạn có chắc chắn muốn thực hiện thao tác này?",
     showConfirmButton: options.showConfirmButton || false,
+    setOpen,
     openDialog, 
     closeDialog,
     confirmDialog

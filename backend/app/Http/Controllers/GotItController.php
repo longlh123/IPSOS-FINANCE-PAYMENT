@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Symfony\Component\HttpFoundation\Response;
 use App\Http\Requests\StoreProjectGotItRequest;
 use App\Models\Project;
@@ -22,6 +23,7 @@ use App\Services\ENVObject;
 use App\Services\APICMCObject;
 use App\Http\Requests\TransactionRequest;
 use App\Http\Requests\CheckTransactionRequest;
+use App\Mail\GotitNotificationMail;
 
 class GotItController extends Controller
 {
@@ -480,8 +482,21 @@ class GotItController extends Controller
                         'error' => SMSStatus::ERROR . ' [' . $responseSMSData['statusDescription'] . ']',
                     ], 400);
                 }
+            } else if($deliveryMethod === 'email'){
+                
+                Log::info('Voucher Information: ', [
+                    'Link' => $voucherTransaction->voucher_link ?? $voucherTransaction->voucher_link_group ?? null,
+                    'Email' => $projectRespondent->email,
+                    'Price' => $price
+                ]);
+                
+                Mail::to($projectRespondent->email)->send(new GotitNotificationMail(
+                    'Hỗ trợ tiền xăng',
+                    $voucherTransaction->voucher_link ?? $voucherTransaction->voucher_link_group ?? null,
+                    intval($price)
+                ));
             }
-
+            
             $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_GIFT_RECEIVED);
             
             return response()->json([

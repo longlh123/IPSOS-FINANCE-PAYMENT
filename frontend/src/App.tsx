@@ -23,6 +23,9 @@ import MiniCATI from "./pages/MiniCATI/MiniCATI";
 import CustomVoucher from "./pages/CustomVoucher/CustomVoucher";
 import CustomVoucherLog from "./pages/CustomVoucher/CustomVoucherLog";
 import DashboardProject from "./pages/Project/ProgressReport";
+import TradeUnionTransactions from "./pages/TradeUnion/TradeUnionTransactions";
+import Gifts from "./pages/Project/Gifts";
+import Transactions from "./pages/Transaction/Transactions";
 
 // Fetch the CSRF token from the meta tag
 const csrfToken = document
@@ -61,6 +64,10 @@ const App: React.FC = () => {
                 path="/project-management/projects"
                 element={<Projects />}
               />
+              <Route
+                path="/transaction-manager/transactions"
+                element={<Transactions />}
+              />
             </Route>
 
             {/* ================= PROJECT LAYOUT GROUP ================= */}
@@ -79,6 +86,10 @@ const App: React.FC = () => {
               <Route
                 path="parttime-employees"
                 element={<ParttimeEmployees />}
+              />
+              <Route
+                path="gifts"
+                element={<Gifts />}
               />
             </Route>
             

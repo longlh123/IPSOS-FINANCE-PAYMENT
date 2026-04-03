@@ -119,6 +119,8 @@ class ProjectRespondentController extends Controller
                 ];
             }
 
+            Log::info('Checking province: ' . $row['province_name']);
+
             if(!Province::where('name', $row['province_name'])->exists()){
                 $errors[] = [
                     'row' => $index + 2,
@@ -126,6 +128,8 @@ class ProjectRespondentController extends Controller
                     'respondent_id' => $respondentId
                 ];
             }
+
+            Log::info('Checking employee: ' . $row['employee_id']);
 
             if(!Employee::where('employee_id', $row['employee_id'])->exists()){
                 $errors[] = [
@@ -226,6 +230,7 @@ class ProjectRespondentController extends Controller
                         'interview_end' => now(),
                         'respondent_phone_number' => $row['respondent_phone_number'],
                         'phone_number' => $row['phone_number'],
+                        'email' => $row['email'],
                         'price_level' => 'main',
                         'status' => ProjectRespondent::STATUS_RESPONDENT_PENDING,
                         'environment' => $environment,

@@ -23,6 +23,9 @@ use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\CatiController;
 use App\Http\Controllers\CustomVouchersController;
 use App\Http\Middleware\EnsureUserHasRole;
+use App\Http\Controllers\ImportController;
+use App\Http\Controllers\TradeUnionRecipientListController;
+use App\Http\Controllers\AccountDepositController;
 
 Route::post('/login', [LoginController::class, 'login'])
     ->name('index');
@@ -67,9 +70,13 @@ Route::middleware(['auth:sanctum'])->group(function(){
     Route::delete('/project_management/projects/{projectId}/offline/respondents/{projectRespondentId}/destroy', [ProjectRespondentController::class, 'bulkRemoveProjectRespondent'])->middleware('ensureUserHasRole:Admin');
     Route::post('/project-management/projects/{projectId}/offline/respondents/{projectRespondentId}/transaction', [GotItController::class, 'perform_offline_transaction'])->middleware('ensureUserHasRole:Admin');
 
-    Route::get('/project-management/vinnet/merchant/view', [VinnetController::class, 'get_merchant_info'])->middleware('ensureUserHasRole:admin,Finance');
-    Route::post('/project-management/vinnet/change-key', [VinnetController::class, 'change_key'])->middleware('ensureUserHasRole:admin,Finance');
-    Route::get('/project-management/vinnet/merchantinfo', [VinnetController::class, 'merchantinfo'])->middleware('ensureUserHasRole:admin,Finance');
+    //Vinnet
+    Route::get('/transaction-management/vinnet/merchant/view', [VinnetController::class, 'get_merchant_info'])->middleware('ensureUserHasRole:admin,Finance');
+    Route::post('/transaction-management/vinnet/change-key', [VinnetController::class, 'change_key'])->middleware('ensureUserHasRole:admin,Finance');
+    Route::get('/transaction-management/vinnet/merchantinfo', [VinnetController::class, 'merchantinfo'])->middleware('ensureUserHasRole:admin,Finance');
+
+    //Got It
+    Route::post('/transaction-management/gotit/account/store', [AccountDepositController::class, 'store'])->middleware('ensureUserHasRole:admin,Finance');
 
     //Quotation
     Route::get('project-management/projects/{projectId}/quotation/{versionId}/view', [QuotationController::class, 'getQuotation'])->middleware('ensureUserHasRole:Admin,Field Manager');
@@ -79,6 +86,11 @@ Route::middleware(['auth:sanctum'])->group(function(){
     Route::delete('project-management/projects/{projectId}/quotation/{versionId}/destroy', [QuotationController::class, 'destroy'])->middleware('ensureUserHasRole:Admin,Field Manager');
     Route::post('project-management/projects/{projectId}/quotation/{versionId}/approve', [QuotationController::class, 'approve'])->middleware('ensureUserHasRole:Admin,Field Manager');
     Route::post('project-management/projects/{projectId}/quotation/reject', [QuotationController::class, 'reject'])->middleware('ensureUserHasRole:Admin,Field Manager');
+
+    //Trade Union Recipient
+    Route::get('/trade-union/recipient-lists', [TradeUnionRecipientListController::class, 'index'])->middleware('ensureUserHasRole:admin');
+    Route::post('/trade-union/recipient-lists/import', [ImportController::class, 'importRecipients'])->middleware('ensureUserHasRole:admin');
+    Route::post('/trade-union/recipient-lists/{id}/send-email', [TradeUnionRecipientListController::class, 'sendEmail'])->middleware('ensureUserHasRole:admin');
 });
 
 Route::get('/project-management/project/verify_token', [TransactionController::class, 'verify']);

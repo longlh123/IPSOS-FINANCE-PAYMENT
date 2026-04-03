@@ -8,6 +8,7 @@ export interface OfflineProjectRespondentImportData {
     InterviewerID: string, 
     RespondentPhoneNumber: string, 
     PhoneNumber: string,
+    Email: string
 }
 
 export interface OfflineProjectRespondentData {
@@ -18,6 +19,7 @@ export interface OfflineProjectRespondentData {
     employee_id: string,
     respondent_phone_number: string,
     phone_number: string,
+    email: string,
     status_label: string,
     status: "pending" | "success" | "refused" | "failed",
     environment: "live" | "test",
@@ -58,6 +60,12 @@ export const OfflineProjectRespondentCellConfig: ColumnFormat[] = [
     {
         label: "Phone",
         name: "phone_number",
+        type: "string",
+        flex: 1.5
+    },
+    {
+        label: "Email",
+        name: "email",
         type: "string",
         flex: 1.5
     }

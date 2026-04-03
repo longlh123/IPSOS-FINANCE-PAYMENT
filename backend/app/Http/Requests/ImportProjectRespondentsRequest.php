@@ -30,6 +30,7 @@ class ImportProjectRespondentsRequest extends FormRequest
             'project_respondents.*.employee_id' => 'required|string',
             'project_respondents.*.respondent_phone_number' => 'required|string',
             'project_respondents.*.phone_number' => 'required|string',
+            'project_respondents.*.email' => 'required|string|email'
         ];
     }
 }

@@ -38,15 +38,18 @@ export const ApiConfig = {
     viewEmployees: `${host}/api/project-management/projects/{projectId}/employees/show`
   },
   vinnet: {
-    viewMerchantInfo: `${host}/api/project-management/vinnet/merchant/view`,
-    viewMerchantAccount: `${host}/api/project-management/vinnet/merchantinfo`,
+    viewMerchantInfo: `${host}/api/transaction-management/vinnet/merchant/view`,
+    viewMerchantAccount: `${host}/api/transaction-management/vinnet/merchantinfo`,
+    changeMerchantKey: `${host}/api/transaction-management/vinnet/change-key`,
+
     performMultipleTransactions: `${host}/api/project-management/vinnet/transactions`,
-    changeMerchantKey: `${host}/api/project-management/vinnet/change-key`,
     verifiedVinnetToken: `${host}/api/project-management/project/verify-vinnet-token`,
     storeVinnetToken: `${host}/api/project-management/project/store-vinnet-token`,
     rejectTransaction: `${host}/api/project-management/vinnet/reject-transaction`
   },
   gotit: {
+    depositedAccount: `${host}/api/transaction-management/gotit/account/store`,
+    
     performTransaction: `${host}/api/project-management/got-it/transaction`,
     rejectTransaction: `${host}/api/project-management/got-it/reject-transaction`,
     checkTransaction: `${host}/api/project-management/got-it/check-transaction-refid`
@@ -79,5 +82,10 @@ export const ApiConfig = {
     authenticateToke: `${host}/api/custom-voucher/authenticate-token`, 
     assignVoucher: `${host}/api/custom-voucher/assign`,
     searchLink: `${host}/api/custom-voucher/search-link`
+  },
+  tradeUnion: {
+    viewRecipientLists: `${host}/api/trade-union/recipient-lists`,
+    importRecipients: `${host}/api/trade-union/recipient-lists/import`,
+    sendEmail: `${host}/api/trade-union/recipient-lists/{id}/send-email`
   }
 };
