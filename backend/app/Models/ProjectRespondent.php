@@ -50,6 +50,7 @@ class ProjectRespondent extends Model
         'interview_end',
         'respondent_phone_number',
         'phone_number',
+        'email',
         'service_type',
         'delivery_method',
         'service_code',

@@ -47,26 +47,23 @@ const Sidebar: React.FC<SideBarProps> = ({ isOpen, toggleSidebar }) => {
         </div>
 
         <ul className="menu-links">
-          {canView("sidebar.visible_projects") && (
-            <li className="nav-link">
-              <NavLink
-                to="/project-management/projects"
-                onClick={() => {
-                  if (isSmallScreen) toggleSidebar(); // chỉ đóng nếu là mobile
-                }}
-              >
-                <i className="icon">
-                  <LibraryBooks style={{ fontSize: "18px" }} />
-                </i>
-                <span className="text nav-text">Projects</span>
-              </NavLink>
-            </li>
-          )}
-          
+          <li className="nav-link">
+            <NavLink
+              to="/project-management/projects"
+              onClick={() => {
+                if (isSmallScreen) toggleSidebar(); // chỉ đóng nếu là mobile
+              }}
+            >
+              <i className="icon">
+                <LibraryBooks style={{ fontSize: "18px" }} />
+              </i>
+              <span className="text nav-text">Projects</span>
+            </NavLink>
+          </li>
           {canView("sidebar.visible_transactions") && (
             <li className="nav-link">
               <NavLink
-                to="/vinnet-management/index"
+                to="/transaction-manager/transactions"
                 onClick={() => {
                   if (isSmallScreen) toggleSidebar();
                 }}
@@ -75,21 +72,6 @@ const Sidebar: React.FC<SideBarProps> = ({ isOpen, toggleSidebar }) => {
                   <GridViewIcon style={{ fontSize: "18px" }} />
                 </i>
                 <span className="text nav-text">Transactions</span>
-              </NavLink>
-            </li>
-          )}
-          {canView("sidebar.visible_transactions") && (
-            <li className="nav-link">
-              <NavLink
-                to="/project-management/transactions"
-                onClick={() => {
-                  if (isSmallScreen) toggleSidebar();
-                }}
-              >
-                <i className="icon">
-                  <GridViewIcon style={{ fontSize: "18px" }} />
-                </i>
-                <span className="text nav-text">Transactions (New)</span>
               </NavLink>
             </li>
           )}

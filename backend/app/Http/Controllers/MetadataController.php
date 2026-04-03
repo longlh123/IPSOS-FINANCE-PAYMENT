@@ -18,7 +18,9 @@ class MetadataController extends Controller
             $projectTypes = ProjectType::all(['id', 'name']);
             $departments = Department::all(['id', 'name']);
             
-            $teams = Team::where('department_id', 3)->get(['id', 'name']);
+            $teams = Team::where('department_id', 3)
+                            ->orWhere('department_id', 2)
+                            ->get(['id', 'name']);
 
             // $lastestYear = ProjectDetail::selectRaw('YEAR()')
 

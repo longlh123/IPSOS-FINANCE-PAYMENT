@@ -3,7 +3,7 @@ import axios from "axios";
 import { InputProvider } from "../../contexts/InputContext";
 import Directional from "../../components/Directional/Directional";
 import MerchantInfor from "./MerchantInfor";
-import TransactionsManager from "../Project/TransactionsManager";
+import TransactionsManager from "../Transaction/Transactions";
 import { Box } from "@mui/material";
 import Grid from '@mui/material/Grid';
 import SummaryWidget from "../../components/Widgets/SummaryWidget";

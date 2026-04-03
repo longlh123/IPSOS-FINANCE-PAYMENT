@@ -162,7 +162,7 @@ export function useOfflineProjectRespondents(projectId: number) {
                     service_code: getServiceCode(data.phone_number),
                     phone_number: data.phone_number,
                     provider: "gotit",
-                    delivery_method: "sms"
+                    delivery_method: "email"
                 }, {
                     headers: {
                         'Content-Type': 'application/json',
