@@ -83,17 +83,33 @@ class CustomVouchersController extends Controller
 
         $token = Str::random(64);
 
-        $customVoucherToken = CustomVoucherToken::create([
-            'employee_id' => $employee->id,
-            'phone_number' => $phoneNumber,
-            'token' => $token,
-            'attempts' => 0, 
-            'expires_at' => now()->addHours(24),
-            'batch_id' => $batchId,
-            'link' => $link,
-            'data_base64' => $dataBase64,
-            'status' => 'active'
-        ]);
+        try{
+            $customVoucherToken = CustomVoucherToken::create([
+                'employee_id' => $employee->id,
+                'phone_number' => $phoneNumber,
+                'token' => $token,
+                'attempts' => 0,
+                'expires_at' => now()->addHours(24),
+                'batch_id' => $batchId,
+                'link' => $link,
+                'data_base64' => $dataBase64,
+                'status' => 'active'
+            ]);
+        } catch (\Illuminate\Database\QueryException $e) {
+            Log::error("Lỗi khi tạo CustomVoucherToken: " . $e->getMessage());
+ 
+            if ($e->getCode() == 23000) {
+                return response()->json([
+                    'status_code' => 400,
+                    'error' => 'Số điện thoại này đã tham gia khảo sát trước đó. Vui lòng kiểm tra.'
+                ]);
+            } else {
+                return response()->json([
+                    'status_code' => 400,
+                    'error' => $e->getMessage()
+                ]);
+            }
+        }
 
         $query = http_build_query([
             'id' => $customVoucherToken->id,
