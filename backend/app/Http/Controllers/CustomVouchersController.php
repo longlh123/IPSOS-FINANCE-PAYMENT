@@ -128,55 +128,45 @@ class CustomVouchersController extends Controller
 
     public function assignVoucher(Request $request)
     {
-        DB::beginTransaction();
-
         try
         {
             $tokenStr = $request->token ?? null;
 
             if (!$tokenStr) {
-                throw new \Exception('Missing token');
+                return response()->json([
+                    'status_code' => 400,
+                    'error' => 'Missing token'
+                ]);
             }
             
             $token = CustomVoucherToken::where('token', $tokenStr)
-                        ->lockForUpdate()
                         ->first();
 
             if(!$token){
-                throw new \Exception('Invalid token');
+                return response()->json([
+                    'status_code' => 400,
+                    'error' => 'Invalid token'
+                ]);
             }
 
             if($token->status !== 'active'){
-                throw new \Exception('Token is blocked');
+                return response()->json([
+                    'status_code' => 400,
+                    'error' => 'Token is blocked'
+                ]);
             }
 
             if($token->expires_at && $token->expires_at < now()){
-                throw new \Exception('Token expired');
+                return response()->json([
+                    'status_code' => 400,
+                    'error' => 'Token expired'
+                ]);
             }
 
             $existing = CustomVoucher::where('token_id', $token->id)->first();
 
             if($existing){
-                DB::commit();
-
-                $qr = Builder::create()
-                    ->writer(new PngWriter())
-                    ->data($existing->code)        // nội dung QR
-                    ->encoding(new Encoding('UTF-8'))
-                    ->size(300)                   // kích thước
-                    ->margin(10)
-                    ->build();
-
-                // chuyển sang base64
-                $qrBase64 = base64_encode($qr->getString());
-                
-                return response()->json([
-                    'status_code' => 200,
-                    'uuid' => $existing->uuid,
-                    'qr' => $qrBase64,
-                    'expired_from' => $existing->expired_from,
-                    'expired_to' => $existing->expired_to
-                ]);
+                return $this->buildVoucherResponse($existing);
             } 
 
             $voucher = CustomVoucher::whereNull('token_id')
@@ -190,66 +180,65 @@ class CustomVouchersController extends Controller
                                 ->first();
 
             if(!$voucher){
-                DB::rollBack();
-
                 return response()->json([
                     'status_code' => 400,
                     'error' => 'Out of vouchers'
                 ]);
             }
 
-            //Assign 
-            if(!$voucher->uuid){
-                $voucher->uuid = Str::uuid();
-            }
+            DB::transaction(function() use ($voucher, $token) {
+                //Assign 
+                if(!$voucher->uuid){
+                    $voucher->uuid = Str::uuid();
+                }
 
-            $voucher->status = 'used';
-            $voucher->token_id = $token->id;
-            $voucher->sent_at = now();
-            $voucher->save();
+                $voucher->update([
+                    'status' => 'used',
+                    'token_id' => $token->id,
+                    'sent_at' => now()
+                ]);
 
-            $token->attempts += 1;
+                $token->increment('attempts');
 
-            if ($token->attempts > 3) {
-                $token->status = 'blocked';
-                $token->save();
+                if($token->attempts >= 5){
+                    $token->update([
+                        'status' => 'blocked'
+                    ]);
+                }
+            });
 
-                DB::rollBack();
-                throw new \Exception('Bạn đã search thông tin quá 3 lần. Link phỏng vấn đã bị khoá.');
-            }
+            return $this->buildVoucherResponse($voucher);
 
-            $token->save();
-
-            $qr = Builder::create()
-                ->writer(new PngWriter())
-                ->data($voucher->code)        // nội dung QR
-                ->encoding(new Encoding('UTF-8'))
-                ->size(300)                   // kích thước
-                ->margin(10)
-                ->build();
-
-            // chuyển sang base64
-            $qrBase64 = base64_encode($qr->getString());
-
-            DB::commit();
-
-            return response()->json([
-                'status_code' => 200,
-                'uuid' => $voucher->uuid,
-                'qr' => $qrBase64,
-                'expired_from' => $voucher->expired_from,
-                'expired_to' => $voucher->expired_to
-            ]);
         } catch(\Exception $e){
             Log::error($e);
 
-            DB::rollBack();
-
             return response()->json([
-                'status_code' => 400,
+                'status_code' => 500,
                 'error' => 'Server error - ' . $e->getMessage()
             ]);
         }
+    }
+
+    private function buildVoucherResponse($voucher)
+    {
+        $qr = Builder::create()
+            ->writer(new PngWriter())
+            ->data($voucher->code)        // nội dung QR
+            ->encoding(new Encoding('UTF-8'))
+            ->size(300)                   // kích thước
+            ->margin(10)
+            ->build();
+
+        // chuyển sang base64
+        $qrBase64 = base64_encode($qr->getString());
+        
+        return response()->json([
+            'status_code' => 200,
+            'uuid' => $voucher->uuid,
+            'qr' => $qrBase64,
+            'expired_from' => $voucher->expired_from,
+            'expired_to' => $voucher->expired_to
+        ]);
     }
 
     public function searchLink(Request $request)
