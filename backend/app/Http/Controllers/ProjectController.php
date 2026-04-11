@@ -406,6 +406,48 @@ class ProjectController extends Controller
         }
     }
 
+    public function updateProjectInfo(Request $request, $projectId)
+    {
+        try
+        {
+            $request->validated([
+                'internal_code' => 'required|string',
+                'project_name' => 'required|string'
+            ]);
+
+            //Retrieve the project by its id
+            try
+            {
+                $project = Project::findOrFail($projectId);
+
+            } catch(\Exception $e){
+                Log::error('The project not found: ' . $e->getMessage());
+                return response()->json([
+                    'status_code' => Response::HTTP_NOT_FOUND, //404
+                    'message' => 'The project not found'
+                ], Response::HTTP_NOT_FOUND);
+            }
+
+            $project->update([
+                'internal_code' => $request->internal_code,
+                'project_name' => $request->project_name
+            ]);
+
+            return response()->json([
+                'status_code' => 200,
+                'message' => 'The project updated successfully.',
+                'data' => new ProjectResource($project) 
+            ]);
+
+        }catch(\Exception $e){
+            Log::error('The project updating failed: ' . $e->getMessage());
+            return response()->json([
+                'status_code' => 400,
+                'error' => 'The project updating failed: ' . $e->getMessage()
+            ]);
+        }
+    }
+
     public function updateStatus(UpdateProjectStatusRequest $request, $projectId)
     {
         try

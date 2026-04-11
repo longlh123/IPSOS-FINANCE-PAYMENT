@@ -4,6 +4,7 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DesktopDatePicker } from '@mui/x-date-pickers/DesktopDatePicker';
 import { useState } from 'react';
 import { DateView } from '@mui/x-date-pickers/models';
+import { Typography } from '@mui/material';
 
 interface SearchDatePickerProps {
     title?: string,
@@ -24,7 +25,7 @@ const SearchDatePicker: React.FC<SearchDatePickerProps> = ({title="", name,  vie
 
     return(
         <div style={{display: "flex", gap: "0.5rem", alignItems: "center", width: "16rem"}}>
-            <span>{title}</span>
+            <Typography variant='body2' color="text.secondary">{title}</Typography>
             <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <DesktopDatePicker
                     views={views}

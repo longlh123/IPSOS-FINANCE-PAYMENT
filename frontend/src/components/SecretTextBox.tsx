@@ -32,6 +32,7 @@ const SecretTextBox: React.FC<SecretTextBoxProps> = ({label, value}) => {
                 type = { show ? "text" : "password" }
                 value = { value }
                 fullWidth
+                size="small"
                 InputProps={{
                     readOnly: true, //chỉ hiển thị, không cho sửa
                     endAdornment:(

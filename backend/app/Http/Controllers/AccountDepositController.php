@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\AccountDeposit;
+use App\Models\ProjectRespondent;
+use App\Models\ProjectGotItVoucherTransaction;
 
 class AccountDepositController extends Controller
 {
@@ -21,14 +23,29 @@ class AccountDepositController extends Controller
 
         $totalDeposit = AccountDeposit::where('account_type', $request->account_type)
                                         ->sum('amount');
+        
+        $spent = ProjectGotItVoucherTransaction::where('voucher_status', ProjectGotItVoucherTransaction::STATUS_VOUCHER_SUCCESS)
+                            ->sum('amount');               
 
         return response()->json([
-            'deposited' => $totalDeposit
+            'deposited' => $totalDeposit,
+            'spent' => $spent,
+            'balance' => $totalDeposit - $spent
         ]);
     }
 
-    public function getGotItAccount(Request $request)
+    public function getGotItAccount(Request $request, $accountType)
     {
-        $totalDeposit = AccountDeposit::where('account_type', $request->account_type);
+        $totalDeposit = AccountDeposit::where('account_type', $accountType)
+                            ->sum('amount');
+
+        $spent = ProjectGotItVoucherTransaction::where('voucher_status', ProjectGotItVoucherTransaction::STATUS_VOUCHER_SUCCESS)
+                            ->sum('amount');
+
+        return response()->json([
+            'deposited' => $totalDeposit,
+            'spent' => $spent,
+            'balance' => $totalDeposit - $spent
+        ]);
     }
 }

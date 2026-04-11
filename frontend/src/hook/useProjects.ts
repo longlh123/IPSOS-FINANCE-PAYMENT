@@ -20,7 +20,7 @@ export function useProjects() {
     const [ meta, setMeta ] = useState<any>(null);
     const [ total, setTotal ] = useState(0); //Tổng số projects từ backend
 
-    const fetchProjects = useCallback(async (page = 0, rowsPerPage = 0, searchTerm = "", searchFromDate = dayjs().startOf("year"), searchToDate = dayjs().endOf("year")) => {
+    const fetchProjects = useCallback(async () => {
         try{
             setLoading(true);
             setError(null);
@@ -87,7 +87,10 @@ export function useProjects() {
             },
         });
 
-        await fetchProjects();
+        const project = response.data.data;
+        
+        setProjects(prev => prev.map(p => p.id == project.id ? { ...p, status} : p));
+
         return response.data.data;
 
     }, [fetchProjects]);
@@ -111,7 +114,7 @@ export function useProjects() {
     }, []);
     
     useEffect(() => {
-        fetchProjects(page, rowsPerPage, searchTerm, searchFromDate, searchToDate);
+        fetchProjects();
     }, [page, rowsPerPage, searchTerm, searchFromDate, searchToDate, fetchProjects]);
 
     return {

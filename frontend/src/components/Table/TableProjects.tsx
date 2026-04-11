@@ -81,6 +81,7 @@ const TableProjects = () => {
 
   const handleSearchChange = (value: string) => {
     setSearchTerm(value.toLocaleLowerCase());
+    setPage(0);
   }
 
   const handleMenuStatusClose = () => {

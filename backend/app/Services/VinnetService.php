@@ -117,6 +117,29 @@ class VinnetService
         return null;
     }
 
+    function getProvice(string $phoneNumber): ?string
+    {
+        $phone_number = trim($phoneNumber);
+
+        if($phone_number === ''){
+            return null;
+        }
+
+        if(strlen($phone_number) < 10 || strlen($phone_number) > 11){
+            return null;
+        }
+
+        $prefix = substr($phone_number, 0, (strlen($phone_number) == 11 ? 4 : 3));
+
+        foreach($this->proviceItems as $provice => $proviceData){
+            if(in_array($prefix, $proviceData["subscriberNumberPrefix"])){
+                return $provice;
+            }
+        }
+
+        return null;
+    }   
+
     public function generate_formated_uuid()
     {
         // Generate a UUID using Laravel's Str::uuid() method
@@ -460,7 +483,7 @@ class VinnetService
                                 continue;
                             }
                         }
-                        throw new Exception("Kết nối tới máy chủ Vinnet thất bại: {$curlError}");
+                        throw new \Exception("Kết nối tới máy chủ Vinnet thất bại: {$curlError}");
                     }
 
                     // Lấy mã HTTP
@@ -471,13 +494,13 @@ class VinnetService
 
                     // Kiểm tra response rỗng
                     if ($response === false || $response === null || trim($response) === '') {
-                        throw new Exception("Máy chủ Vinnet không phản hồi hoặc trả về dữ liệu rỗng");
+                        throw new \Exception("Máy chủ Vinnet không phản hồi hoặc trả về dữ liệu rỗng");
                     }
 
                     // HTTP code khác 200
                     if ($httpCode !== 200) {
                         Log::error("Request failed with HTTP code {$httpCode}. Response: {$response}");
-                        throw new Exception("Request thất bại với HTTP code {$httpCode}");
+                        throw new \Exception("Request thất bại với HTTP code {$httpCode}");
                     }
 
                     // Kiểm tra JSON
@@ -485,12 +508,12 @@ class VinnetService
                         $responseData = json_decode($response, true);
                     } else {
                         Log::warning("Response không hợp lệ JSON: {$response}");
-                        throw new Exception("Response không đúng định dạng JSON");
+                        throw new \Exception("Response không đúng định dạng JSON");
                     }
 
                     // Kiểm tra trường cần thiết
                     if (!isset($responseData['reqUuid'], $responseData['resCode'], $responseData['resMesg'], $responseData['resData'], $responseData['sign'])) {
-                        throw new Exception("Response thiếu các trường cần thiết để xác thực chữ ký");
+                        throw new \xception("Response thiếu các trường cần thiết để xác thực chữ ký");
                     }
 
                     // Xác thực chữ ký
