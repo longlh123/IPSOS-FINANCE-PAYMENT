@@ -8,6 +8,7 @@ export const ApiConfig = {
     viewProjects: `${host}/api/project-management/projects`,
     viewProject: `${host}/api/project-management/projects?platform=ifield&created_user_id=`,
     updateStatusOfProject: `${host}/api/project-management/projects/{projectId}/status`,
+    updateProjectInfo: `${host}/api/project-management/projects/{projectId}/update-info`,
     getMetadata: `${host}/api/project-management/metadata`,
     addProject: `${host}/api/project-management/projects/store`,
     getProjectTypes: `${host}/api/project-management/project-types`,
@@ -48,11 +49,15 @@ export const ApiConfig = {
     rejectTransaction: `${host}/api/project-management/vinnet/reject-transaction`
   },
   gotit: {
+    viewGotItAccount: `${host}/api/transaction-management/gotit/account/{accountType}/view`,
     depositedAccount: `${host}/api/transaction-management/gotit/account/store`,
-    
+
     performTransaction: `${host}/api/project-management/got-it/transaction`,
     rejectTransaction: `${host}/api/project-management/got-it/reject-transaction`,
     checkTransaction: `${host}/api/project-management/got-it/check-transaction-refid`
+  },
+  functions: {
+    exportTransactions: `${host}/api/transaction-management/export`
   },
   techcombank_panel: {
     viewTechcombankPanel: `${host}/api/techcombank-panel/users`,

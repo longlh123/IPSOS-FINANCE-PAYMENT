@@ -1,5 +1,5 @@
 import axios from "axios";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ApiConfig } from "../config/ApiConfig";
 
 interface gotitAccountData {
@@ -8,7 +8,7 @@ interface gotitAccountData {
     balance: number
 }
 
-export function useGotItAccount(){
+export function useGotItAccount(accountType: string){
     const [ loading, setLoading ] = useState(false);
     const [ error, setError ] = useState(false);
     const [ message, setMessage ] = useState("");
@@ -18,13 +18,38 @@ export function useGotItAccount(){
         spent: 0,
         balance: 0
     });
+
+    const getAccount = async () => {
+        try{
+            if(!accountType) return;
+
+            setError(false);
+            setLoading(true);
+
+            const token = localStorage.getItem('authToken');
+
+            const res = await axios.get(ApiConfig.gotit.viewGotItAccount.replace("{accountType}", accountType), {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                }
+            });
+
+            setGotItAccount(res.data);
+        }catch(error){
+            setError(true);
+        } finally{
+            setLoading(false);
+        }
+    }
     
     const addDeposit = async (amount: string) => {
         try{
             setError(false);
             setLoading(true);
 
-            const token = localStorage.getItem('authToken')
+            const token = localStorage.getItem('authToken');
 
             const res = await axios.post(ApiConfig.gotit.depositedAccount, {
                 'account_type': 'gotit',
@@ -35,10 +60,7 @@ export function useGotItAccount(){
                 },
             });
 
-            setGotItAccount(prev => ({
-                ...prev,
-                deposited: res.data.deposited
-            }))
+            setGotItAccount(res.data);
         } catch(error){
             setError(true);
         } finally {
@@ -46,9 +68,14 @@ export function useGotItAccount(){
         }
     }
 
+    useEffect(() => {
+        getAccount();
+    }, [accountType]);
+
     return {
         loading,
         gotitAccount,
-        addDeposit
+        addDeposit,
+        getAccount
     }
 }

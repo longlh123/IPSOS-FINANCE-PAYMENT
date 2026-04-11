@@ -26,6 +26,7 @@ use App\Http\Middleware\EnsureUserHasRole;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\TradeUnionRecipientListController;
 use App\Http\Controllers\AccountDepositController;
+use App\Http\Controllers\ExportController;
 
 Route::post('/login', [LoginController::class, 'login'])
     ->name('index');
@@ -56,6 +57,7 @@ Route::middleware(['auth:sanctum'])->group(function(){
     Route::put('/project-management/projects/{projectId}/update', [ProjectController::class, 'update'])->middleware('ensureUserHasRole:admin');
     Route::put('/project-management/projects/{projectId}/status', [ProjectController::class, 'updateStatus'])->middleware('ensureUserHasRole:Admin,Scripter');
     Route::put('/project-management/projects/{projectId}/disabled', [ProjectController::class, 'updateDisabled'])->middleware('ensureUserHasRole:admin');
+    Route::put('/project-management/projects/{projectId}/update-info', [ProjectController::class, 'updateProjectInfo'])->middleware('ensureUserHasRole:admin');
 
     Route::delete('/project-management/projects/{projectId}/provinces/{provinceId}/remove', [ProjectController::class, 'removeProvinceFromProject'])->middleware('ensureUserHasRole:admin');
 
@@ -77,6 +79,7 @@ Route::middleware(['auth:sanctum'])->group(function(){
 
     //Got It
     Route::post('/transaction-management/gotit/account/store', [AccountDepositController::class, 'store'])->middleware('ensureUserHasRole:admin,Finance');
+    Route::get('/transaction-management/gotit/account/{accountType}/view', [AccountDepositController::class, 'getGotItAccount'])->middleware('ensureUserHasRole:admin,Finance');
 
     //Quotation
     Route::get('project-management/projects/{projectId}/quotation/{versionId}/view', [QuotationController::class, 'getQuotation'])->middleware('ensureUserHasRole:Admin,Field Manager');
@@ -91,6 +94,9 @@ Route::middleware(['auth:sanctum'])->group(function(){
     Route::get('/trade-union/recipient-lists', [TradeUnionRecipientListController::class, 'index'])->middleware('ensureUserHasRole:admin');
     Route::post('/trade-union/recipient-lists/import', [ImportController::class, 'importRecipients'])->middleware('ensureUserHasRole:admin');
     Route::post('/trade-union/recipient-lists/{id}/send-email', [TradeUnionRecipientListController::class, 'sendEmail'])->middleware('ensureUserHasRole:admin');
+
+    //Export
+    Route::get('transaction-management/export', [ExportController::class, 'exportTransaction'])->middleware('ensureUserHasRole:admin');
 });
 
 Route::get('/project-management/project/verify_token', [TransactionController::class, 'verify']);
