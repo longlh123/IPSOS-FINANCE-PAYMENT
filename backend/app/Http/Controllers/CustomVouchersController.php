@@ -44,7 +44,7 @@ class CustomVouchersController extends Controller
             ]);
         }
 
-        $existingPhoneNumber = CustomVoucherToken::where('phone_number', $phoneNumber)->first();
+        $existingPhoneNumber = CustomVoucherToken::where('phone_number', $phoneNumber)->exists();
 
         if($existingPhoneNumber){
             return response()->json([
@@ -76,8 +76,6 @@ class CustomVouchersController extends Controller
         foreach($data as $key => $value){
             $dataArr[] = $key . '=' . trim($value);
         }
-
-        Log::info($dataArr);
 
         $dataBase64 = base64_encode(implode(';', $dataArr));
 

@@ -14,6 +14,7 @@ use App\Http\Requests\TransactionRejectedRequest;
 use App\Http\Resources\TransactionResource;
 use App\Models\Project;
 use App\Models\ProjectRespondent;
+use App\Models\ProjectGotItVoucherTransaction;
 use Ramsey\Uuid\Uuid;
 use App\Constants\TransactionStatus;
 use App\Services\ProjectRespondentTokenService;
@@ -100,6 +101,24 @@ class TransactionController extends Controller
         }
     }
 
+    private function detectEnvironment($project, $interviewURL): string
+    {
+        if($project->projectDetails->status === Project::STATUS_IN_COMING || $project->projectDetails->status === Project::STATUS_ON_HOLD || 
+            ($project->projectDetails->status === Project::STATUS_ON_GOING && !in_array(substr(strtolower($interviewURL->interviewer_id), 0, 2), ['hn', 'sg', 'dn', 'ct', 'ma'])))
+            {
+                return 'test';
+            }
+
+        if(strlen($interviewURL->location_id) == 0 || 
+            strtolower($interviewURL->location_id) === '_defaultsp' || 
+                !in_array(substr(strtolower($interviewURL->location_id), 0, 2), ['hn', 'sg', 'dn', 'ct', 'ma']))
+                {
+                    return 'test';
+                }
+        
+        return 'live';
+    }
+
     public function authenticate_token(ProjectRespondentTokenRequest $request, ProjectRespondentTokenService $tokenService, VinnetService $vinnetService)
     {
         try
@@ -112,30 +131,16 @@ class TransactionController extends Controller
                 return response()->json([
                     'status_code' => 901,
                     'message' => 'URL không hợp lệ.',
-                    'error' => 'INVALID_URL'
+                    'error' => 'URL không hợp lệ.'
                 ], 400);
             }
 
-            $splittedURL = explode("/", $decodedURL);
-
-            Log::info('URL Splitted: ' . json_encode($splittedURL));
-            
-            try{
-
-                $interviewURL = new InterviewURL($splittedURL);
-
-            } catch (\Exception $e){
-                return response()->json([
-                    'status_code' => 901,
-                    'message' => $e->getMessage(),
-                    'error' => $e->getMessage()
-                ], 404);
-            }
+            $interviewURL = new InterviewURL(explode("/", $decodedURL));
 
             //Tìm thông tin dự án dựa trên dữ liệu từ Interview URL
             $project = Project::findByInterviewURL($interviewURL);
 
-            if (!$project->projectDetails) {
+            if (!$project || !$project->projectDetails) {
                 return response()->json([
                     'status_code' => 902,
                     'message' => Project::ERROR_PROJECT_DETAILS_NOT_CONFIGURED . ' Vui lòng liên hệ Admin để biết thêm thông tin.',
@@ -144,22 +149,9 @@ class TransactionController extends Controller
             }
 
             //Tìm thông tin dự án đã được set up giá dựa trên dữ liệu từ Interview URL
-            try {
-                $price = $project->getPriceForProvince($interviewURL->province_id, $interviewURL->price_level);
-            } catch(\Exception $e){
+            $price = $project->getPriceForProvince($interviewURL->province_id, $interviewURL->price_level);
 
-                Log::error($e->getMessage());
-
-                return response()->json([
-                    'status_code' => 903,
-                    'message' => $e->getMessage() . ' Vui lòng liên hệ Admin để biết thêm thông tin.',
-                    'error' => Project::STATUS_PROJECT_NOT_SUITABLE_PRICES
-                ], 404);
-            }
-            
-            Log::info('Find the price by province: ' . intval($price));
-
-            if($price == 0)
+            if($price <= 0)
             {   
                 Log::error(Project::STATUS_PROJECT_NOT_SUITABLE_PRICES);
                 
@@ -172,7 +164,11 @@ class TransactionController extends Controller
             
             $phoneNumber = $validatedRequest['phone_number'];
 
-            $serviceCode = $vinnetService->get_service_code($phoneNumber);
+            $serviceCode = cache()->remember(
+                "service_code_$phoneNumber",
+                3600,
+                fn() => $vinnetService->get_service_code($phoneNumber)
+            );
 
             if(!$serviceCode){
                 return response()->json([
@@ -182,7 +178,11 @@ class TransactionController extends Controller
                 ], 409);
             }
 
-            $serviceItems = $vinnetService->get_service_items($price);
+            $serviceItems = cache()->remember(
+                "service_items_$price",
+                3600,
+                fn() => $vinnetService->get_service_items($price)
+            );
             
             try
             {
@@ -200,34 +200,23 @@ class TransactionController extends Controller
                 ], 409);
             }
 
-            $environment = 'live';
-
-            if($project->projectDetails->status === Project::STATUS_IN_COMING || $project->projectDetails->status === Project::STATUS_ON_HOLD || 
-                ($project->projectDetails->status === Project::STATUS_ON_GOING && !in_array(substr(strtolower($interviewURL->interviewer_id), 0, 2), ['hn', 'sg', 'dn', 'ct', 'ma'])))
-                {
-                    $environment = 'test';
-                }
-
-            if(strlen($interviewURL->location_id) == 0 || 
-                strtolower($interviewURL->location_id) === '_defaultsp' || 
-                    !in_array(substr(strtolower($interviewURL->location_id), 0, 2), ['hn', 'sg', 'dn', 'ct', 'ma']))
-                    {
-                        $environment = 'test';
-                    }
+            $environment = $this->detectEnvironment($project, $interviewURL);
             
             Log::info('Environment: ' . $environment);
 
             // Tìm thông tin của Project Respondent
             $projectRespondent = ProjectRespondent::findProjectRespondent($project, $interviewURL, $phoneNumber);
 
-            Log::info('Project Respondent:' . $projectRespondent);
-
             if(!$projectRespondent){
                 //Thông tin mới => Cập nhật thông tin vào hệ thống
-                DB::beginTransaction();
-
-                try{
-                    $projectRespondent = $project->createProjectRespondents([
+                $projectRespondent = DB::transaction(function() use (
+                    $project,
+                    $interviewURL,
+                    $phoneNumber,
+                    $serviceCode,
+                    $environment
+                ) {
+                    return $project->createProjectRespondents([
                         'project_id' => $project->id,
                         'location_id' => $interviewURL->location_id,
                         'shell_chainid' => $interviewURL->shell_chainid,
@@ -243,101 +232,43 @@ class TransactionController extends Controller
                         'status' => ProjectRespondent::STATUS_RESPONDENT_PENDING,
                         'environment' => $environment,
                     ]);
-                    
-                    DB::commit();
-
-                } catch(\Exception $e) {
-
-                    DB::rollBack();
-
-                    Log::error('SQL Error ['.$e->getCode().']: '.$e->getMessage());
-
-                    if($e->getCode() === '23000'){
-                        return response()->json([
-                            'status_code' => 999,
-                            'message' => ProjectRespondent::ERROR_CANNOT_STORE_RESPONDENT,
-                            'error' => $e->getMessage()
-                        ], 409); // 409 Conflict
-                    }
-                    
-                    return response()->json([
-                        'status_code' => 999,
-                        'message' => ProjectRespondent::ERROR_CANNOT_STORE_RESPONDENT,
-                        'error' => $e->getMessage()
-                    ], 500);
-                }
+                });
             } else {
                 //Thông tin cũ
                 //Kiểm tra xem Project Respondent có thực hiện bất kỳ giao dịch nào chưa?
                 //Nếu chưa => xem như thông tin mới => cập nhật lại status cho Project Respondent
                 
-                $vinnetTransactions = $projectRespondent->vinnetTransactions;
-
-                if($vinnetTransactions->isNotEmpty()){
-                    $numberOfSuccess = $vinnetTransactions
-                                            ->where('vinnet_token_status', TransactionStatus::STATUS_VERIFIED)
-                                            ->count();
-
-                    if($numberOfSuccess == 0){
-                        $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_PENDING);    
-                    } else {
-                        Log::warning(
-                            ProjectRespondent::ERROR_DUPLICATE_RESPONDENT . ' [Trường hợp Đáp viên đã tồn tại và đã có thực hiện giao dịch]',
-                            [
-                                'respondent_id' => $projectRespondent->id
-                            ]
-                        );
-
-                        //Nếu đã thực hiện giao dịch => không cho thực hiện
-                        return response()->json([
-                            'status_code' => 905,
-                            'message' => ProjectRespondent::ERROR_DUPLICATE_RESPONDENT,
-                            'error' => ProjectRespondent::ERROR_DUPLICATE_RESPONDENT . ' [Trường hợp Đáp viên đã tồn tại và đã có thực hiện giao dịch]'
-                        ], 500);
-                    }
-                } else {
-                    $gotitTransactions = $projectRespondent->gotitVoucherTransactions;
-
-                    if($gotitTransactions->isNotEmpty()){
-                        $numberOfSuccess = $gotitTransactions
-                                                        ->where('voucher_status', ProjectGotItVoucherTransaction::STATUS_VOUCHER_SUCCESS)
-                                                        ->exists();
-                        
-                        if($numberOfSuccess == 0){
-                            $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_PENDING);    
-                        } else {
-                            Log::warning(
-                                ProjectRespondent::ERROR_DUPLICATE_RESPONDENT . ' [Trường hợp Đáp viên đã tồn tại và đã có thực hiện giao dịch]',
-                                [
-                                    'respondent_id' => $projectRespondent->id
-                                ]
-                            );
-
-                            //Nếu đã thực hiện giao dịch => không cho thực hiện
-                            return response()->json([
-                                'status_code' => 905,
-                                'message' => ProjectRespondent::ERROR_DUPLICATE_RESPONDENT,
-                                'error' => ProjectRespondent::ERROR_DUPLICATE_RESPONDENT . ' [Trường hợp Đáp viên đã tồn tại và đã có thực hiện giao dịch]'
-                            ], 500);
-                        }
-                    } else {
-                        $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_PENDING);
-                    }
+                $hasSuccess = $projectRespondent->vinnetTransactions()
+                                ->where('vinnet_token_status', TransactionStatus::STATUS_VERIFIED)
+                                ->exists()
+                                ||
+                                $projectRespondent->gotitVoucherTransactions()
+                                ->where('voucher_status', ProjectGotItVoucherTransaction::STATUS_VOUCHER_SUCCESS)
+                                ->exists();
+                
+                if($hasSuccess){
+                    return response()->json([
+                        'status_code' => 905,
+                        'message' => ProjectRespondent::ERROR_DUPLICATE_RESPONDENT,
+                        'error' => ProjectRespondent::ERROR_DUPLICATE_RESPONDENT . ' [Trường hợp Đáp viên đã tồn tại và đã có thực hiện giao dịch]'
+                    ], 409);
                 }
+
+                $projectRespondent->updateStatus(ProjectRespondent::STATUS_RESPONDENT_PENDING);   
             }
 
             $token = $tokenService->createOrReuseToken($projectRespondent);
             
             if($environment === 'test'){
                     
-                    Log::info('Staging Environment: ');
+                Log::info('Staging Environment: ');
 
-                    return response()->json([
-                        'status_code' => 996,
-                        'message' => TransactionStatus::STATUS_TRANSACTION_TEST . ' [Giá trị quà tặng: ' . $price . ']',
-                        'token' => $token,
-                        'service_items' => $serviceItems
-                    ], 200); 
+                return response()->json([
+                    'status_code' => 996,
+                    'message' => TransactionStatus::STATUS_TRANSACTION_TEST . ' [Giá trị quà tặng: ' . $price . ']',
+                    'token' => $token,
+                    'service_items' => $serviceItems
+                ], 200); 
             } else {
                 return response()->json([
                     'status_code' => 900,

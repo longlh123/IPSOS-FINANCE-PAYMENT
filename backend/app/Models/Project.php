@@ -102,7 +102,8 @@ class Project extends Model
 
     public static function findByInterviewURL($interviewURL): self
     {
-        $project = self::with('projectDetails', 'projectRespondents')
+        $project = self::query()
+            ->with(['projectDetails', 'projectRespondents'])
             ->where('internal_code', $interviewURL->internal_code)
             ->where('project_name', $interviewURL->project_name)
             ->whereHas('projectDetails', function(Builder $query) use ($interviewURL){
@@ -110,15 +111,21 @@ class Project extends Model
             })->first();
 
         if(!$project){
-            Log::error(self::STATUS_PROJECT_NOT_FOUND);
             throw new \Exception(self::STATUS_PROJECT_NOT_FOUND);
-        } else {
-            //Log::info('Status of project:' . $project->projectDetails->status);
+        }
 
-            if($project->projectDetails->status == self::STATUS_PLANNED || $project->projectDetails->status == self::STATUS_COMPLETED || $project->projectDetails->status == self::STATUS_CANCELLED){
-                Log::error(self::STATUS_PROJECT_SUSPENDED_OR_NOT_FOUND);
-                throw new \Exception(self::STATUS_PROJECT_SUSPENDED_OR_NOT_FOUND);
-            } 
+        $projectDetails = $project->projectDetails;
+
+        if(!$projectDetails){
+            throw new \Exception(self::STATUS_PROJECT_NOT_FOUND);
+        }
+        
+        if(in_array($projectDetails->status, [
+            self::STATUS_PLANNED,
+            self::STATUS_COMPLETED,
+            self::STATUS_CANCELLED
+        ])){
+            throw new \Exception(self::STATUS_PROJECT_SUSPENDED_OR_NOT_FOUND);
         }
 
         return $project;
