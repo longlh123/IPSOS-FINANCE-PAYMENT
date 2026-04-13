@@ -96,6 +96,7 @@ const Login = () => {
           <div className="email-control">
             <TextField
               label="Email"
+              type="email"
               variant="outlined"
               className="TextFieldLogin"
               onChange={(e) => handleChangeInput("email", e.target.value)}

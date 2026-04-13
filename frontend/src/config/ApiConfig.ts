@@ -7,6 +7,7 @@ export const ApiConfig = {
   project: {
     viewProjects: `${host}/api/project-management/projects`,
     viewProject: `${host}/api/project-management/projects?platform=ifield&created_user_id=`,
+    updateProject: `${host}/api/project-management/projects/{projectId}/update`,
     updateStatusOfProject: `${host}/api/project-management/projects/{projectId}/status`,
     getMetadata: `${host}/api/project-management/metadata`,
     addProject: `${host}/api/project-management/projects/store`,
@@ -19,6 +20,8 @@ export const ApiConfig = {
     removeEmployee: `${host}/api/project-management/projects/{projectId}/employees/{employeeId}/destroy`,
     addEmployeeToTravelExpense: `${host}/api/project-management/projects/{projectId}/employees/{employeeId}/travel-expense/store`,
     viewTravelExpenses: `${host}/api/project-management/projects/{projectId}/travel-expense/show`,
+    updateTravelExpense: `${host}/api/project-management/projects/{projectId}/travel-expense/{travelExpenseId}/update`,
+    updateTravelExpenseTarget: `${host}/api/project-management/projects/{projectId}/travel-expense/target/update`,
     removeTravelExpense: `${host}/api/project-management/projects/{projectId}/travel-expense/{travelExpenseId}/destroy`,
     viewOfflineProjectRespondents: `${host}/api/project-management/projects/{projectId}/offline/respondents/show`,
     addOfflineProjectRespondents: `${host}/api/project-management/projects/{projectId}/offline/respondents/store`,
@@ -71,6 +74,11 @@ export const ApiConfig = {
     login: `${host}/api/login`, //y
     forgotPassword: `${host}/api/forgot-password`,
     resetPassword: `${host}/api/reset-password`,
+  },
+  user: {
+    viewUsers: `${host}/api/users`,
+    viewUserMetadata: `${host}/api/users/metadata`,
+    createUser: `${host}/api/users`,
   },
   minicati: {
     getSuspendedList: `${host}/api/suspended`,

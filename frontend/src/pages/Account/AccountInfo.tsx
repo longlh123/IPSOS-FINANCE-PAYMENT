@@ -8,10 +8,9 @@ const AccountInfo: React.FC = () => {
   const rows = user
     ? [
         { label: "ID", value: user.id ?? "-" },
-        { label: "Tên đăng nhập", value: user.username ?? "-" },
+        { label: "Địa chỉ email", value: user.email ?? "-" },
         { label: "Tên", value: user.first_name ?? "-" },
         { label: "Họ", value: user.last_name ?? "-" },
-        { label: "Email", value: user.email ?? "-" },
         { label: "Vai trò", value: user.role ?? "-" },
       ]
     : [];

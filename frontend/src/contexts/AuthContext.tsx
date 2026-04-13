@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { clearAuthData, getAuthToken, getStoredUser, saveAuthData } from "../utils/authStorage";
 
 interface UserDetail {
+    id?: number,
+    email?: string,
     first_name: string,
     last_name: string,
     role: string
@@ -33,7 +35,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setToken(devToken);
             sessionStorage.setItem("authToken", devToken);
 
-            const devUser = { first_name: "Dev", last_name: "User", role: "admin" };
+            const devUser = { id: 0, email: "dev@example.com", first_name: "Dev", last_name: "User", role: "admin" };
             setUser(devUser);
             sessionStorage.setItem("user", JSON.stringify(devUser));
         }

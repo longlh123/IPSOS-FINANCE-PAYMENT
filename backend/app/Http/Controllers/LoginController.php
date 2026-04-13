@@ -5,9 +5,6 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use App\Providers\AppServiceProvider;
-use App\Models\User;
-use App\Http\Requests\LoginRequest;
 use Symfony\Component\HttpFoundation\Response;
 use App\Http\Resources\UserDetailResource;
 
@@ -20,12 +17,15 @@ class LoginController extends Controller
     {
         // Validate the login request
         $request->validate([
-            'email' => 'email|required',
-            'password' => 'required'
+            'email' => 'required|email',
+            'password' => 'required|string'
         ]);
         
         // Attempt to authenticate the user
-        $credentials = $request->only('email', 'password');
+        $credentials = [
+            'email' => $request->email,
+            'password' => $request->password,
+        ];
         
         if(!Auth::attempt($credentials)) 
         {
@@ -75,22 +75,6 @@ class LoginController extends Controller
             // 'role' => $user->roles()->pluck('name'),
             // 'token' => $tokenResult
         ], Response::HTTP_OK);
-    }
-
-    public function login_with_username_or_email(LoginRequest $request)
-    {
-        $loginType = filter_var($request->login, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
-        $credentials = [
-            $loginType => $request->login,
-            'password' => $request->password,
-        ];
-
-        if (Auth::attempt($credentials)) {
-            $request->session()->regenerate();
-            return response()->json(['message' => 'Login successful'], 200);
-        }
-
-        return response()->json(['message' => 'The provided credentials do not match our records.'], 422);
     }
 
     public function logout(Request $request)

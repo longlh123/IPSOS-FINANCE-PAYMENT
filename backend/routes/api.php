@@ -39,6 +39,8 @@ Route::get('/project-management/{department_id}/teams', [DepartmentController::c
 
 Route::middleware(['auth:sanctum'])->group(function(){
     Route::get('/users', [UserController::class, 'index'])->middleware('ensureUserHasRole:admin');
+    Route::get('/users/metadata', [UserController::class, 'metadata'])->middleware('ensureUserHasRole:admin');
+    Route::post('/users', [UserController::class, 'store'])->middleware('ensureUserHasRole:admin');
     Route::post('/logout', [LoginController::class, 'logout']);
 
     //View Projects
@@ -63,6 +65,8 @@ Route::middleware(['auth:sanctum'])->group(function(){
     Route::delete('/project-management/projects/{projectId}/employees/{employeeId}/destroy', [ProjectController::class, 'bulkRemoveEmployee'])->middleware('ensureUserHasRole:Admin');
     Route::post('/project-management/projects/{projectId}/employees/{employeeId}/travel-expense/store', [ProjectController::class, 'addEmployeeToTravelExpense'])->middleware('ensureUserHasRole:Admin,Scripter');
     Route::get('/project-management/projects/{projectId}/travel-expense/show', [ProjectController::class, 'showTravelExpense'])->middleware('ensureUserHasRole:Admin,Scripter,Field Manager,Finance');
+    Route::put('/project-management/projects/{projectId}/travel-expense/target/update', [ProjectController::class, 'updateTravelExpenseTarget'])->middleware('ensureUserHasRole:Admin,Scripter,Finance');
+    Route::put('/project-management/projects/{projectId}/travel-expense/{travelExpenseId}/update', [ProjectController::class, 'updateTravelExpense'])->whereNumber('travelExpenseId')->middleware('ensureUserHasRole:Admin,Scripter,Finance');
     Route::delete('/project-management/projects/{projectId}/travel-expense/{travelExpenseId}/destroy', [ProjectController::class, 'removeTravelExpense'])->middleware('ensureUserHasRole:Admin,Scripter');
 
     Route::post('/project-management/projects/{projectId}/offline/respondents/store', [ProjectRespondentController::class, 'bulkImportOfflineProjectRespondents'])->middleware('ensureUserHasRole:Admin');

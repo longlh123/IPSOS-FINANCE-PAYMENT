@@ -20,8 +20,10 @@ import Projects from "./pages/Project/Projects";
 import Quotation from "./pages/Project/Quotation/Quotation";
 import ParttimeEmployees from "./pages/Project/ParttimeEmployees";
 import TravelExpense from "./pages/Project/TravelExpense";
+import ProjectInfo from "./pages/Project/ProjectInfo";
 import MiniCATI from "./pages/MiniCATI/MiniCATI";
 import AccountInfo from "./pages/Account/AccountInfo";
+import UserManagement from "./pages/UserManagement/UserManagement";
 
 // Fetch the CSRF token from the meta tag
 const csrfToken = document
@@ -60,6 +62,14 @@ const App: React.FC = () => {
                 path="/account-info"
                 element={<AccountInfo />}
               />
+              <Route
+                path="/project-management/users"
+                element={
+                  <ProtectedRoute allowedRoles={["admin"]}>
+                    <UserManagement />
+                  </ProtectedRoute>
+                }
+              />
             </Route>
 
             {/* ================= PROJECT LAYOUT GROUP ================= */}
@@ -71,6 +81,10 @@ const App: React.FC = () => {
                 </ProtectedRoute>
               }
             >
+              <Route
+                path="project-info"
+                element={<ProjectInfo />}
+              />
               <Route
                 path="quotation"
                 element={<Quotation />}

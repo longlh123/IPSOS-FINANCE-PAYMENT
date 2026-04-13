@@ -4,8 +4,9 @@ import { Drawer, Divider } from "@mui/material";
 import { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
 import logo from "../../assets/img/Ipsos logo.png";
-import { LibraryBooks } from "@mui/icons-material";
+import { Group, LibraryBooks } from "@mui/icons-material";
 import { useVisibility } from "../../hook/useVisibility";
+import { useAuth } from "../../contexts/AuthContext";
 
 interface SideBarProps {
   isOpen: boolean;
@@ -16,6 +17,8 @@ const Sidebar: React.FC<SideBarProps> = ({ isOpen, toggleSidebar }) => {
   const [isSmallScreen, setIsSmallScreen] = useState<boolean>(false);
 
   const { canView } = useVisibility();
+  const { user } = useAuth();
+  const isAdmin = (user?.role ?? "").toLowerCase() === "admin";
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(max-width: 767px)"); // mobile < 768px
@@ -55,6 +58,22 @@ const Sidebar: React.FC<SideBarProps> = ({ isOpen, toggleSidebar }) => {
                   <LibraryBooks style={{ fontSize: "18px" }} />
                 </i>
                 <span className="text nav-text">Projects</span>
+              </NavLink>
+            </li>
+          )}
+
+          {isAdmin && (
+            <li className="nav-link">
+              <NavLink
+                to="/project-management/users"
+                onClick={() => {
+                  if (isSmallScreen) toggleSidebar();
+                }}
+              >
+                <i className="icon">
+                  <Group style={{ fontSize: "18px" }} />
+                </i>
+                <span className="text nav-text">User Management</span>
               </NavLink>
             </li>
           )}
