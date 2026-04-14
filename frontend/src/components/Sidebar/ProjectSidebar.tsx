@@ -7,6 +7,7 @@ import logo from "../../assets/img/Ipsos logo.png";
 import { LibraryBooks } from "@mui/icons-material";
 import { useVisibility } from "../../hook/useVisibility";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 
 interface ProjectSidebarProps {
     projectId: number,
@@ -59,6 +60,19 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({ projectId, isOpen, togg
                 </NavLink>
             </li>
             <Divider style={{ margin: "12px 0" }} />
+            <li className="nav-link">
+              <NavLink
+                to={`/project-management/projects/${projectId}/project-info`}
+                onClick={() => {
+                  if (isSmallScreen) toggleSidebar();
+                }}
+              >
+                <i className="icon">
+                  <InfoOutlinedIcon style={{ fontSize: "18px" }} />
+                </i>
+                <span className="text nav-text">Project Info</span>
+              </NavLink>
+            </li>
             <li className="nav-link">
               <NavLink
                 to={`/project-management/projects/${projectId}/quotation`}
