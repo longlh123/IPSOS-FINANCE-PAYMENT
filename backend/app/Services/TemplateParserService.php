@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Str;
@@ -13,16 +14,14 @@ class TemplateParserService
     {
         $sheet = Excel::toArray([], $filePath);
 
-        $groupsSheet = $this->getBySheetName($filePath, 'GROUPS');
         $fieldsSheet = $this->getBySheetName($filePath, 'FIELDS');
         $configSheet = $this->getBySheetName($filePath, 'CONFIG');
         $selectSheet = $this->getBySheetName($filePath, 'SELECT');
 
         $dropdownMap = $this->parseSelectSheet($selectSheet);
         $configMap = $this->parseConfigSheet($configSheet, $dropdownMap);
-        $groupMap = $this->parseGroupSheet($groupsSheet);
-
-        return $this->parseFieldSheet($fieldsSheet, $dropdownMap, $configMap, $groupMap);
+        
+        return $this->parseFieldSheet($fieldsSheet, $dropdownMap, $configMap);
     }
     
     private function getBySheetName(string $filePath, string $sheetName): array
@@ -50,10 +49,14 @@ class TemplateParserService
             
             $key = $row[0] ?? null;
             $value = $row[1] ?? null;
+            $label = $row[2] ?? null;
 
-            if(!$key || !$value) continue;
+            if(!$key || !$value || !$label) continue;
 
-            $map[$key][] = $value;
+            $map[$key][] = [
+                'value' => trim($value),
+                'label' => trim($label)
+            ];
         }
 
         return $map;
@@ -85,7 +88,21 @@ class TemplateParserService
             ];
 
             if($type === 'select' && $optionsKey || $type === 'multi-select'){
-                $field['options'] = $dropdownMap[$optionsKey] ?? [];
+                if(str_starts_with($optionsKey, 'db:')){
+                    $table_name = str_replace('db:', '', $optionsKey);
+
+                    $field['options'] = DB::table($table_name)
+                                            ->select('id as value', 'name as label')
+                                            ->get()
+                                            ->map(fn($item) => [
+                                                'value' => $item->value,
+                                                'label' => $item->label
+                                            ]);
+                } else {
+                    $optionsKey = str_replace('excel:', '', $optionsKey);
+
+                    $field['options'] = $dropdownMap[$optionsKey] ?? [];
+                }
             }
 
             $configMap[$groupKey][] = $field;
@@ -94,33 +111,7 @@ class TemplateParserService
         return $configMap;
     }
 
-    private function parseGroupSheet(array $rows): array
-    {
-        $groupMap = [];
-
-        foreach($rows as $index => $row){
-            if($index === 0) continue;
-
-            $key = $row[0] ?? null;
-            $title = $row[1] ?? null;
-            $collapsible = $row[2] ?? null;
-            $defaultOpen = $row[3] ?? null;
-
-            if(!$key) continue;
-
-            $groupMap[$key] = [
-                'type' => 'group',
-                'title' => trim($title),
-                'collapsible' => (bool)$collapsible,
-                'default_open' => (bool)$defaultOpen,
-                'fields' => []
-            ];
-        }
-
-        return $groupMap;
-    }
-
-    private function parseFieldSheet(array $rows, array $dropdownMap, array $configMap, array $groupMap): array
+    private function parseFieldSheet(array $rows, array $dropdownMap, array $configMap): array
     {
         $schema = [];
         $currentGroupIndex = null;
@@ -128,22 +119,20 @@ class TemplateParserService
         foreach($rows as $index => $row){
             if($index === 0) continue;
 
-            $groupKey    = $row[0] ?? null;
-            $fieldName   = $row[1] ?? null;
-            $label       = $row[2] ?? null;
-            $type        = $row[3] ?? null;
-            $required    = $row[4] ?? null;
-            $default     = $row[5] ?? null;
-            $configKey   = $row[6] ?? null;
-            $optionsKey  = $row[7] ?? null;
-            $layoutXS    = $row[8] ?? null;
-            $layoutSM    = $row[9] ?? null;
-            $layoutMD    = $row[10] ?? null;
+            $fieldName   = $row[0] ?? null;
+            $label       = $row[1] ?? null;
+            $type        = $row[2] ?? null;
+            $required    = $row[3] ?? null;
+            $default     = $row[4] ?? null;
+            $configKey   = $row[5] ?? null;
+            $optionsKey  = $row[6] ?? null;
+            $layoutXS    = $row[7] ?? null;
+            $layoutSM    = $row[8] ?? null;
+            $layoutMD    = $row[9] ?? null;
 
             if(!$fieldName) continue;
 
             $field = [
-                'group_key' => $groupKey ? trim($groupKey) : null,
                 'name'     => trim($fieldName),
                 'label'    => trim($label),
                 'type'     => trim($type),
@@ -157,7 +146,21 @@ class TemplateParserService
             ];
 
             if($type === 'select' || $type === 'multi-select' || $type === 'radio' || $type === 'checkbox'){
-                $field['options'] = $dropdownMap[$optionsKey] ?? []; 
+                if(str_starts_with($optionsKey, 'db:')){
+                    $table_name = str_replace('db:', '', $optionsKey);
+
+                    $field['options'] = DB::table($table_name)
+                                            ->select('id as value', 'name as label')
+                                            ->get()
+                                            ->map(fn($item) => [
+                                                'value' => $item->value,
+                                                'label' => $item->label
+                                            ]);
+                } else {
+                    $optionsKey = str_replace('excel:', '', $optionsKey);
+
+                    $field['options'] = $dropdownMap[$optionsKey] ?? [];     
+                }
             }
 
             if($type === 'range' && $optionsKey){
@@ -172,26 +175,7 @@ class TemplateParserService
                 $field['fields'] = $configMap[$configKey] ?? [];
             }
 
-            if($groupKey && isset($groupMap[$groupKey])){
-                
-                if($currentGroupIndex === null || $schema[$currentGroupIndex]['key'] !== $groupKey){
-                    $schema[] = [
-                        'type' => 'group',
-                        'key' => $groupKey,
-                        'title' => $groupMap[$groupKey]['title'],
-                        'collapsible' => $groupMap[$groupKey]['collapsible'],
-                        'default_open' => $groupMap[$groupKey]['default_open'],
-                        'fields' => []
-                    ];
-
-                    $currentGroupIndex = array_key_last($schema);
-                }
-
-                $schema[$currentGroupIndex]['fields'][] = $field;
-            } else {
-                $currentGroupIndex = null;
-                $schema[] = $field;
-            }
+            $schema[] = $field;
         }
 
         return $schema;

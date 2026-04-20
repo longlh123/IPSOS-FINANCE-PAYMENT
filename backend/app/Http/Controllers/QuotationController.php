@@ -81,6 +81,12 @@ class QuotationController extends Controller
     {
         try
         {
+            $request->validate([
+                'data' => 'required|array',
+                'data.internal_code' => 'required|string',
+                'data.project_name' => 'required|string'
+            ]);
+
             $logged_in_user = Auth::user()->id;
 
             try
@@ -97,7 +103,7 @@ class QuotationController extends Controller
             }
 
             $lastestVersion = $project->quotations()->max('version') ?? 0;
-
+            
             $quotation = $project->quotations()->create([
                 'data' => $request->data,
                 'version' => $lastestVersion + 1,
@@ -127,6 +133,29 @@ class QuotationController extends Controller
         {
             $logged_in_user = Auth::user()->id;
 
+            $request->validate([
+                'data' => 'required|array',
+                'data.internal_code' => 'required|string',
+                'data.project_name' => 'required|string',
+                'data.platform' => 'required|string',
+                'data.project_objectives' => 'required|string'
+            ]);
+
+            $newInternalCode = trim($request->data['internal_code']);
+            $newProjectName = trim(strtoupper($request->data['project_name']));
+
+            $existingProject = Project::where('internal_code', $newInternalCode)
+                                ->where('project_name', $newProjectName)
+                                ->where('id', '!=', $projectId)
+                                ->exists();
+
+            if($existingProject){
+                return response()->json([
+                    'status_code' => 422,
+                    'error' => 'Project Name and Internal Code already exist.'
+                ], 422);
+            }
+
             $project = Project::findOrFail($projectId);
 
             $quotation = $project->quotations()->where('id', $versionId)->first();
@@ -138,10 +167,26 @@ class QuotationController extends Controller
                 ], 403);
             }
 
-            $quotation->update([
-                'data' => $request->data,
-                'updated_user_id' => $logged_in_user
-            ]);
+            DB::transaction(function() use ($logged_in_user, $project, $quotation, $request) {
+
+                $newInternalCode = trim($request->data['internal_code']);
+                $newProjectName = trim(strtoupper($request->data['project_name']));
+                
+                $project->update([
+                    'internal_code' => $newInternalCode,
+                    'project_name' => $newProjectName
+                ]);
+
+                $project->projectDetails()->update([
+                    'platform' => trim($request->data['platform']),
+                    'project_objectives' => $request->data['project_objectives']
+                ]);
+
+                $quotation->update([
+                    'data' => $request->data,
+                    'updated_user_id' => $logged_in_user
+                ]);
+            });
 
             return response()->json([
                 'status_code' => 200,

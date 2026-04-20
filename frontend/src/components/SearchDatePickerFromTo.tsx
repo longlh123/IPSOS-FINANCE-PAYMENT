@@ -58,17 +58,6 @@ const SearchDatePickerFromTo: React.FC<SearchDatePickerFromToProps> = ({
                 >
                     <span>{buttonLabel ?? "APPLY"}</span>
             </LoadingButton>
-            {/* <Button
-                variant="contained"
-                className="btn bg-primary"
-                onClick={handleFilter}
-                disabled={isApplyFilter}
-                sx={{
-                    whiteSpace: "nowrap"
-                }}
-            >
-                <span>{buttonLabel ?? "APPLY"}</span>
-            </Button> */}
         </div>
     )
 }

@@ -18,6 +18,7 @@ const Transactions = () => {
 
     const [ fromDate, setFromDate ] = useState<Dayjs | null>(null);
     const [ toDate, setToDate ] = useState<Dayjs | null>(null);
+    
     const [ loadingExport, setLoadingExport ] = useState<boolean>(false);
     
     const [ projects, setProjects ] = useState<string[]>(["Project A", "Project B"]);

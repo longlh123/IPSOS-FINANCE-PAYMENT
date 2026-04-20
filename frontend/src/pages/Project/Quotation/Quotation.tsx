@@ -35,22 +35,27 @@ const Quotation: React.FC = () => {
     const { open, title, message: messageDialog, showConfirmButton, openDialog, closeDialog, confirmDialog } = useDialog();
     
     const handleSaveVersion = async (data:any) => {
-            
-        let quotation = null;
+        try
+        {
+            let quotation = null;
 
-        if(isEditing){
-            quotation = await updateQuotation(data);
-        } else {
-            quotation = await addQuotation(data);
+            if(isEditing){
+                quotation = await updateQuotation(data);
+            } else {
+                quotation = await addQuotation(data);
+            }
+
+            await getQuotationVersions();
+
+            setIsEditing(false);
+            setCanEdit(true);
+            setOpenAlert(true);
+
+            setFormKey(formKey + 1);
+        } catch(error){
+            console.log(error);
+            setOpenAlert(true);
         }
-
-        await getQuotationVersions();
-
-        setIsEditing(false);
-        setCanEdit(true);
-        setOpenAlert(true);
-
-        setFormKey(formKey + 1);
     };
 
     const handleCancel = () => {
