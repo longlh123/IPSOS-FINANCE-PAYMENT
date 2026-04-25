@@ -14,6 +14,9 @@ class ProjectDetail extends Model
     protected $table = 'project_details';
 
     protected $fillable = [
+        'travel_expense_target',
+        'travel_expense_target_recruit',
+        'travel_expense_target_recall',
         'symphony', 
         'job_number', 
         'status', 

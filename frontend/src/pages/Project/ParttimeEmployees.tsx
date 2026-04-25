@@ -16,6 +16,27 @@ import { ProjectData } from "../../config/ProjectFieldsConfig";
 import Tooltip from '@mui/material/Tooltip';
 import DriveEtaIcon from '@mui/icons-material/DriveEta';
 
+const formatProjectTypes = (project: ProjectData | null) => {
+    const projectWithLegacyTypes = project as (ProjectData & { project_project_types?: Array<string | { name?: string }> }) | null;
+    const rawTypes = projectWithLegacyTypes?.project_project_types ?? project?.project_types ?? [];
+
+    if (!Array.isArray(rawTypes) || rawTypes.length === 0) {
+        return "-";
+    }
+
+    const normalizedTypes = rawTypes
+        .map((typeItem) => {
+            if (typeof typeItem === "string") {
+                return typeItem;
+            }
+
+            return typeItem?.name ?? "";
+        })
+        .filter(Boolean);
+
+    return normalizedTypes.length > 0 ? normalizedTypes.join(", ") : "-";
+};
+
 
 const ParttimeEmployees = () => {
     const { id } = useParams<{id: string}>();
@@ -27,6 +48,7 @@ const ParttimeEmployees = () => {
     const employeeRows = employees as Array<EmployeeData & { transaction_total?: number }>;
     
     const { canView } = useVisibility();
+    const projectTypesDisplay = formatProjectTypes(projectSelected);
     
     const [ employeeCellConfig, setEmployeeCellConfig ] = useState(EmployeeCellConfig)
     const { open, title, message, showConfirmButton, openDialog, closeDialog, confirmDialog } = useDialog();
@@ -40,7 +62,7 @@ const ParttimeEmployees = () => {
     const selectedRows = employeeRows.filter((row) => selectedRowIds.includes(row.id));
     const selectedRowsCount = selectedRows.length;
     const canBulkDelete = selectedRowsCount > 0 && selectedRows.every((row) => Number(row.transaction_total ?? 0) === 0);
-    const canBulkAddToTravel = selectedRowsCount > 0 && selectedRows.every((row) => Number(row.transaction_total ?? 0) > 0);
+    const canBulkAddToTravel = selectedRowsCount > 0;
     
     const handleRemoveClick = (employee: EmployeeData) => {
         setBulkDeleteEmployeeIds([]);
@@ -259,7 +281,7 @@ const ParttimeEmployees = () => {
             renderAction: (row: any) => {
                 const transactionTotal = Number(row.transaction_total ?? 0);
                 const deleteDisabled = loading || transactionTotal > 0;
-                const addToTravelDisabled = loading || transactionTotal === 0;
+                const addToTravelDisabled = loading;
 
                 return (
                     <>
@@ -329,6 +351,9 @@ const ParttimeEmployees = () => {
                         </div>
                         <div>
                             <strong>Symphony:</strong> {projectSelected?.symphony}
+                        </div>
+                        <div>
+                            <strong>Project Type:</strong> {projectTypesDisplay}
                         </div>
                     </div>
                 </div>

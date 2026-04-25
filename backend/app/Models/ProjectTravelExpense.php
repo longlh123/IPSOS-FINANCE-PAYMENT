@@ -15,6 +15,17 @@ class ProjectTravelExpense extends Model
         'project_id',
         'employee_id',
         'province_id',
+        'departure_date',
+        'return_date',
+        'working_days',
+        'unit_price',
+        'vehicle_ticket',
+        'unit_price_2',
+        'pickup_guests',
+        'unit_price_3',
+        'total_salary',
+        'tax_deduction',
+        'remaining_amount',
     ];
 
     public function project()

@@ -16,6 +16,27 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import LoadingButton from '@mui/lab/LoadingButton';
 import SendIcon from '@mui/icons-material/Send';
 
+const formatProjectTypes = (project: ProjectData | null) => {
+    const projectWithLegacyTypes = project as (ProjectData & { project_project_types?: Array<string | { name?: string }> }) | null;
+    const rawTypes = projectWithLegacyTypes?.project_project_types ?? project?.project_types ?? [];
+
+    if (!Array.isArray(rawTypes) || rawTypes.length === 0) {
+        return "-";
+    }
+
+    const normalizedTypes = rawTypes
+        .map((typeItem) => {
+            if (typeof typeItem === "string") {
+                return typeItem;
+            }
+
+            return typeItem?.name ?? "";
+        })
+        .filter(Boolean);
+
+    return normalizedTypes.length > 0 ? normalizedTypes.join(", ") : "-";
+};
+
 const Gifts: React.FC = () => {
     const { id } = useParams<{id: string}>();
     const projectId = Number(id) || 0;
@@ -27,6 +48,7 @@ const Gifts: React.FC = () => {
     
     const { getProject } = useProjects();
     const [ offlineProjectRespondentCellConfig, setOfflineProjectRespondentCellConfig ] = useState(OfflineProjectRespondentCellConfig);
+    const projectTypesDisplay = formatProjectTypes(projectSelected);
 
     const { offineProjectRespondents, removeProjectRespondent, offlineTransactionSending, importOfflineProjectRespondents, loading: loadingOfflineProjectRespondents, error: errorOfflineProjectRespondents, message: messageOfflineProjectRespondents, page, rowsPerPage, searchTerm, total, setSearchTerm, setPage, setRowsPerPage } = useOfflineProjectRespondents(projectId);
     const [ loadingRowId, setLoadingRowId ] = useState<string | null>(null);
@@ -267,6 +289,9 @@ const Gifts: React.FC = () => {
                     </div>
                     <div>
                         <strong>Symphony:</strong> {projectSelected?.symphony}
+                    </div>
+                    <div>
+                        <strong>Project Type:</strong> {projectTypesDisplay}
                     </div>
                     </div>
                 </div>

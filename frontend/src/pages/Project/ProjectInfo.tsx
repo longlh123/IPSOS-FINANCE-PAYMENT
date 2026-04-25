@@ -7,6 +7,7 @@ import {
   Chip,
   CircularProgress,
   FormControl,
+  IconButton,
   InputLabel,
   LinearProgress,
   MenuItem,
@@ -20,12 +21,58 @@ import {
   TableRow,
   TextField,
 } from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
+import AddIcon from "@mui/icons-material/Add";
 import axios from "../../config/axiosInstance";
 import { ApiConfig } from "../../config/ApiConfig";
 import { useProjects } from "../../hook/useProjects";
 import { useMetadata } from "../../hook/useMetadata";
 import { ProjectData } from "../../config/ProjectFieldsConfig";
 import { useAuth } from "../../contexts/AuthContext";
+
+interface SamplingMethodRow {
+  sample_type: string;
+  sample_method: string;
+}
+
+interface RespondentTarget {
+  sample_type: string;
+  gender: string;
+  age: string;
+  class: string;
+  product_usage: string;
+  bumo: string;
+  other: string;
+}
+
+const SAMPLE_TYPE_OPTIONS = ["Main", "Booster", "Non"];
+const SAMPLE_METHOD_OPTIONS = [
+  "Random Sampling",
+  "Quota Sampling",
+  "Stratified Sampling",
+  "Convenience Sampling",
+  "Snowball Sampling",
+  "Purposive Sampling",
+];
+
+const RESPONDENT_CRITERIA_LABELS: { key: keyof Omit<RespondentTarget, "sample_type">; label: string }[] = [
+  { key: "gender", label: "Giới tính" },
+  { key: "age", label: "Độ tuổi" },
+  { key: "class", label: "Class" },
+  { key: "product_usage", label: "Sử dụng sản phẩm" },
+  { key: "bumo", label: "BUMO" },
+  { key: "other", label: "Khác" },
+];
+
+const emptyRespondentTarget = (sampleType: string): RespondentTarget => ({
+  sample_type: sampleType,
+  gender: "",
+  age: "",
+  class: "",
+  product_usage: "",
+  bumo: "",
+  other: "",
+});
 
 interface ProjectInfoForm {
   internal_code: string;
@@ -37,6 +84,8 @@ interface ProjectInfoForm {
   project_types: string[];
   teams: string[];
   permissions: string;
+  sampling_methods: SamplingMethodRow[];
+  respondent_targets: RespondentTarget[];
 }
 
 const toInputDate = (value?: string | null) => {
@@ -76,7 +125,33 @@ const ProjectInfo: React.FC = () => {
     project_types: [],
     teams: [],
     permissions: "",
+    sampling_methods: [{ sample_type: "", sample_method: "" }],
+    respondent_targets: [],
   });
+
+  // Sync respondent_targets when sampling_methods change
+  const activeSampleTypes = useMemo(
+    () => Array.from(new Set(form.sampling_methods.map((m) => m.sample_type).filter(Boolean))),
+    [form.sampling_methods]
+  );
+
+  useEffect(() => {
+    setForm((prev) => {
+      const existing = prev.respondent_targets;
+      // Keep targets for active types, add new ones for missing types
+      const updated = activeSampleTypes.map(
+        (type) => existing.find((t) => t.sample_type === type) ?? emptyRespondentTarget(type)
+      );
+      // Only update if actually changed
+      if (
+        updated.length === existing.length &&
+        updated.every((t, i) => t.sample_type === existing[i]?.sample_type)
+      ) {
+        return prev;
+      }
+      return { ...prev, respondent_targets: updated };
+    });
+  }, [activeSampleTypes]);
 
   const teamOptions = useMemo(() => metadata?.teams?.map((item: any) => item.name) ?? [], [metadata]);
   const projectTypeOptions = useMemo(() => metadata?.project_types?.map((item: any) => item.name) ?? [], [metadata]);
@@ -100,6 +175,10 @@ const ProjectInfo: React.FC = () => {
         project_types: data?.project_types ?? [],
         teams: data?.teams ?? [],
         permissions: ((data as any)?.permissions ?? []).join(", "),
+        sampling_methods: (data as any)?.sampling_methods?.length
+          ? (data as any).sampling_methods
+          : [{ sample_type: "", sample_method: "" }],
+        respondent_targets: (data as any)?.respondent_targets ?? [],
       });
     } catch (err: any) {
       setError(err?.response?.data?.message || err?.message || "Failed to load project info");
@@ -137,6 +216,12 @@ const ProjectInfo: React.FC = () => {
           .split(",")
           .map((item) => item.trim())
           .filter(Boolean),
+        sampling_methods: form.sampling_methods.filter(
+          (row) => row.sample_type || row.sample_method
+        ),
+        respondent_targets: form.respondent_targets.filter((t) =>
+          form.sampling_methods.some((m) => m.sample_type === t.sample_type)
+        ),
       };
 
       const url = ApiConfig.project.updateProject.replace("{projectId}", projectId.toString());
@@ -494,6 +579,185 @@ const ProjectInfo: React.FC = () => {
                       </TableBody>
                     </Table>
                   </TableContainer>
+                )}
+              </TableCell>
+            </TableRow>
+
+            <TableRow>
+              <TableCell sx={{ verticalAlign: "top" }}>Đối tượng đáp viên</TableCell>
+              <TableCell>
+                {(() => {
+                  const samplingMethods = editMode
+                    ? form.sampling_methods
+                    : ((project as any)?.sampling_methods ?? []);
+                  const sampleTypes: string[] = Array.from(new Set(
+                    samplingMethods
+                      .map((m: SamplingMethodRow) => m.sample_type)
+                      .filter(Boolean)
+                  ));
+
+                  if (sampleTypes.length === 0) return "-";
+
+                  const targets: RespondentTarget[] = editMode
+                    ? form.respondent_targets
+                    : ((project as any)?.respondent_targets ?? []);
+
+                  return (
+                    <TableContainer component={Paper} variant="outlined">
+                      <Table size="small">
+                        <TableBody>
+                          {sampleTypes.map((type, typeIdx) => {
+                            const target = targets.find((t) => t.sample_type === type);
+                            return RESPONDENT_CRITERIA_LABELS.map((field, fieldIdx) => (
+                              <TableRow key={`${type}-${field.key}`}>
+                                {fieldIdx === 0 && (
+                                  <TableCell
+                                    rowSpan={RESPONDENT_CRITERIA_LABELS.length}
+                                    sx={{
+                                      fontWeight: 700,
+                                      verticalAlign: "top",
+                                      whiteSpace: "nowrap",
+                                      borderRight: "1px solid rgba(224,224,224,1)",
+                                    }}
+                                  >
+                                    Mẫu {type.toLowerCase()}
+                                  </TableCell>
+                                )}
+                                <TableCell sx={{ whiteSpace: "nowrap", width: 140 }}>
+                                  {field.label}
+                                </TableCell>
+                                <TableCell>
+                                  {editMode ? (
+                                    <TextField
+                                      size="small"
+                                      fullWidth
+                                      multiline={field.key === "product_usage"}
+                                      minRows={field.key === "product_usage" ? 2 : 1}
+                                      value={target?.[field.key] ?? ""}
+                                      onChange={(e) => {
+                                        setForm((prev) => {
+                                          const updated = [...prev.respondent_targets];
+                                          const idx = updated.findIndex(
+                                            (t) => t.sample_type === type
+                                          );
+                                          if (idx >= 0) {
+                                            updated[idx] = {
+                                              ...updated[idx],
+                                              [field.key]: e.target.value,
+                                            };
+                                          }
+                                          return { ...prev, respondent_targets: updated };
+                                        });
+                                      }}
+                                    />
+                                  ) : (
+                                    target?.[field.key] || "n/a"
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            ));
+                          })}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  );
+                })()}
+              </TableCell>
+            </TableRow>
+
+            <TableRow>
+              <TableCell sx={{ verticalAlign: "top" }}>Phương pháp sampling</TableCell>
+              <TableCell>
+                {editMode ? (
+                  <Box>
+                    <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 1, mb: 1 }}>
+                      <Box sx={{ fontWeight: 700, fontSize: 14 }}>Sample Type</Box>
+                      <Box sx={{ fontWeight: 700, fontSize: 14 }}>Sample Method</Box>
+                      <Box sx={{ width: 40 }} />
+                    </Box>
+                    {form.sampling_methods.map((row, idx) => (
+                      <Box key={idx} sx={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 1, mb: 1 }}>
+                        <FormControl size="small" fullWidth>
+                          <InputLabel>Sample Type</InputLabel>
+                          <Select
+                            label="Sample Type"
+                            value={row.sample_type}
+                            onChange={(e) => {
+                              const updated = [...form.sampling_methods];
+                              updated[idx] = { ...updated[idx], sample_type: e.target.value as string };
+                              setForm((prev) => ({ ...prev, sampling_methods: updated }));
+                            }}
+                          >
+                            {SAMPLE_TYPE_OPTIONS.map((opt) => (
+                              <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                        <FormControl size="small" fullWidth>
+                          <InputLabel>Sample Method</InputLabel>
+                          <Select
+                            label="Sample Method"
+                            value={row.sample_method}
+                            onChange={(e) => {
+                              const updated = [...form.sampling_methods];
+                              updated[idx] = { ...updated[idx], sample_method: e.target.value as string };
+                              setForm((prev) => ({ ...prev, sampling_methods: updated }));
+                            }}
+                          >
+                            {SAMPLE_METHOD_OPTIONS.map((opt) => (
+                              <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                        <IconButton
+                          color="error"
+                          onClick={() => {
+                            const updated = form.sampling_methods.filter((_, i) => i !== idx);
+                            setForm((prev) => ({ ...prev, sampling_methods: updated.length ? updated : [{ sample_type: "", sample_method: "" }] }));
+                          }}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Box>
+                    ))}
+                    <Button
+                      size="small"
+                      startIcon={<AddIcon />}
+                      onClick={() =>
+                        setForm((prev) => ({
+                          ...prev,
+                          sampling_methods: [...prev.sampling_methods, { sample_type: "", sample_method: "" }],
+                        }))
+                      }
+                    >
+                      Thêm dòng
+                    </Button>
+                  </Box>
+                ) : (
+                  (() => {
+                    const methods = (project as any)?.sampling_methods ?? [];
+                    if (!methods.length) return "-";
+                    return (
+                      <TableContainer component={Paper} variant="outlined">
+                        <Table size="small">
+                          <TableHead>
+                            <TableRow>
+                              <TableCell sx={{ fontWeight: 700 }}>Sample Type</TableCell>
+                              <TableCell sx={{ fontWeight: 700 }}>Sample Method</TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {methods.map((row: any, idx: number) => (
+                              <TableRow key={idx}>
+                                <TableCell>{row.sample_type || "-"}</TableCell>
+                                <TableCell>{row.sample_method || "-"}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                    );
+                  })()
                 )}
               </TableCell>
             </TableRow>

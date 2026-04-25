@@ -12,6 +12,27 @@ import TextsmsIcon from "@mui/icons-material/Textsms";
 import SendIcon from "@mui/icons-material/Send";
 import SmsIcon from "@mui/icons-material/Sms";
 
+const formatProjectTypes = (project: ProjectData | null) => {
+  const projectWithLegacyTypes = project as (ProjectData & { project_project_types?: Array<string | { name?: string }> }) | null;
+  const rawTypes = projectWithLegacyTypes?.project_project_types ?? project?.project_types ?? [];
+
+  if (!Array.isArray(rawTypes) || rawTypes.length === 0) {
+    return "-";
+  }
+
+  const normalizedTypes = rawTypes
+    .map((typeItem) => {
+      if (typeof typeItem === "string") {
+        return typeItem;
+      }
+
+      return typeItem?.name ?? "";
+    })
+    .filter(Boolean);
+
+  return normalizedTypes.length > 0 ? normalizedTypes.join(", ") : "-";
+};
+
 const Transactions: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const projectId = Number(id) || 0;
@@ -20,6 +41,7 @@ const Transactions: React.FC = () => {
   const { getProject } = useProjects();
   const { transactions, loading, error: errorTransactions, message: messageTransactions, page, setPage, rowsPerPage, setRowsPerPage, total, setSearchTerm } = useTransactions(projectId);
   const [ transactionCellConfig, setTransactionCellConfig ] = useState(TransactionCellConfig);
+  const projectTypesDisplay = formatProjectTypes(projectSelected);
   
   const handleSearchChange = (value: string) => {
     setSearchTerm(value.toLocaleLowerCase());
@@ -87,6 +109,9 @@ const Transactions: React.FC = () => {
                 </div>
                 <div>
                     <strong>Symphony:</strong> {projectSelected?.symphony}
+                </div>
+                <div>
+                    <strong>Project Type:</strong> {projectTypesDisplay}
                 </div>
               </div>
             </div>

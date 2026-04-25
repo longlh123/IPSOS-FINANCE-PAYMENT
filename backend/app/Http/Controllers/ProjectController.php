@@ -298,7 +298,9 @@ class ProjectController extends Controller
                 ], Response::HTTP_NOT_FOUND);
             }
 
-            if($user->id !== $project->projectDetails->created_user_id)
+            $roleName = strtolower($user->userDetails->role->name ?? '');
+
+            if($roleName !== 'admin' && $user->id !== $project->projectDetails->created_user_id)
             {
                 return response()->json([
                     'status_code' => 403, 
@@ -843,16 +845,18 @@ class ProjectController extends Controller
                     'te.id',
                     'e.employee_id as employee_ids',
                     DB::raw("CONCAT(e.first_name, ' ', e.last_name) as full_name"),
+                    'te.departure_date',
+                    'te.return_date',
                     DB::raw('COUNT(pr.id) as completed_samples'),
-                    DB::raw('NULL as working_days'),
-                    DB::raw('NULL as unit_price'),
-                    DB::raw('NULL as vehicle_ticket'),
-                    DB::raw('NULL as unit_price_2'),
-                    DB::raw('NULL as pickup_guests'),
-                    DB::raw('NULL as unit_price_3'),
-                    DB::raw('NULL as total_salary'),
-                    DB::raw('NULL as tax_deduction'),
-                    DB::raw('NULL as remaining_amount'),
+                    'te.working_days',
+                    'te.unit_price',
+                    'te.vehicle_ticket',
+                    'te.unit_price_2',
+                    'te.pickup_guests',
+                    'te.unit_price_3',
+                    'te.total_salary',
+                    'te.tax_deduction',
+                    'te.remaining_amount',
                     DB::raw('UPPER(COALESCE(p_selected.name, p_employee.name, "")) as region')
                 ]);
 
@@ -868,6 +872,136 @@ class ProjectController extends Controller
                 'status_code' => 500,
                 'message' => 'Unexpected error occurred while loading travel expenses.',
                 'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function updateTravelExpense(Request $request, $projectId, $travelExpenseId)
+    {
+        try {
+            $travelExpense = ProjectTravelExpense::where('project_id', $projectId)
+                ->where('id', $travelExpenseId)
+                ->first();
+
+            if (!$travelExpense) {
+                return response()->json([
+                    'status_code' => 404,
+                    'success' => false,
+                    'message' => 'Travel expense record not found.'
+                ], 404);
+            }
+
+            $validator = Validator::make($request->all(), [
+                'departure_date' => 'sometimes|nullable|date',
+                'return_date' => 'sometimes|nullable|date|after_or_equal:departure_date',
+                'working_days' => 'sometimes|nullable|numeric|min:0',
+                'unit_price' => 'sometimes|nullable|integer|min:0',
+                'vehicle_ticket' => 'sometimes|nullable|integer|min:0',
+                'unit_price_2' => 'sometimes|nullable|integer|min:0',
+                'pickup_guests' => 'sometimes|nullable|integer|in:0,1',
+                'unit_price_3' => 'sometimes|nullable|integer|min:0',
+                'total_salary' => 'sometimes|nullable|integer|min:0',
+                'tax_deduction' => 'sometimes|nullable|integer|min:0',
+                'remaining_amount' => 'sometimes|nullable|integer|min:0',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'status_code' => 422,
+                    'success' => false,
+                    'message' => 'Validation failed.',
+                    'errors' => $validator->errors(),
+                ], 422);
+            }
+
+            $payload = $validator->validated();
+
+            if (array_key_exists('pickup_guests', $payload) && intval($payload['pickup_guests']) !== 1) {
+                $payload['unit_price_3'] = null;
+            }
+
+            $travelExpense->update($payload);
+
+            return response()->json([
+                'status_code' => 200,
+                'success' => true,
+                'message' => 'Travel expense updated successfully.',
+                'data' => $travelExpense->fresh(),
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Unexpected error while updating travel expense: ' . $e->getMessage());
+
+            return response()->json([
+                'status_code' => 500,
+                'success' => false,
+                'message' => 'Unexpected error occurred while updating travel expense.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function updateTravelExpenseTarget(Request $request, $projectId)
+    {
+        try {
+            $project = Project::with('projectDetails')->find($projectId);
+
+            if (!$project || !$project->projectDetails) {
+                return response()->json([
+                    'status_code' => 404,
+                    'success' => false,
+                    'message' => 'Project not found.'
+                ], 404);
+            }
+
+            $validator = Validator::make($request->all(), [
+                'travel_expense_target' => 'nullable|integer|min:1',
+                'travel_expense_target_recruit' => 'nullable|integer|min:1',
+                'travel_expense_target_recall' => 'nullable|integer|min:1',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'status_code' => 422,
+                    'success' => false,
+                    'message' => 'Validation failed.',
+                    'errors' => $validator->errors(),
+                ], 422);
+            }
+
+            $travelExpenseTarget = $request->input('travel_expense_target');
+            $travelExpenseTargetRecruit = $request->input('travel_expense_target_recruit');
+
+            // Keep legacy target in sync with recruit target for HUT flows.
+            if ($travelExpenseTarget === null && $travelExpenseTargetRecruit !== null) {
+                $travelExpenseTarget = $travelExpenseTargetRecruit;
+            }
+
+            $project->projectDetails->update([
+                'travel_expense_target' => $travelExpenseTarget,
+                'travel_expense_target_recruit' => $travelExpenseTargetRecruit,
+                'travel_expense_target_recall' => $request->input('travel_expense_target_recall'),
+            ]);
+
+            $projectDetails = $project->projectDetails->fresh();
+
+            return response()->json([
+                'status_code' => 200,
+                'success' => true,
+                'message' => 'Travel expense target updated successfully.',
+                'data' => [
+                    'travel_expense_target' => $projectDetails->travel_expense_target,
+                    'travel_expense_target_recruit' => $projectDetails->travel_expense_target_recruit,
+                    'travel_expense_target_recall' => $projectDetails->travel_expense_target_recall,
+                ],
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Unexpected error while updating travel expense target: ' . $e->getMessage());
+
+            return response()->json([
+                'status_code' => 500,
+                'success' => false,
+                'message' => 'Unexpected error occurred while updating travel expense target.',
+                'error' => $e->getMessage(),
             ], 500);
         }
     }

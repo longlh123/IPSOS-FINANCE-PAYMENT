@@ -43,6 +43,9 @@ export interface ProjectData {
     id?: number,
     internal_code?: string;
     project_name: string;
+  travel_expense_target?: number | null;
+  travel_expense_target_recruit?: number | null;
+  travel_expense_target_recall?: number | null;
     symphony?: string;
     platform: string;
     teams: string[];
