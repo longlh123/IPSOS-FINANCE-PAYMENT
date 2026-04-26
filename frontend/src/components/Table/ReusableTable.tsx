@@ -17,6 +17,7 @@ interface ReusableTableProps {
     onRowsPerPageChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
     filters?: React.ReactNode;
     actions?: (row: any) => React.ReactNode;
+    topToolbar?: React.ReactNode;
 };
 
 const ReusableTable: React.FC<ReusableTableProps> = ({
@@ -32,7 +33,8 @@ const ReusableTable: React.FC<ReusableTableProps> = ({
     onPageChange,
     onRowsPerPageChange,
     filters,
-    actions
+    actions,
+    topToolbar
 }) => {
     const [ openAlert, setOpenAlert] = useState(false);
 
@@ -68,6 +70,8 @@ const ReusableTable: React.FC<ReusableTableProps> = ({
             )} 
             
             <TableContainer component={Paper} className="table-container">
+                {topToolbar}
+                
                 <Table sx={{ tableLayout: 'auto', width: '100%' }}>
                     <TableHead className="header-table">
                         <TableRow>

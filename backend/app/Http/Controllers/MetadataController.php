@@ -3,10 +3,13 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 use App\Models\ProjectType;
 use App\Models\Department;
 use App\Models\Team;
 use App\Models\Project;
+use App\Models\Role;
 use App\Http\Resources\ProjectResource;
 
 class MetadataController extends Controller
@@ -14,31 +17,30 @@ class MetadataController extends Controller
     public function index(Request $request)
     {
         try{
-            $projects = Project::with(['projectDetails','projectTypes'])->get();
-            $projectTypes = ProjectType::all(['id', 'name']);
-            $departments = Department::all(['id', 'name']);
-            
-            $teams = Team::where('department_id', 3)
-                            ->orWhere('department_id', 2)
-                            ->get(['id', 'name']);
+            $projectTypes = Cache::remember('project_types', 3600, fn() => ProjectType::all(['id', 'name']));
+            $departments = Cache::remember('deparments', 3600, fn() => Department::all(['id', 'name']));
+            $roles = Cache::remember('roles', 3600, fn() => Role::all(['id', 'name', 'department_id']));
 
-            // $lastestYear = ProjectDetail::selectRaw('YEAR()')
+            Log::info('Metadata: ', [
+                    'project_types' => $projectTypes,
+                    'departments' => $departments,
+                    'roles' => $roles
+                ]);
 
             return response()->json([
                 'status_code' => 200,
-                'message' => 'List of project types requested successfully',
+                'message' => 'Metadata fetched successfully',
                 'data' => [
-                    'projects' => ProjectResource::collection($projects),
                     'project_types' => $projectTypes,
                     'departments' => $departments,
-                    'teams' => $teams
+                    'roles' => $roles
                 ]
             ]);
         }catch(Exception $e){
             Log::error($e->getMessage());
             return response()->json([
                 'status_code' => 500,
-                'message' => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
         }
     }

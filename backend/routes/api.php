@@ -31,6 +31,17 @@ use App\Http\Controllers\ExportController;
 Route::post('/login', [LoginController::class, 'login'])
     ->name('index');
 
+Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail']);
+Route::post('/reset-password', [ResetPasswordController::class, 'reset']);
+
+Route::get('/test-mail', function () {
+    Password::sendResetLink([
+        'email' => 'longlh112633@gmail.com'
+    ]);
+
+    return 'sent';
+});
+
 Route::get('/administrative-divisions/old/provinces', [AdministrativeDivisionsController::class, 'get_old_provinces']);
 Route::get('/administrative-divisions/old/{provinceId}/districts', [AdministrativeDivisionsController::class, 'get_old_districts']);
 Route::get('/administrative-divisions/new/provinces', [AdministrativeDivisionsController::class, 'get_provinces']);
@@ -42,7 +53,8 @@ Route::get('/project-management/departments', [DepartmentController::class, 'ind
 Route::get('/project-management/{department_id}/teams', [DepartmentController::class, 'get_teams']);
 
 Route::middleware(['auth:sanctum'])->group(function(){
-    Route::get('/users', [UserController::class, 'index'])->middleware('ensureUserHasRole:admin');
+    Route::get('/users/show', [UserController::class, 'index'])->middleware('ensureUserHasRole:admin');
+    Route::post('/users', [UserController::class, 'store'])->middleware('ensureUserHasRole:admin');
     Route::post('/logout', [LoginController::class, 'logout']);
 
     //View Projects
@@ -113,9 +125,6 @@ Route::post('/project-management/gotit/check-transaction', [GotItController::cla
 
 
 
-Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail']);
-
-Route::post('/reset-password', [ResetPasswordController::class, 'reset']);
 
 
 Route::get('/techcombank-panel/users', [TechcombankPanelController::class, 'index']);

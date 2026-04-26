@@ -7,11 +7,11 @@ type Props = {
     row: {
         id: string,
         label: string,
-        value: string[],
+        value: Option[],
         options: Option[]
     };
     isEditing: boolean;
-    onChange: (id: string, value: string[]) => void; 
+    onChange: (id: string, value: any) => void; 
 }
 
 const MultiSelectRow = memo(({ row, isEditing, onChange}: Props) => {
@@ -26,36 +26,61 @@ const MultiSelectRow = memo(({ row, isEditing, onChange}: Props) => {
                 {row.label}
             </TableCell>
             <TableCell>
-                <Autocomplete
-                    multiple
-                    disableCloseOnSelect //Khi chọn 1 option thì dropdown không bị đóng lại
-                    options={row.options || []} 
-                    value={row.options.filter((opt =>
-                        (row.value || []).includes(opt.value)
-                    )) || []}
-                    disabled={!isEditing}
-                    onChange={(event, newValue) => onChange(row.id, newValue.map(v => v.value))}
-                    getOptionLabel={(option) => option.label} //quyết định hiển thị label
-                    isOptionEqualToValue={(option, value) => 
-                        option.value === value.value
-                    } //tick checkbox nếu đúng value
-                    renderOption={(props, option, { selected }) => (
-                        <li {...props}>
-                            <Checkbox
-                                style={{ marginRight: 8 }}
-                                checked={selected}
-                            />
-                            {option.label}
-                        </li>
-                    )}
-                    renderInput={(params) => (
-                        <TextField
-                            {...params}
-                            size="small"
-                            placeholder="Select..."
+                {
+                    (isEditing) ? (
+                        <Autocomplete
+                            multiple
+                            disableCloseOnSelect //Khi chọn 1 option thì dropdown không bị đóng lại
+                            options={row.options || []} 
+                            value={row.value || []}
+                            disabled={!isEditing}
+                            sx={{
+                                "& .Mui-disabled": {
+                                    WebkitTextFillColor: "#000",
+                                    opacity: 0.9
+                                },
+                                "& . MuiInputBase-root.Mui.disabled": {
+                                    opacity: 0.9,
+                                    WebkitTextFillColor: "#000",
+                                }
+                            }}
+                            onChange={(event, newValue) => onChange(row.id, newValue)}
+                            getOptionLabel={(option) => option.label} //quyết định hiển thị label
+                            isOptionEqualToValue={(option, value) => 
+                                option.value === value.value
+                            } //tick checkbox nếu đúng value
+                            renderOption={(props, option, { selected }) => (
+                                <li {...props}>
+                                    <Checkbox
+                                        style={{ marginRight: 8 }}
+                                        checked={selected}
+                                    />
+                                    {option.label}
+                                </li>
+                            )}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    size="small"
+                                    placeholder="Select..."
+                                />
+                            )}
                         />
-                    )}
-                />
+                    ) : (
+                        (() => {
+                            const value = row.value || [];
+                            
+                            if(value.length == 0){
+                                return "-"
+                            } else {
+                                return (
+                                    <span>{row.value.map((option) => option.label).join(', ')}</span>
+                                )
+                            }
+                        })()
+                    )
+                }
+                
             </TableCell>
         </TableRow>
     );

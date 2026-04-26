@@ -53,6 +53,7 @@ class TransactionsExport implements FromQuery, WithHeadings, WithChunkReading, W
                     ->whereIn('pr.channel', [
                         'vinnet',
                         'gotit',
+                        'other',
                         'email'
                     ])
                     ->whereBetween(DB::raw("COALESCE(pvt.created_at, pgv.created_at)"),[
@@ -102,7 +103,7 @@ class TransactionsExport implements FromQuery, WithHeadings, WithChunkReading, W
             $row->transaction_id,
             $row->transaction_id,
             $row->transaction_id,
-            $this->vinnetService->getProvice($row->phone_number),
+            $row->channel == 'gotit' ? $this->vinnetService->getProviceByPhoneNumber($row->phone_number) : $this->vinnetService->getProviceByServiceCode($row->service_code),
             optional($row->created_at) ? date('d/m/Y H:i:s', strtotime($row->created_at)) : '',
             $row->channel == 'gotit' ? "DAYONE" : "VINNET",
             $this->maskPhone($row->phone_number),

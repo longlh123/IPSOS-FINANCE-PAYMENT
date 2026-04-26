@@ -11,12 +11,12 @@ class Role extends Model
 {
     use HasFactory;
 
-    //Specify the primary key
-    // protected $primaryKey = 'name';
-    // public $incrementing = false; //If 'name' is not auto-incrementing
-    // protected $keyType = 'string'; // If 'name' is a string
+    protected $table = "roles";
 
-    protected $fillable = [ 'name', 'department_id' ];
+    protected $fillable = [ 
+        'name', 
+        'department_id' 
+    ];
 
     public function department()
     {

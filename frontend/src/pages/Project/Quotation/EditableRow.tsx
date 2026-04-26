@@ -71,6 +71,15 @@ const EditableRow = memo(({ row, isEditing, isActive, onStartEdit, onStopEdit, o
         }
     }
 
+    const isUrl = (value: string) => {
+        try{
+            new URL(value);
+            return true;
+        } catch{
+            return false;
+        }
+    } 
+
     return (
         <TableRow>
             <TableCell 
@@ -91,11 +100,32 @@ const EditableRow = memo(({ row, isEditing, isActive, onStartEdit, onStopEdit, o
                     (isActive && isEditing) ? (
                         renderInput()
                     ) : (
-                        <div
-                            dangerouslySetInnerHTML={{ __html: row.value || "Click to edit" }}
-                            style={{ cursor: "pointer" }}
-                        >
-                        </div>
+                        (() => {
+                            const value = row.value?.trim();
+
+                            if(!value) return "-";
+
+                            if(isUrl(value)){
+                                return (
+                                    <a
+                                        href={value}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        onClick={(e) => e.stopPropagation()}
+                                        style={{
+                                            color: "#1976d2", 
+                                            textDecoration: "underline"
+                                        }}
+                                    >
+                                        {value}
+                                    </a>
+                                )
+                            } else {
+                                return (
+                                    <span>{value}</span>
+                                )
+                            }
+                        })()
                     )
                 }
             </TableCell>

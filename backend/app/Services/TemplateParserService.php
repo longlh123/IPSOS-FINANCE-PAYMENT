@@ -87,7 +87,7 @@ class TemplateParserService
                 'default'  => $default
             ];
 
-            if($type === 'select' && $optionsKey || $type === 'multi-select'){
+            if($type === 'select' && $optionsKey || $type === 'multi-select' || $type === 'radio'){
                 if(str_starts_with($optionsKey, 'db:')){
                     $table_name = str_replace('db:', '', $optionsKey);
 
@@ -171,7 +171,7 @@ class TemplateParserService
                 $field['fields'] = $configMap[$configKey] ?? [];
             }
 
-            if($type === 'repeater_card' && $configKey){
+            if($type === 'section' && $configKey){
                 $field['fields'] = $configMap[$configKey] ?? [];
             }
 

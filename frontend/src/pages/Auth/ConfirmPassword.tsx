@@ -2,8 +2,6 @@ import "../../assets/css/components.css";
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useLocation, useNavigate } from 'react-router-dom';
-
-import GuestLayout from '../../Layouts/ProjectLayout';
 import { VisibilityOff, Visibility } from "@mui/icons-material";
 import LoadingButton from '@mui/lab/LoadingButton';
 import SendIcon from '@mui/icons-material/Send';
@@ -67,80 +65,74 @@ const ConfirmPassword = () => {
     };
 
     return (
-        <Box 
-            sx={{ 
-                marginTop: 8,
-                display: 'flex',
-                flexDirection: 'column',
-                textAlign: 'justify',
-                gap: 3,
-                width: "100%",
+        <Box
+            sx={{
+                minHeight: "100vh",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                backgroundColor: "#f5f5f5"
             }}
         >
-            <div>
-                <Typography variant="h4">
+            <Box 
+                sx={{ 
+                    width: 400,
+                    p: 4,
+                    borderRadius: 2,
+                    backgroundColor: "#fff",
+                    boxShadow: 3,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 3
+                }}
+            >
+                <Typography variant="h5" textAlign="center">
                     <span>Confirmation Password</span>
                 </Typography>
-            </div>
-            <div>
-                <Typography variant="h6">
+                <Typography variant="body2" textAlign="center">
                     This is a secure area of the application. Please confirm your password before continuing.
                 </Typography>
-            </div>
-            {statusMessage.length != 0 && (
-                <div className='message-invalid'>
-                    <span>{statusMessage}</span>
-                </div>
-            )}
-            <div>
-                <FormControl className="TextFieldLogin" variant="outlined">
-                    <InputLabel htmlFor="outlined-adornment-password">
-                        Password
-                    </InputLabel>
+                {statusMessage.length != 0 && (
+                    <div className='message-invalid'>
+                        <span>{statusMessage}</span>
+                    </div>
+                )}
+                <FormControl fullWidth>
+                    <InputLabel>Password</InputLabel>
                     <OutlinedInput
-                        id="outlined-adornment-password"
                         type={showPassword ? "text" : "password"}
                         onChange={(e) => handleChangeInput("password", e.target.value)}
                         endAdornment={
-                        <IconButton onClick={handleClickShowPassword}>
-                            {showPassword ? <VisibilityOff /> : <Visibility />}
-                        </IconButton>
+                            <IconButton onClick={handleClickShowPassword}>
+                                {showPassword ? <VisibilityOff /> : <Visibility />}
+                            </IconButton>
                         }
                         label="Password"
                     />
                 </FormControl>
-            </div>
-            <div>
-                <FormControl className="TextFieldLogin" variant="outlined">
-                    <InputLabel htmlFor="outlined-adornment-password">
-                        Confirm Password
-                    </InputLabel>
+                <FormControl fullWidth>
+                    <InputLabel>Confirm Password</InputLabel>
                     <OutlinedInput
-                        id="outlined-adornment-password"
                         type={showPassword ? "text" : "password"}
                         onChange={(e) => handleChangeInput("password_confirmation", e.target.value)}
                         endAdornment={
-                        <IconButton onClick={handleClickShowPassword}>
-                            {showPassword ? <VisibilityOff /> : <Visibility />}
-                        </IconButton>
+                            <IconButton onClick={handleClickShowPassword}>
+                                {showPassword ? <VisibilityOff /> : <Visibility />}
+                            </IconButton>
                         }
                         label="Confirm Password"
                     />
                 </FormControl>
-            </div>
-            <div className="item">
                 <LoadingButton
-                    size="small"
+                    fullWidth
                     onClick={handleResetPassword}
                     endIcon={<SendIcon />}
                     loading={loading}
-                    loadingPosition="end"
                     variant="contained"
-                    className='btn bg-primary'
-                    >
-                    <span>RESET PASSWORD</span>
+                >
+                    RESET PASSWORD
                 </LoadingButton>
-            </div>  
+            </Box>
         </Box>
     );
 }

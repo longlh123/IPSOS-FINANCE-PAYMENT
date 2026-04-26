@@ -1,30 +1,37 @@
 import { useCallback, useEffect, useState } from "react";
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import axios from "axios";
 import { ApiConfig } from "../config/ApiConfig";
 
 export const useMetadata = () => {
     const [ metadata, setMetadata ] = useState<any>(null);
-    const [ loading, setLoading ] = useState(false);
-    const [ error, setError ] = useState<string | null>(null);
+    
+    const queryClient = useQueryClient();
 
-    const fetchMetadata = useCallback(async () => {
-        try{
-            setLoading(true);
-            setError(null);
-
+    const query = useQuery({
+        queryKey: ['metadata'],
+        queryFn: async () => {
             const response = await axios.get(ApiConfig.project.getMetadata);
-            setMetadata(response.data.data);
 
-        } catch(error: any){
-            setError(error.message || "Failed to load metadata");
-        } finally{
-            setLoading(false);
-        }
-    }, []);
+            return response.data.data
+        },
+        staleTime: Infinity,
+        gcTime: Infinity
+    });
 
-    useEffect(() => {
-        fetchMetadata();
-    }, [fetchMetadata]);
+    const invalidate = () => {
+        queryClient.invalidateQueries({ queryKey: ['metadata'] });
+    };
 
-    return { metadata, loading, error, fetchMetadata };
+    return {
+        data: query.data ?? {
+            project_types: [],
+            departments: [],
+            roles: []
+        },
+        isLoading: query.isLoading,
+        isError: query.isError,
+        refetch: query.refetch,
+        invalidate
+    };
 };

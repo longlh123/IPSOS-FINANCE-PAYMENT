@@ -186,7 +186,7 @@ const ParttimeEmployees = () => {
                 total = {total}
                 onPageChange={handleChangePage}
                 onRowsPerPageChange={handleChangeRowsPerPage}
-            ></ReusableTable>
+            />
 
             <AlertDialog
                 open={open}

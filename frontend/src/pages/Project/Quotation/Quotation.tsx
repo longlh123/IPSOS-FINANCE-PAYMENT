@@ -311,7 +311,6 @@ const Quotation: React.FC = () => {
                 <QuotationDynamicForm
                     key={formKey}
                     schema={schema}
-                    projectData={project ?? null}
                     initialQuotationData={selectedVersion?.quotation}
                     isEditting={versions?.length === 0 ? true : isEditing}
                     onSubmit={handleSaveVersion}

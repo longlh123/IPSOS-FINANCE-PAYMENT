@@ -73,9 +73,11 @@ export const ApiConfig = {
     getPanellist: `${host}/api/techcombank-panel/panellist`,
   },
   account: {
-    login: `${host}/api/login`, //y
+    login: `${host}/api/login`,
     forgotPassword: `${host}/api/forgot-password`,
     resetPassword: `${host}/api/reset-password`,
+    viewAccounts: `${host}/api/users/show`,
+    storeAccount: `${host}/api/users`
   },
   minicati: {
     getSuspendedList: `${host}/api/suspended`,

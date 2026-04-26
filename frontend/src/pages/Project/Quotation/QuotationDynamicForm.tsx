@@ -8,6 +8,7 @@ import RichTextRow from "./RichTextRow";
 import RadioRow from "./RadioRow";
 import MultiSelectRow from "./MultiSelectRow";
 import RepeaterRow from "./RepeaterRow";
+import SectionRow from "./SectionRow";
 
 interface LayoutSchema {
     xs: number,
@@ -29,12 +30,11 @@ export interface FieldSchema {
 interface DynamicFormProps {
     schema: FieldSchema[];
     onSubmit: (data: any) => void;
-    projectData: ProjectData | null,
     initialQuotationData?: any,
     isEditting: boolean,
 }
 
-const QuotationDynamicForm: React.FC<DynamicFormProps> = ({ schema, projectData, initialQuotationData, isEditting, onSubmit }) => {
+const QuotationDynamicForm: React.FC<DynamicFormProps> = ({ schema, initialQuotationData, isEditting, onSubmit }) => {
 
     const [ rows, setRows ] = useState<any>({}); 
 
@@ -51,7 +51,7 @@ const QuotationDynamicForm: React.FC<DynamicFormProps> = ({ schema, projectData,
         }));
     }, []);
 
-    const [ tmpSampleType, setTmpSampleType ] = useState<string | null>(null);
+    const shouldShowBoosterCondition = rows['sam']
 
     const [ editingId, setEditingId ] = useState<string | null>(null);
 
@@ -127,179 +127,16 @@ const QuotationDynamicForm: React.FC<DynamicFormProps> = ({ schema, projectData,
             )
         }
 
-        
-
-        // if(field.type === 'range'){
-        //     return (
-        //         <Grid item xs={field.layout?.xs} sm={field.layout?.sm} md={field.layout?.md} key={field.name}>
-        //             <div style={{ marginBottom: "1rem" }}>
-        //                 <Typography variant="body2" gutterBottom>
-        //                     {field.label}
-        //                 </Typography>
-        //                 <Grid container spacing={2}>
-        //                     {field.fields?.map((f) => {
-        //                         const value = formData[field.name!]?.[f.name!] ?? "";
-
-        //                         return (
-        //                             <Grid item xs={6} key={f.name}>
-        //                                 <TextField
-        //                                     fullWidth
-        //                                     size="small"
-        //                                     type={f.type}
-        //                                     label={f.label}
-        //                                     value={value}
-        //                                     required={f.required}
-        //                                     disabled={!isEditting}
-        //                                     onChange={(e) => handleChange(field.name!, {
-        //                                         ...formData[field.name!], 
-        //                                         [f.name!]: e.target.value
-        //                                     })}
-        //                                 />
-        //                             </Grid>
-        //                         )
-        //                     })}
-        //                 </Grid>
-        //             </div>
-        //         </Grid>
-        //     )
-        // }
-
-        // if (field.type === "repeater") {
-        //     return (
-        //         <Grid item xs={12} key={field.name}>
-        //             <Typography variant="subtitle1" sx={{ mt: 2 }}>
-        //                 {field.label}
-        //             </Typography>
-        //             <TableContainer>
-        //                 <Table size="small">
-        //                     <TableHead>
-        //                         <TableRow>
-        //                             {field.fields?.map((subField) => (
-        //                                 <TableCell key={subField.name}>
-        //                                     {subField.label}
-        //                                 </TableCell>
-        //                             ))}
-        //                         </TableRow>
-        //                     </TableHead>
-        //                     <TableBody>
-        //                         {(formData[field.name!] || []).map(
-        //                             (row: any, index: number) => (
-        //                                 <TableRow key={index}>
-        //                                     {field.fields?.map((subField) => (
-        //                                         <TableCell key={subField.name}>
-        //                                             <TextField
-        //                                                 select={subField.type === "select"}
-        //                                                 size="small"
-        //                                                 fullWidth
-        //                                                 label={subField.label}
-        //                                                 value={row[subField.name!] || ""}
-        //                                                 disabled={!isEditting}
-        //                                                 onChange={(e) =>
-        //                                                     handleRepeaterChange(
-        //                                                         field.name!,
-        //                                                         index,
-        //                                                         subField.name!,
-        //                                                         e.target.value
-        //                                                     )
-        //                                                 }
-        //                                             >
-        //                                                 {subField.options?.map((option) => (
-        //                                                     <MenuItem
-        //                                                         key={option}
-        //                                                         value={option}
-        //                                                     >
-        //                                                         {option}
-        //                                                     </MenuItem>
-        //                                                 ))}
-        //                                             </TextField>
-        //                                         </TableCell>
-        //                                     ))}
-
-        //                                     <TableCell>
-        //                                         <IconButton
-        //                                             color="error"
-        //                                             onClick={() =>
-        //                                                 removeRepeaterRow(field.name!, index)
-        //                                             }
-        //                                             disabled={!isEditting}
-        //                                         >
-        //                                             <DeleteIcon />
-        //                                         </IconButton>
-        //                                     </TableCell>
-        //                                 </TableRow>
-        //                             )
-        //                         )}
-        //                     </TableBody>
-        //                 </Table>
-        //             </TableContainer>
-                    
-        //             <Button
-        //                 variant="outlined"
-        //                 size="small"
-        //                 sx={{ mt: 1 }}
-        //                 onClick={() => addRepeaterRow(field.name!)}
-        //                 disabled={!isEditting}
-        //             >
-        //                 Add Row
-        //             </Button>
-        //         </Grid>
-        //     );
-        // }
-
-        // if(field.type === "repeater_card"){
-        //     return (
-        //         <Grid item xs={field.layout?.xs} sm={field.layout?.sm} md={field.layout?.md} key={field.name}>
-        //             {field.fields?.map((subField) => (
-        //                 <Grid item xs={4}>
-        //                     <div style={{ marginBottom: "1rem" }}>
-        //                         <Typography variant="body2" gutterBottom>
-        //                             {subField.label}
-        //                         </Typography>
-        //                         <TextField
-        //                             select
-        //                             size="small"
-        //                             fullWidth
-        //                             value={tmpSampleType}
-        //                             disabled={!isEditting}
-        //                             onChange={(e) => setTmpSampleType(e.target.value)}
-        //                         >
-        //                             {subField.options?.map((option) => (
-        //                                 <MenuItem key={option} value={option}>
-        //                                     {option}
-        //                                 </MenuItem>
-        //                             ))}
-        //                         </TextField>
-        //                     </div>
-        //                 </Grid>
-        //             ))}
-        //             <Grid item>
-        //                 <Button
-        //                     variant="outlined"
-        //                     size="small"
-        //                     sx={{ mt: 1 }}
-        //                     onClick={() => addRepeaterCardRow(field.name!)}
-        //                     disabled={!tmpSampleType}
-        //                 >
-        //                     Add Sample
-        //                 </Button>
-        //             </Grid>
-        //             {(formData[field.name!] || []).map((row: any, index: number) => (
-        //                 <Card key={row.id} sx={{ mt: 2 }}>
-        //                     <CardHeader
-        //                         title={`Sample ${index + 1}: ${row.type}`}
-        //                         action={
-        //                             <IconButton
-        //                                 onClick={() => removeRepeaterCardRow(field.name!, row.index)}
-        //                             >
-        //                                 <DeleteIcon/>
-        //                             </IconButton>
-        //                         }
-        //                     />
-        //                 </Card>
-        //             ))}
-        //         </Grid>
-        //     )
-        // }
+        if(field.type === 'section'){
+            return (
+                <SectionRow
+                    key={field.name}
+                    row={{id: field.name, label: field.label, value: rows[field.name], fields: field.fields ?? []}}
+                    isEditing={isEditting}
+                    onChange={updateRow}
+                />
+            )
+        }
     }
 
     return (
@@ -312,7 +149,7 @@ const QuotationDynamicForm: React.FC<DynamicFormProps> = ({ schema, projectData,
         >
             <TableContainer component={Paper}>
                 <Table size="small">
-                    <TableBody>
+                    <TableBody> 
                         {schema.map((field) => {
                             return renderField(field)
                         })}

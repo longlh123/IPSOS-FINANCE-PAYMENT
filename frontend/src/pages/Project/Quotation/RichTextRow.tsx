@@ -11,12 +11,13 @@ type Props = {
     };
     isEditing: boolean;
     isActive: boolean;
+    placeholder?: string;
     onStartEdit: () => void;
     onStopEdit: () => void;
     onChange: ( id: string, value: string ) => void
 } 
 
-const RichTextRow = memo(({row, isEditing, isActive, onStartEdit, onStopEdit, onChange}: Props) => {
+const RichTextRow = memo(({row, isEditing, isActive, placeholder, onStartEdit, onStopEdit, onChange}: Props) => {
     const ref = useRef<HTMLTableCellElement>(null);
     
     useEffect(() => {
@@ -63,7 +64,7 @@ const RichTextRow = memo(({row, isEditing, isActive, onStartEdit, onStopEdit, on
                     />
                 ) : (
                     <div
-                        dangerouslySetInnerHTML={{ __html: row.value || "Click to edit" }}
+                        dangerouslySetInnerHTML={{ __html: row.value || placeholder || "-" }}
                         style={{ cursor: "pointer" }}
                     ></div>
                 )}

@@ -27,6 +27,9 @@ import TradeUnionTransactions from "./pages/TradeUnion/TradeUnionTransactions";
 import Gifts from "./pages/Project/Gifts";
 import Transactions from "./pages/Transaction/Transactions";
 import Settings from "./pages/Project/Settings";
+import AccountManagement from "./pages/AccountManagement/AccountManagement";
+import ConfirmPassword from "./pages/Auth/ConfirmPassword";
+import ForgotPassword from "./pages/Auth/ForgotPassword";
 
 // Fetch the CSRF token from the meta tag
 const csrfToken = document
@@ -44,6 +47,8 @@ const App: React.FC = () => {
             {/* ================= PUBLIC ROUTES ================= */}
             <Route path="/" element={<Login />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/confirm-password" element={<ConfirmPassword/>} />
+            <Route path="/forgot-password" element={<ForgotPassword/>} />
             <Route path="/page200" element={<Page200 messageSuccess="" />} />
             <Route path="/error" element={<ErrorPage />} />
 
@@ -68,6 +73,10 @@ const App: React.FC = () => {
               <Route
                 path="/transaction-manager/transactions"
                 element={<Transactions />}
+              />
+              <Route
+                path="/account-management/accounts"
+                element={<AccountManagement/>}
               />
             </Route>
 

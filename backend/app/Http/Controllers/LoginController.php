@@ -9,7 +9,7 @@ use App\Providers\AppServiceProvider;
 use App\Models\User;
 use App\Http\Requests\LoginRequest;
 use Symfony\Component\HttpFoundation\Response;
-use App\Http\Resources\UserDetailResource;
+use App\Http\Resources\UserResource;
 
 class LoginController extends Controller
 {
@@ -70,10 +70,7 @@ class LoginController extends Controller
             'status_code' => Response::HTTP_OK, //200,
             'message' => 'Login successfully',
             'token' => $tokenResult,
-            'user' => new UserDetailResource($user),
-            // 'user' => $userData,
-            // 'role' => $user->roles()->pluck('name'),
-            // 'token' => $tokenResult
+            'user' => new UserResource($user)
         ], Response::HTTP_OK);
     }
 

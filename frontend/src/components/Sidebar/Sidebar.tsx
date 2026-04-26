@@ -75,6 +75,21 @@ const Sidebar: React.FC<SideBarProps> = ({ isOpen, toggleSidebar }) => {
               </NavLink>
             </li>
           )}
+          {canView("sidebar.visible_accounts") && (
+            <li className="nav-link">
+              <NavLink
+                to="/account-management/accounts"
+                onClick={() => {
+                  if (isSmallScreen) toggleSidebar();
+                }}
+              >
+                <i className="icon">
+                  <GridViewIcon style={{ fontSize: "18px" }} />
+                </i>
+                <span className="text nav-text">Accounts</span>
+              </NavLink>
+            </li>
+          )}
         </ul>
 
         <Divider style={{ margin: "18px 0" }} />

@@ -1,26 +1,15 @@
 import "../../assets/css/components.css";
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import ipsosLogo from "../../assets/img/Ipsos logo.svg"; // Assuming SVG file location
 import axios from "axios";
-
-import { TextField, Button } from "@mui/material";
-import { ApiConfig } from "../../config/ApiConfig";
-import GuestLayout from '../../Layouts/ProjectLayout';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
+import { TextField, Box, FormControl, Typography } from "@mui/material";
 import LoadingButton from '@mui/lab/LoadingButton';
 import SendIcon from '@mui/icons-material/Send';
+import { ApiConfig } from "../../config/ApiConfig";
 
 const ForgotPassword = () => {
-  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
-
-  const handleChangeInput = (value: string) => {
-    setEmail(value);
-  };
 
   const handleForgotPassword = async () => {
     try {
@@ -46,53 +35,58 @@ const ForgotPassword = () => {
   };
 
   return (
-    <>
-      <div className="LoginForm">
-        <div className="header-form-login">
-          <img src={ipsosLogo} alt="Ipsos Logo" />
-          <h2>Forgot Password</h2>
-          <p>
+    <Box
+      sx={{
+          minHeight: "100vh",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: "#f5f5f5"
+      }}
+    >
+      <Box 
+        sx={{ 
+            width: 500,
+            p: 4,
+            borderRadius: 2,
+            backgroundColor: "#fff",
+            boxShadow: 3,
+            display: "flex",
+            flexDirection: "column",
+            gap: 3
+        }}
+      >
+        <Typography variant="h5" textAlign="center">
+            <span>Forgot Password</span>
+        </Typography>
+        <Typography variant="body2" textAlign="center">
             Forgot your password? No problem. Just let us know your email
             address and we will email you a password reset link that will allow
             you to choose a new one.
-          </p>
-        </div>
-        <div className="form-validate">
-          <div className="error-control">
-            {/* {isLoggedIn && <Alert severity="error">{alertMessage}</Alert>} */}
+        </Typography>
+        {statusMessage.length != 0 && (
+          <div className='message-invalid'>
+              <span>{statusMessage}</span>
           </div>
-          <div className="email-control">
-            <TextField
-              label="Email"
-              variant="outlined"
-              className="TextFieldLogin"
-            />
-          </div>
-          <div className="password-control"></div>
-          {/* <div className="forgot-password">
-            <span onClick={handleForgotPassword}>Forgot Password ?</span>
-          </div> */}
-
-          <div className="btn-login">
-            <Button
-              sx={{
-                width: "100%",
-                my: 4,
-                backgroundColor: "var(--main-color) !important",
-                color: "#fff",
-                textTransform: "none !important",
-              }}
-            >
-              Send Email
-            </Button>
-          </div>
-
-          <div className="footer-form-login">
-            <p onClick={() => navigate("/Login")}>Comeback Login</p>
-          </div>
-        </div>
-      </div>
-    </>
+        )}
+        <FormControl fullWidth>
+          <TextField
+            label="Email"
+            variant="outlined"
+            onChange={(event) => setEmail(event.target.value)}
+          />
+        </FormControl>
+        <LoadingButton
+            fullWidth
+            onClick={handleForgotPassword}
+            endIcon={<SendIcon />}
+            loading={loading}
+            variant="contained"
+        >
+            SEND EMAIL
+        </LoadingButton>
+      </Box>
+    </Box>
   );
 };
 

@@ -1,14 +1,16 @@
-import { Autocomplete, Checkbox, IconButton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField } from "@mui/material";
+import { Autocomplete, Box, Checkbox, IconButton, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField } from "@mui/material";
 import { memo, useEffect, useMemo, useState } from "react";
 import { FieldSchema } from "./QuotationDynamicForm";
 import SaveIcon from '@mui/icons-material/Save';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { Rowing } from "@mui/icons-material";
+import { BorderRight, Rowing } from "@mui/icons-material";
 import { RowType } from "./EditableRow";
 
 export interface RepeaterRowData {
     [key: string]: any
 };
+
+type Option = { value: string, label: string };
 
 type Props = {
     row: {
@@ -64,26 +66,28 @@ const RepeaterRow = memo(({ row, isEditing, onChange}: Props) => {
         onChange(row.id, newRows);
     }
 
-    const renderSavedField = (field: FieldSchema, rowItem: RepeaterRowData) => {
+    const renderSavedField = (field: FieldSchema, rowItem: RepeaterRowData, cellStyle: any) => {
         const value = rowItem[field.name];
 
         return (
-            <TableCell
+            <Box
                 key={field.name}
+                sx={cellStyle}
             >
                 {Array.isArray(value)
                     ? value.map(v => v.label).join(',')
                     : value.label || value}
-            </TableCell>
+            </Box>
         );
     }
 
-    const renderField = (field: FieldSchema) => {
+    const renderField = (field: FieldSchema, cellStyle: any) => {
         switch(field.type){
             case "number":
                 return (
-                    <TableCell
+                    <Box
                         key={field.name}
+                        sx={cellStyle}
                     >
                         <TextField
                             fullWidth
@@ -94,18 +98,20 @@ const RepeaterRow = memo(({ row, isEditing, onChange}: Props) => {
                             value={draft[field.name] ?? ""}
                             onChange={(e) => handleFieldChange(field.name, e.target.value)}
                         />
-                    </TableCell>
+                    </Box>
                 )
             default:
                 return (
-                    <TableCell
+                    <Box
                         key={field.name}
+                        sx={cellStyle}
                     >
                         <Autocomplete
                             multiple
+                            fullWidth
                             disableCloseOnSelect //Khi chọn 1 option thì dropdown không bị đóng lại
                             options={field.options || []} 
-                            value={draft[field.name] ?? []}
+                            value={draft[field.name] || []}
                             disabled={!isEditing}
                             onChange={(event, newValue) => handleFieldChange(field.name, newValue)}
                             getOptionLabel={(option) => option.label} //quyết định hiển thị label
@@ -129,74 +135,118 @@ const RepeaterRow = memo(({ row, isEditing, onChange}: Props) => {
                                 />
                             )}
                         />
-                    </TableCell>
+                    </Box>
                 );
         }
     }
 
     const renderMiniTable = (fields: FieldSchema[]) => { 
-        return (
-            <TableContainer>
-                <Table size="small">
-                    <TableHead>
-                        <TableRow>
-                            {fields.map((subField) => (
-                                <TableCell key={subField.name}>
-                                    {subField.label}
-                                </TableCell>
-                            ))}
-                            <TableCell width={120} sx={{textAlign: "center"}}>
-                                Actions
-                            </TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {repeaterRows.map((rowItem, rowIndex) => (
-                            <TableRow
-                                key={rowIndex}
-                            >
-                                {row.fields.map((subField) => (
-                                    renderSavedField(subField, rowItem)
-                                ))}
-                                <TableCell
-                                    sx={{textAlign: "center"}}
-                                >
-                                    <IconButton
-                                        color="error"
-                                        disabled={!isEditing}
-                                        onClick={() => handleDelete(rowIndex)}
-                                    >
-                                        <DeleteIcon />
-                                    </IconButton>
-                                </TableCell>
-                            </TableRow>
+        const gridTemplate = `${fields.map(() => "1fr").join(" ")} auto`;
+        const cellStyle = {
+            padding: "8px 12px",
+            BorderRight: "1px solid #e0e0e0",
+            display: "flex",
+            alignItems: "center",
+            minHeight: 40
+        };
+
+        return (isEditing || repeaterRows.length > 0) ? (
+            <Box
+                sx={{
+                    border: "1px solid #e0e0e0",
+                    borderRadius: 1,
+                    overflow: "hidden"
+                }}
+            >
+                <Box
+                    sx={{
+                        display: "grid",
+                        gridTemplateColumns: gridTemplate,
+                        backgroundColor: "#f5f5f5",
+                        borderBottom: "1px solid #e0e0e0"
+                    }}
+                >
+                    {fields.map((subField) => (
+                        <Box
+                            sx={cellStyle}
+                        >
+                            {subField.label}
+                        </Box>
+                    ))}
+                    <Box
+                        sx={{
+                            textAlign: "center",
+                            width: 120,
+                            padding: "8px 12px",
+                            minHeight: 40
+                        }}
+                    >
+                        Actions
+                    </Box>
+                </Box>
+                {repeaterRows.map((rowItem, rowIndex) => (
+                    <Box
+                        key={rowIndex}
+                        sx={{
+                            display: "grid",
+                            gridTemplateColumns: gridTemplate,
+                            borderBottom: "1px solid #e0e0e0",
+                            '&:hover': {backgroundColor: '#fafafa'},
+                            '& > div:last-child': { borderRight: 'none' }
+                        }}
+                    >
+                        {row.fields.map((subField) => (
+                            renderSavedField(subField, rowItem, cellStyle)
                         ))}
-                        <TableRow>
-                            {fields.map((subField) => (
-                                renderField(subField)
-                            ))}
-                            <TableCell
-                                sx={{textAlign: "center"}}
+                        <Box
+                            sx={{...cellStyle, justifyContent: "center", width: 120}}
+                        >
+                            <IconButton
+                                color="error"
+                                disabled={!isEditing}
+                                onClick={() => handleDelete(rowIndex)}
                             >
-                                <IconButton
-                                    color="primary"
-                                    disabled={!isDraftValid}
-                                    onClick={handleSave}
-                                >
-                                    <SaveIcon />
-                                </IconButton>
-                            </TableCell>
-                        </TableRow>
-                    </TableBody>
-                </Table>
-            </TableContainer>
+                                <DeleteIcon />
+                            </IconButton>
+                        </Box>
+                    </Box>
+                ))}
+                {isEditing && (
+                    <Box
+                        sx={{
+                            display: "grid",
+                            gridTemplateColumns: gridTemplate
+                        }}
+                    >
+                        {fields.map((subField) => (
+                            renderField(subField, cellStyle)
+                        ))}
+                        <Box
+                            sx={{...cellStyle, justifyContent: "center", width: 120}}
+                        >
+                            <IconButton
+                                color="primary"
+                                disabled={!isDraftValid}
+                                onClick={handleSave}
+                            >
+                                <SaveIcon />
+                            </IconButton>
+                        </Box>
+                    </Box>
+                )}
+            </Box>
+        ) : (
+            <div
+                dangerouslySetInnerHTML={{ __html: (row.value || []).map((option) => option.label).join(', ') || "-" }}
+                style={{ cursor: "pointer" }}
+            ></div>
         )
     };
 
     return (
         <TableRow>
             <TableCell 
-                width={300}
+                width={400}
                 sx={{
                     fontWeight: 600
                 }}
