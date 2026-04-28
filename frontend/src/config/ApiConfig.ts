@@ -80,6 +80,9 @@ export const ApiConfig = {
     storeAccount: `${host}/api/users`
   },
   minicati: {
+    showBatches: `${host}/api/project-management/projects/{projectId}/mini-cati/batches/show`,
+    importBatch: `${host}/api/project-management/projects/{projectId}/mini-cati/batch/import`,
+    destroyBatch: `${host}/api/project-management/projects/{projectId}/mini-cati/batch/{batchId}/destroy`,
     getSuspendedList: `${host}/api/suspended`,
     filters: `${host}/api/filters`,
     next: `${host}/api/next`,

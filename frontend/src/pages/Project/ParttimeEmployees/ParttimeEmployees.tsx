@@ -178,9 +178,13 @@ const ParttimeEmployees = () => {
                 title="Employees"
                 columns={columns}
                 data={employees}
-                loading={loading}
-                error={errorEmployees}
-                message={messageEmployees}
+                actionStatus={{
+                    fetch: {
+                        loading: loading,
+                        error: errorEmployees,
+                        message: messageEmployees
+                    }
+                }}
                 page = {page}
                 rowsPerPage = {rowsPerPage}
                 total = {total}

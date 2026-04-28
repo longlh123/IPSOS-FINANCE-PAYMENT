@@ -101,6 +101,19 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({ projectId, isOpen, togg
                   <span className="text nav-text">Gifts</span>
               </NavLink>
             </li>
+            <li className="nav-link">
+              <NavLink
+                  to={`/project-management/projects/${projectId}/cati-settings`}
+                  onClick={() => {
+                  if (isSmallScreen) toggleSidebar(); // chỉ đóng nếu là mobile
+                  }}
+              >
+                  <i className="icon">
+                  <LibraryBooks style={{ fontSize: "18px" }} />
+                  </i>
+                  <span className="text nav-text">CATI Settings</span>
+              </NavLink>
+            </li>
         </ul>
         <Divider style={{ margin: "18px 0" }} />
         <ul className="menu-links">

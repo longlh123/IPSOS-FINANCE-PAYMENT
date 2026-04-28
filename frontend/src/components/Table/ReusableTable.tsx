@@ -3,13 +3,29 @@ import { ColumnFormat } from "../../config/ColumnConfig";
 import CloseIcon from "@mui/icons-material/Close";
 import { Alert, Box, CircularProgress, IconButton, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow } from "@mui/material";
 
+type ActionState = {
+    fetch?: {
+        loading?: boolean,
+        error?: boolean
+        message?: string
+    };
+    import?: {
+        loading?: boolean,
+        error?: boolean,
+        message?: string
+    };
+    delete?: {
+        loading?: boolean,
+        error?: boolean,
+        message?: string
+    }
+}
+
 interface ReusableTableProps {
     title: string;
     columns: ColumnFormat[];
     data: any[];
-    loading?: boolean;
-    error?: boolean;
-    message?: string | null;
+    actionStatus: ActionState;
     total?: number;
     page?: number;
     rowsPerPage?: number;
@@ -24,9 +40,7 @@ const ReusableTable: React.FC<ReusableTableProps> = ({
     title,
     columns,
     data=[],
-    loading,
-    error = false,
-    message = null,
+    actionStatus,
     page = 0,
     rowsPerPage = 10,
     total = 0,
@@ -38,40 +52,89 @@ const ReusableTable: React.FC<ReusableTableProps> = ({
 }) => {
     const [ openAlert, setOpenAlert] = useState(false);
 
+    const fetchLoading = actionStatus.fetch?.loading;
+    const fetchError = actionStatus.fetch?.error;
+    const fetchMessage = actionStatus.fetch?.message;
+
+    const deleteLoading = actionStatus.delete?.loading;
+    const deleteError = actionStatus.delete?.error;
+    const deleteMessage = actionStatus.delete?.message;
+
+    const importLoading = actionStatus.import?.loading;
+    const importError = actionStatus.import?.error;
+    const importMessage = actionStatus.import?.message;
+
     useEffect(() => {
-        if(error || message){
+        if(fetchMessage || importMessage || deleteMessage){
             setOpenAlert(true);
         } else {
             setOpenAlert(false);
         }
-    }, [error, message])
+    }, [fetchMessage, importMessage, deleteMessage])
 
     return (
         <Box className="box-table">
-            {openAlert  && (
-                <Alert 
-                    severity= {error ? "error" : "success"} 
-                    sx={{ width: "100%", alignItems: "center", mb: 2 }}
-                    action={
-                        <IconButton
-                            aria-label="close"
-                            color="inherit"
-                            size="small"
-                            onClick={() => setOpenAlert(false)}
+            {openAlert && (
+                <Box sx={{ p: 2 }}>
+                    {(fetchMessage) && (
+                        <Alert 
+                            severity= {fetchError ? "error" : "success"} 
+                            sx={{ width: "100%", alignItems: "center", mb: 2 }}
+                            action={
+                                <IconButton
+                                    aria-label="close"
+                                    color="inherit"
+                                    size="small"
+                                    onClick={() => setOpenAlert(false)}
+                                >
+                                    <CloseIcon fontSize="inherit" />
+                                </IconButton>
+                            }
                         >
-                            <CloseIcon fontSize="inherit" />
-                        </IconButton>
-                    }
-                >
-                    <span 
-                        dangerouslySetInnerHTML={{ __html: message ?? "" }}
-                    ></span>
-                </Alert>
-            )} 
-            
+                            {fetchMessage}
+                        </Alert>
+                    )}
+                    {(importMessage) && (
+                        <Alert 
+                            severity= {importError ? "error" : "success"} 
+                            sx={{ width: "100%", alignItems: "center", mb: 2 }}
+                            action={
+                                <IconButton
+                                    aria-label="close"
+                                    color="inherit"
+                                    size="small"
+                                    onClick={() => setOpenAlert(false)}
+                                >
+                                    <CloseIcon fontSize="inherit" />
+                                </IconButton>
+                            }
+                        >
+                            {importMessage}
+                        </Alert>
+                    )}
+                    {(deleteMessage) && (
+                        <Alert 
+                            severity= {deleteError ? "error" : "success"} 
+                            sx={{ width: "100%", alignItems: "center", mb: 2 }}
+                            action={
+                                <IconButton
+                                    aria-label="close"
+                                    color="inherit"
+                                    size="small"
+                                    onClick={() => setOpenAlert(false)}
+                                >
+                                    <CloseIcon fontSize="inherit" />
+                                </IconButton>
+                            }
+                        >
+                            {deleteMessage}
+                        </Alert>
+                    )}
+                </Box>
+            )}
             <TableContainer component={Paper} className="table-container">
                 {topToolbar}
-                
+
                 <Table sx={{ tableLayout: 'auto', width: '100%' }}>
                     <TableHead className="header-table">
                         <TableRow>
@@ -93,7 +156,7 @@ const ReusableTable: React.FC<ReusableTableProps> = ({
                     </TableHead>
                     <TableBody>
                         {
-                            loading ? (
+                            fetchLoading ? (
                                 <TableRow>
                                     <TableCell colSpan={columns.length} align="center">
                                         <CircularProgress />

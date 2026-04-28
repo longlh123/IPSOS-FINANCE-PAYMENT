@@ -30,6 +30,7 @@ import Settings from "./pages/Project/Settings";
 import AccountManagement from "./pages/AccountManagement/AccountManagement";
 import ConfirmPassword from "./pages/Auth/ConfirmPassword";
 import ForgotPassword from "./pages/Auth/ForgotPassword";
+import CATISettings from "./pages/Project/CATISettings";
 
 // Fetch the CSRF token from the meta tag
 const csrfToken = document
@@ -100,6 +101,10 @@ const App: React.FC = () => {
               <Route
                 path="gifts"
                 element={<Gifts />}
+              />
+              <Route
+                path="cati-settings"
+                element={<CATISettings />}
               />
               <Route
                 path="settings"

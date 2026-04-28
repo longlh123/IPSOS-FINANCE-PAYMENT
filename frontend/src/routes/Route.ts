@@ -7,15 +7,15 @@ import TransactionsManager from "../pages/Transaction/Transactions";
 import Gifts from "../pages/Project/Gifts";
 
 export const DefaultRoute = [
-  {
-    path: "/confirmpassword",
-    component: ConfirmPassword,
-  },
-  {
-    path: "/project-management/projects",
-    component: Projects,
-    roles: ["admin", "scripter"]
-  }, 
+  // {
+  //   path: "/confirmpassword",
+  //   component: ConfirmPassword,
+  // },
+  // {
+  //   path: "/project-management/projects",
+  //   component: Projects,
+  //   roles: ["admin", "scripter"]
+  // }, 
   // {
   //   path: "/project-management/projects/:id/settings",
   //   component: ProjectSettings,

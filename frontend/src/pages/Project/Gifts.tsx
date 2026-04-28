@@ -146,18 +146,6 @@ const Gifts: React.FC = () => {
                             >
                                 <span>TẶNG QUÀ</span>
                         </LoadingButton>
-                        <LoadingButton
-                            onClick={() => handleSendGiftClick(row)}
-                            size="small"
-                            endIcon={<SendIcon />}
-                            loading={(loadingRowId === row.respondent_id)}
-                            loadingPosition="end"
-                            variant="contained"
-                            disabled={view_disabled}
-                            className='btn bg-vinnet-secondary'
-                            >
-                                <span>VIEW</span>
-                        </LoadingButton>
                     </div>
                     
                 )
@@ -202,7 +190,7 @@ const Gifts: React.FC = () => {
             }
 
             const REQUIRED_COLUMNS = [
-                "InstanceID",	"Shell_ChainID", "SamplePoint",	"Province",	"InterviewerID", "RespondentPhoneNumber", "PhoneNumber", "Email"
+                "InstanceID",	"Shell_ChainID", "SamplePoint",	"Province",	"InterviewerID", "RespondentPhoneNumber", "PhoneNumber", "Email", "PriceLevel"
             ]
 
             const hearders = Object.keys(jsonData[0]);
@@ -238,7 +226,8 @@ const Gifts: React.FC = () => {
             employee_id: r.InterviewerID.toString(),
             respondent_phone_number: r.RespondentPhoneNumber.toString() ?? null,
             phone_number: r.PhoneNumber.toString() ?? null,
-            email: r.Email.toString() ?? null
+            email: r.Email.toString() ?? null,
+            price_level: r.PriceLevel.toString() ?? null
         }));
 
         await importOfflineProjectRespondents(payload);
@@ -304,9 +293,13 @@ const Gifts: React.FC = () => {
                 title="Employees"
                 columns={columns}
                 data={offineProjectRespondents}
-                loading={loadingOfflineProjectRespondents}
-                error={errorOfflineProjectRespondents}
-                message={messageOfflineProjectRespondents}
+                actionStatus={{
+                    import: {
+                        loading: loadingOfflineProjectRespondents,
+                        error: errorOfflineProjectRespondents,
+                        message: messageOfflineProjectRespondents
+                    }
+                }}
                 page = {page}
                 rowsPerPage = {rowsPerPage}
                 total = {total}

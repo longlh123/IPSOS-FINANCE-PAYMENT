@@ -5,13 +5,12 @@ import { useAccounts } from "../../hook/useAccounts";
 import ReusableTable from "../../components/Table/ReusableTable";
 import { useMetadata } from "../../hook/useMetadata";
 import { useMemo, useState } from "react";
-import type { RoleData, DepartmentData } from "../../config/AccountFieldsConfig";
-import { DataArray } from "@mui/icons-material";
+import { error } from "console";
 
 const AccountManagement = () => {
     const { data, isLoading } = useMetadata();
     const { accounts, meta, total, page, setPage, rowsPerPage, setRowsPerPage, searchTerm, setSearchTerm, loading, error: errorAccounts, message: messageAccount, storeAccount, fetchAcounts } = useAccounts();
-
+    
     const [ openCreateDialog, setOpenCreateDialog ] = useState<boolean>(false);
 
     const initialAccountData: AccountData = {
@@ -21,40 +20,15 @@ const AccountManagement = () => {
         last_name: "",
         password: "",
         password_confirmation: "",
-        department: {
-            id: 0,
-            name: ""
-        },
-        role: {
-            id: 0,
-            name: "",
-            department_id: 0
-        }
+        department: "",
+        role: ""
     }
 
     const [ formCreateData, setFormCreateData ] = useState<AccountData>(initialAccountData);
     const [ isCreateDisabled, setIsCreateDisabled ] = useState<boolean>(false);
 
     const columns: ColumnFormat[] = [
-        ...AccountCellConfig,
-        {
-            label: "Role",
-            name: "role",
-            type: "string",
-            flex: 1,
-            renderCell(row: AccountData) {
-                return row.department.name  
-            },
-        },
-        {
-            label: "Deparment",
-            name: "department",
-            type: "string",
-            flex: 1,
-            renderCell(row) {
-                return row.role.name
-            },
-        }
+        ...AccountCellConfig
     ];
 
     const handleChangePage = (event: any, newPage: number) => {
@@ -90,10 +64,10 @@ const AccountManagement = () => {
     }
 
     const filteredRoles = useMemo(() => {
-        if(!formCreateData.department.id) return [];
+        if(!formCreateData.department) return [];
 
-        return data.roles.filter((r: {department_id: number}) => r.department_id === formCreateData.department.id); 
-    }, [data.roles, formCreateData.department.id]); 
+        return data.roles.filter((r: { id: number, name: string, department_id: number }) => r.department_id === Number(formCreateData.department)); 
+    }, [data.roles, formCreateData.department]); 
 
     return (
         <Box>
@@ -101,9 +75,13 @@ const AccountManagement = () => {
                 title="Employees"
                 columns={columns}
                 data={accounts}
-                loading={loading}
-                error={errorAccounts}
-                message={messageAccount}
+                actionStatus={{
+                    fetch: {
+                        loading: loading,
+                        error: errorAccounts,
+                        message: messageAccount
+                    }
+                }}
                 page = {page}
                 rowsPerPage = {rowsPerPage}
                 total = {total}
@@ -197,11 +175,11 @@ const AccountManagement = () => {
                         <Select
                             labelId="department-label"
                             label="Department"
-                            value={formCreateData.department.id ?? ""}
+                            value={formCreateData.department ?? ""}
                             onChange={(event) => {
-                                const selected = data.departments.find((d: {id: number}) => d.id === Number(event.target.value));
+                                const selected = data.departments.find((d: {id: number, name: string}) => d.id === Number(event.target.value));
 
-                                handleChange("department", selected);
+                                handleChange("department", selected.id);
                             }}
                         >
                             {data.departments.map((department: {id: number, name: string}) => (
@@ -212,16 +190,16 @@ const AccountManagement = () => {
                         </Select>
                     </FormControl>
 
-                    <FormControl fullWidth required disabled={!formCreateData.department.id}>
+                    <FormControl fullWidth required disabled={!formCreateData.department}>
                         <InputLabel id="role-label">Role</InputLabel>
                         <Select
                             labelId="role-label"
                             label="Role"
-                            value={formCreateData.role.id}
+                            value={formCreateData.role}
                             onChange={(event) => {
-                                const selected = data.roles.find((d: {id: number}) => d.id === Number(event.target.value));
+                                const selected = data.roles.find((d: {id: number, name: string}) => d.id === Number(event.target.value));
 
-                                handleChange("role", selected);
+                                handleChange("role", selected.id);
                             }}
                         >
                             {filteredRoles.map((r: {id: string, name: string}) => (

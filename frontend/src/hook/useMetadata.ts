@@ -27,7 +27,8 @@ export const useMetadata = () => {
         data: query.data ?? {
             project_types: [],
             departments: [],
-            roles: []
+            roles: [],
+            teams: []
         },
         isLoading: query.isLoading,
         isError: query.isError,

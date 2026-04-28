@@ -1,16 +1,5 @@
 import { ColumnFormat } from "./ColumnConfig"
 
-export type RoleData = {
-    id: number,
-    name: string,
-    department_id: number
-}
-
-export type DepartmentData = {
-    id: number,
-    name: string
-}
-
 export interface AccountData {
     id?: number,
     name: string,
@@ -19,8 +8,8 @@ export interface AccountData {
     last_name: string,
     date_of_birth?: Date | null,
     address?: string,
-    role: RoleData,
-    department: DepartmentData,
+    role: string,
+    department: string,
     password?: string,
     password_confirmation?: string,
 }
@@ -37,5 +26,17 @@ export const AccountCellConfig: ColumnFormat[] = [
         name: "email",
         type: "string",
         flex: 1.5
+    },
+    {
+        label: "Role",
+        name: "role",
+        type: "string",
+        flex: 1,
+    },
+    {
+        label: "Deparment",
+        name: "department",
+        type: "string",
+        flex: 1,
     }
 ];

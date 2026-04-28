@@ -3,6 +3,9 @@ import axios from "axios";
 import { Select, MenuItem, Box, Button, Card, CardContent, Typography, TextField, Menu, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, Paper, FormControl, InputLabel, Grid } from "@mui/material";
 import { useSearchParams } from "react-router-dom";
 import { ApiConfig } from "../../config/ApiConfig";
+import ReusableTable from "../../components/Table/ReusableTable";
+import { ColumnFormat } from "../../config/ColumnConfig";
+import { MiniCATICellConfig } from "../../config/MiniCATIFieldsConfig";
 
 export default function MiniCATI() {
   const [ current, setCurrent ] = useState<any>(null);
@@ -23,17 +26,37 @@ export default function MiniCATI() {
     filter_3: [],
     filter_4: []
   });
-    const statusOptions = [
-        { value: "Done", label: "Thành công" },
-        { value: "Suspended", label: "Hẹn gọi lại" },
 
-        { value: "Reject_Industry", label: "Thuộc ngành cấm" },
-        { value: "Reject_NoMemory", label: "Không nhớ giao dịch" },
-        { value: "Reject_NoTransaction", label: "Không có giao dịch" },
-        { value: "Reject_Refuse", label: "Từ chối tham gia" },
-        { value: "Reject_WrongPhone", label: "Số điện thoại sai" },
-        // { value: "Reject_NoAnswer", label: "Không nghe máy" },
-    ];
+  const statusOptions = [
+      { value: "Done", label: "Thành công" },
+      { value: "Suspended", label: "Hẹn gọi lại" },
+
+      { value: "Reject_Industry", label: "Thuộc ngành cấm" },
+      { value: "Reject_NoMemory", label: "Không nhớ giao dịch" },
+      { value: "Reject_NoTransaction", label: "Không có giao dịch" },
+      { value: "Reject_Refuse", label: "Từ chối tham gia" },
+      { value: "Reject_WrongPhone", label: "Số điện thoại sai" },
+      // { value: "Reject_NoAnswer", label: "Không nghe máy" },
+  ];
+
+  const columns: ColumnFormat[] = [
+    ...MiniCATICellConfig,
+    {
+      label: "Action",
+      name: "Action",
+      type: "string",
+      align: "center",
+      renderCell: (row: any) => {
+        <Button
+          size="small"
+          variant="outlined"
+          onClick={() => setCurrent(row)}
+        >
+          Gọi lại
+        </Button>
+      },
+    }
+  ];
 
     const [status, setStatus] = useState("");
     const [comment, setComment] = useState("");
@@ -41,11 +64,11 @@ export default function MiniCATI() {
     const [suspendedList, setSuspendedList] = useState<any[]>([]);
 
     const getSuspendedList = async () => {
-        const res = await axios.get(ApiConfig.minicati.getSuspendedList, {
-            params: { employee_id: employeeId }
-        });
+      const res = await axios.get(ApiConfig.minicati.getSuspendedList, {
+          params: { employee_id: employeeId }
+      });
 
-        setSuspendedList(res.data);
+      setSuspendedList(res.data);
     };
 
     useEffect(() => {
@@ -105,6 +128,7 @@ export default function MiniCATI() {
         await getSuspendedList();
     };
 
+  
   return (
     <Box p={3}>
       
@@ -301,13 +325,27 @@ export default function MiniCATI() {
       ) : (
         <p>No sample available</p>
       )}
+      
+      {/* <ReusableTable
+        title="Danh sách hẹn gọi lại"
+        columns={columns}
+        data={suspendedList}
+        loading={loading}
+        error={errorAccounts}
+        message={messageAccount}
+        page = {page}
+        rowsPerPage = {rowsPerPage}
+        total = {total}
+        onPageChange={handleChangePage}
+        onRowsPerPageChange={handleChangeRowsPerPage}
+      /> */}
 
         <Box sx={{ maxWidth: 720, margin: "auto", mt: 3 }}>
   
             <Typography variant="h6" fontWeight="bold" mb={2}>
                 🔁 Danh sách hẹn gọi lại
             </Typography>
-
+            
             <TableContainer component={Paper} sx={{ borderRadius: 3 }}>
                 <Table size="small">
                 
