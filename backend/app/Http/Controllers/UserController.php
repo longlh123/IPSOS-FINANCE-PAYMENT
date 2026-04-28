@@ -62,8 +62,8 @@ class UserController extends Controller
                 'name' => "required|string|max:255",
                 'email' => 'required|email|unique:users,email',
                 'password' => 'required|min:6|confirmed',
-                'role.id' => 'required|exists:roles,id',
-                'department.id' => 'required|exists:departments,id',
+                'role' => 'required|exists:roles,id',
+                'department' => 'required|exists:departments,id',
                 'first_name' => 'required|string|max:255',
                 'last_name' => 'required|string|max:255'
             ]);
@@ -77,8 +77,8 @@ class UserController extends Controller
             $user->userDetails()->create([
                 'first_name' => $validated['first_name'],
                 'last_name' => $validated['last_name'],
-                'role_id' => $validated['role']['id'],
-                'department_id' => $validated['department']['id'],
+                'role_id' => $validated['role'],
+                'department_id' => $validated['department'],
             ]);
 
             Password::sendResetLink([

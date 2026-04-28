@@ -24,14 +24,8 @@ class UserResource extends JsonResource
             'last_name' => $this->userDetails->last_name,
             'date_of_birth' => $this->userDetails->date_of_birth,
             'address' => $this->userDetails->address,
-            'role' => $this->userDetails->role ? [
-                'id' => $this->userDetails->role->id,
-                'name' => $this->userDetails->role->name
-            ] : null,
-            'department' => $this->userDetails->department ? [
-                'id' => $this->userDetails->role->id,
-                'name' => $this->userDetails->role->name
-            ] : null
+            'role' => $this->userDetails->role->name,
+            'department' => $this->userDetails->role->name
         ];
     }
 }

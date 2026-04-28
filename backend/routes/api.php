@@ -84,6 +84,11 @@ Route::middleware(['auth:sanctum'])->group(function(){
     Route::delete('/project_management/projects/{projectId}/offline/respondents/{projectRespondentId}/destroy', [ProjectRespondentController::class, 'bulkRemoveProjectRespondent'])->middleware('ensureUserHasRole:Admin');
     Route::post('/project-management/projects/{projectId}/offline/respondents/{projectRespondentId}/transaction', [GotItController::class, 'perform_offline_transaction'])->middleware('ensureUserHasRole:Admin');
 
+    //MiniCATI
+    Route::get('/project-management/projects/{projectId}/mini-cati/batches/show', [CATIController::class, 'index'])->middleware('ensureUserHasRole:Admin,Scripter,Field Manager');
+    Route::post('/project-management/projects/{projectId}/mini-cati/batch/import', [ImportController::class, 'importCATIRespondents'])->middleware('ensureUserHasRole:Admin,Scripter,Field Manager');
+    Route::delete('/project-management/projects/{projectId}/mini-cati/batch/{batchId}/destroy', [CATIController::class, 'destroyBatch'])->middleware('ensureUserHasRole:Admin,Scripter,Field Manager');
+    
     //Vinnet
     Route::get('/transaction-management/vinnet/merchant/view', [VinnetController::class, 'get_merchant_info'])->middleware('ensureUserHasRole:admin,Finance');
     Route::post('/transaction-management/vinnet/change-key', [VinnetController::class, 'change_key'])->middleware('ensureUserHasRole:admin,Finance');

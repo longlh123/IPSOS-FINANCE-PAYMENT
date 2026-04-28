@@ -16,16 +16,12 @@ class MetadataController extends Controller
 {
     public function index(Request $request)
     {
-        try{
+        try
+        {
             $projectTypes = Cache::remember('project_types', 3600, fn() => ProjectType::all(['id', 'name']));
             $departments = Cache::remember('deparments', 3600, fn() => Department::all(['id', 'name']));
             $roles = Cache::remember('roles', 3600, fn() => Role::all(['id', 'name', 'department_id']));
-
-            Log::info('Metadata: ', [
-                    'project_types' => $projectTypes,
-                    'departments' => $departments,
-                    'roles' => $roles
-                ]);
+            $teams = Cache::remember('teams', 3600, fn() => Team::whereIn('department_id', [2, 3])->get(['id', 'name']));
 
             return response()->json([
                 'status_code' => 200,
@@ -33,7 +29,8 @@ class MetadataController extends Controller
                 'data' => [
                     'project_types' => $projectTypes,
                     'departments' => $departments,
-                    'roles' => $roles
+                    'roles' => $roles,
+                    'teams' => $teams
                 ]
             ]);
         }catch(Exception $e){
