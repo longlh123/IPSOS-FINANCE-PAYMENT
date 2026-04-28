@@ -23,16 +23,16 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
     }
 
     //Nếu có giới hạn role → kiểm tra
-    if(allowedRoles && user && user.role && !allowedRoles.includes(user.role.toLowerCase())){
-      return <Navigate
-                to="/error"
-                state={{
-                  errorCode: 3,
-                  errorMessage: "Bạn không có quyền truy cập trang này."
-                }}
-                replace
-              />
-    }
+    // if(allowedRoles && user && user.role && !allowedRoles.includes(user.role)){
+    //   return <Navigate
+    //             to="/error"
+    //             state={{
+    //               errorCode: 3,
+    //               errorMessage: "Bạn không có quyền truy cập trang này."
+    //             }}
+    //             replace
+    //           />
+    // }
   
     return <>{children}</>;
 };

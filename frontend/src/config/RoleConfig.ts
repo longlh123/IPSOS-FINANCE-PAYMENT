@@ -1,7 +1,8 @@
 export const BaseVisibility = {
   sidebar: {
     visible_projects: true,
-    visible_transactions: false
+    visible_transactions: false,
+    visible_accounts: false
   },
   projects: {
     visible_project_table: true,
@@ -42,7 +43,8 @@ export const VisibilityConfig = {
     inherit: null,
     override: {
       sidebar: {
-        visible_transactions: true
+        visible_transactions: true,
+        visible_accounts: true
       },
       projects: {
         functions: {

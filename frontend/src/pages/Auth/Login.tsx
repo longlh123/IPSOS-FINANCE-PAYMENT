@@ -66,7 +66,7 @@ const Login = () => {
 
   const handleForgotPassword = () => {
     // Handle forgot password functionality here
-    navigate("/ForgotPassword");
+    navigate("/forgot-password");
   };
 
   return (

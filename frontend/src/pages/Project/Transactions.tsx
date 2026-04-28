@@ -11,6 +11,7 @@ import { useProjects } from "../../hook/useProjects";
 import TextsmsIcon from "@mui/icons-material/Textsms";
 import SendIcon from "@mui/icons-material/Send";
 import SmsIcon from "@mui/icons-material/Sms";
+import { error } from "console";
 
 const Transactions: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -114,9 +115,13 @@ const Transactions: React.FC = () => {
             title="Employees"
             columns={columns}
             data={transactions}
-            loading={loading}
-            error={errorTransactions}
-            message={messageTransactions}
+            actionStatus={{
+              fetch: {
+                loading: loading,
+                error: errorTransactions,
+                message: messageTransactions
+              }
+            }}
             page = {page}
             rowsPerPage = {rowsPerPage}
             total = {total}

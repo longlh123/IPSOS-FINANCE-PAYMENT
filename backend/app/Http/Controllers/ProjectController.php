@@ -237,6 +237,29 @@ class ProjectController extends Controller
                 
                 //Attach the teams to the project (assuming a many-to-many relationship)
                 $project->teams()->attach($teams);
+
+                $projectTypeItems = ProjectType::whereIn('id', $validatedRequest['project_types'])
+                                                ->get()
+                                                ->map(function($item) {
+                                                    return [
+                                                        'value' => $item->id,
+                                                        'label' => $item->name
+                                                    ];
+                                                });
+
+                $project->quotations()->create([
+                    'data' => [
+                        'internal_code' => $internalCode,
+                        'project_name' => $validatedRequest['project_name'],
+                        'project_types' => $projectTypeItems,
+                        'platform' => strtolower($validatedRequest['platform']),
+                        'planned_field_start' => $validatedRequest['planned_field_start'],
+                        'planned_field_end' => $validatedRequest['planned_field_end']
+                    ],
+                    'version' => 1,
+                    'status' => 'draft',
+                    'created_user_id' => $user->id
+                ]);
                 
                 DB::commit();
                 

@@ -31,6 +31,17 @@ use App\Http\Controllers\ExportController;
 Route::post('/login', [LoginController::class, 'login'])
     ->name('index');
 
+Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail']);
+Route::post('/reset-password', [ResetPasswordController::class, 'reset']);
+
+Route::get('/test-mail', function () {
+    Password::sendResetLink([
+        'email' => 'longlh112633@gmail.com'
+    ]);
+
+    return 'sent';
+});
+
 Route::get('/administrative-divisions/old/provinces', [AdministrativeDivisionsController::class, 'get_old_provinces']);
 Route::get('/administrative-divisions/old/{provinceId}/districts', [AdministrativeDivisionsController::class, 'get_old_districts']);
 Route::get('/administrative-divisions/new/provinces', [AdministrativeDivisionsController::class, 'get_provinces']);
@@ -42,7 +53,8 @@ Route::get('/project-management/departments', [DepartmentController::class, 'ind
 Route::get('/project-management/{department_id}/teams', [DepartmentController::class, 'get_teams']);
 
 Route::middleware(['auth:sanctum'])->group(function(){
-    Route::get('/users', [UserController::class, 'index'])->middleware('ensureUserHasRole:admin');
+    Route::get('/users/show', [UserController::class, 'index'])->middleware('ensureUserHasRole:admin');
+    Route::post('/users', [UserController::class, 'store'])->middleware('ensureUserHasRole:admin');
     Route::post('/logout', [LoginController::class, 'logout']);
 
     //View Projects
@@ -72,6 +84,11 @@ Route::middleware(['auth:sanctum'])->group(function(){
     Route::delete('/project_management/projects/{projectId}/offline/respondents/{projectRespondentId}/destroy', [ProjectRespondentController::class, 'bulkRemoveProjectRespondent'])->middleware('ensureUserHasRole:Admin');
     Route::post('/project-management/projects/{projectId}/offline/respondents/{projectRespondentId}/transaction', [GotItController::class, 'perform_offline_transaction'])->middleware('ensureUserHasRole:Admin');
 
+    //MiniCATI
+    Route::get('/project-management/projects/{projectId}/mini-cati/batches/show', [CATIController::class, 'index'])->middleware('ensureUserHasRole:Admin,Scripter,Field Manager');
+    Route::post('/project-management/projects/{projectId}/mini-cati/batch/import', [ImportController::class, 'importCATIRespondents'])->middleware('ensureUserHasRole:Admin,Scripter,Field Manager');
+    Route::delete('/project-management/projects/{projectId}/mini-cati/batch/{batchId}/destroy', [CATIController::class, 'destroyBatch'])->middleware('ensureUserHasRole:Admin,Scripter,Field Manager');
+    
     //Vinnet
     Route::get('/transaction-management/vinnet/merchant/view', [VinnetController::class, 'get_merchant_info'])->middleware('ensureUserHasRole:admin,Finance');
     Route::post('/transaction-management/vinnet/change-key', [VinnetController::class, 'change_key'])->middleware('ensureUserHasRole:admin,Finance');
@@ -113,9 +130,6 @@ Route::post('/project-management/gotit/check-transaction', [GotItController::cla
 
 
 
-Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail']);
-
-Route::post('/reset-password', [ResetPasswordController::class, 'reset']);
 
 
 Route::get('/techcombank-panel/users', [TechcombankPanelController::class, 'index']);

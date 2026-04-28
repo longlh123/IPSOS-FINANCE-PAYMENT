@@ -117,7 +117,7 @@ class VinnetService
         return null;
     }
 
-    function getProvice(string $phoneNumber): ?string
+    function getProviceByPhoneNumber(string $phoneNumber): ?string
     {
         $phone_number = trim($phoneNumber);
 
@@ -133,6 +133,17 @@ class VinnetService
 
         foreach($this->proviceItems as $provice => $proviceData){
             if(in_array($prefix, $proviceData["subscriberNumberPrefix"])){
+                return $provice;
+            }
+        }
+
+        return null;
+    }   
+
+    function getProviceByServiceCode(string $serviceCode): ?string
+    {
+        foreach($this->proviceItems as $provice => $proviceData){
+            if($proviceData["serviceCode"] == $serviceCode){
                 return $provice;
             }
         }

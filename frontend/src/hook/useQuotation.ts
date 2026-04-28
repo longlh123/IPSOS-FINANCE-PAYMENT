@@ -113,7 +113,9 @@ export function useQuotation(projectId?: number) {
             setMessage(response.data.message);
         } catch(error: any){
             setError(true);
-            setMessage(error.message || 'Failed to fetch Quotation');
+            setMessage(error.response.data.error || error.response.data.message || error.message || 'Failed to fetch Quotation');
+
+            throw error;
         } finally{
             setLoading(false);
         }

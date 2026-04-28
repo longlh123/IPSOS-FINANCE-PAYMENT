@@ -46,6 +46,11 @@ class Project extends Model
         return $this->hasMany(Quotation::class, 'project_id', 'id');
     }
 
+    public function catiBatches()
+    {
+        return $this->hasMany(CATIBatch::class, 'project_id', 'id');
+    }
+
     public function projectTypes()
     {
         return $this->belongsToMany(ProjectType::class, 'project_project_types', 'project_id', 'project_type_id')->withTimestamps();

@@ -68,7 +68,7 @@ const TableProjects = () => {
   const [selectedProject, setSelectedProject] = useState<any | null>(null);
 
   const { projects, page, rowsPerPage, total, setPage, setRowsPerPage, searchTerm, setSearchTerm, searchFromDate, setSearchFromDate, searchToDate, setSearchToDate, updateProjectStatus, loading: projectsLoading, error: projectError } = useProjects();
-  const { metadata, loading: metadataLoading, error: metadataError } = useMetadata();
+  const { data, isLoading, isError } = useMetadata();
 
   const handleChangePage = (event: any, newPage: number) => {
     setPage(newPage);
@@ -208,13 +208,13 @@ const TableProjects = () => {
           </div>
         </div>
         
-        { (projectError && metadataError) ? (
+        { (projectError && isError) ? (
           <Box display="flex" justifyContent="center" alignItems="center" height="100%">
             <SdCardAlertOutlinedIcon />
-            <div>{projectError ?? metadataError}</div>
+            <div>{projectError ?? isError}</div>
           </Box>
         ) : (
-          (projectsLoading && metadataLoading) ? (
+          (projectsLoading && isLoading) ? (
             <Box display="flex" justifyContent="center" alignItems="center" height="100%">
               <CircularProgress />
             </Box>
@@ -382,14 +382,11 @@ const TableProjects = () => {
         onConfirm={confirmDialog}
       />
 
-      {/* SHOW MODAL IMPORT EXCEL */}
-      {/* <ModalImportExcel openModal={openImportExcelModal} onClose={handleCloseModal} project={selectedProject} /> */}
-
       {/* show Modal Add */}
       <ModalAddProject 
         openModal={openModalAdd} 
         onClose={handleCloseModal} 
-        metadata={metadata}
+        metadata={data}
       />
     </>
   );

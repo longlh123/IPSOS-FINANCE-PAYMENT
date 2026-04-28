@@ -1003,9 +1003,7 @@ class GotItController extends Controller
             ]);
         }
     }
-
-    // public function perform_transaction_new()
-
+    
     private function generate_voucher_request($apiObject, $voucher_link_type, $phone_number, $prices)
     {
         $time=strtotime(date('Y-m-d'));

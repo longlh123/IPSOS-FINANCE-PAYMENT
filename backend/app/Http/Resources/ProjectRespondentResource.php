@@ -48,6 +48,7 @@ class ProjectRespondentResource extends JsonResource
             'status' => $this->mapStatusToFrontEnd($this->status),
             'environment' => $this->environment,
             'token' => $this->getToken($this->id),
+            'price_level' =>$this->project->getPriceForProvince($this->province_id, $this->price_level)
         ];
     }
 

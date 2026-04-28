@@ -188,6 +188,8 @@ class ProjectRespondentController extends Controller
 
             $projectRespondentData = $validatedRequest['project_respondents'];
 
+            Log::info($projectRespondentData);
+
             $batchId = "IMPORT_" . now()->format('dmYHis');
 
             DB::beginTransaction();
@@ -231,7 +233,7 @@ class ProjectRespondentController extends Controller
                         'respondent_phone_number' => $row['respondent_phone_number'],
                         'phone_number' => $row['phone_number'],
                         'email' => $row['email'],
-                        'price_level' => 'main',
+                        'price_level' => $row['price_level'],
                         'status' => ProjectRespondent::STATUS_RESPONDENT_PENDING,
                         'environment' => $environment,
                     ]);

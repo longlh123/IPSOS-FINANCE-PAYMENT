@@ -5,15 +5,35 @@ namespace App\Imports;
 use App\Models\User;
 use App\Models\TradeUnionRecipientList;
 use App\Models\TradeUnionRecipient;
-use Maatwebsite\Excel\Concerns\ToModel;
-use Maatwebsite\Excel\Concerns\WithHeadingRow;
-use Maatwebsite\Excel\Validators\Failure;
-use Maatwebsite\Excel\Concerns\SkipsOnFailure;
-use Maatwebsite\Excel\Concerns\SkipsFailures;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
+use Maatwebsite\Excel\Concerns\{
+    ToModel,
+    WithHeadingRow,
+    WithValidation,
+    WithBatchInserts,
+    WithChunkReading,
+    SkipsEmptyRows,
+    SkipsOnError,
+    SkipsErrors,
+    SkipsOnFailure,
+    SkipsFailures
+};
 
-class RecipientsImport implements ToModel, WithHeadingRow
+class RecipientsImport implements 
+    ToModel,
+    WithHeadingRow,
+    WithValidation,
+    WithBatchInserts,
+    WithChunkReading,
+    SkipsEmptyRows,
+    SkipsOnError,
+    SkipsOnFailure
 {
+    //Import vẫn chạy dù có dòng lỗi
+    use SkipsErrors, SkipsFailures;
+
     protected int $recipientListId;
 
     public function __construct(int $recipientListId)
@@ -23,7 +43,7 @@ class RecipientsImport implements ToModel, WithHeadingRow
 
     public function model(array $row)
     {
-        Log::info('RecipientsImport row', $row);
+        // Log::info('RecipientsImport row', $row);
 
         $email = trim($row['email'] ?? '');
         
@@ -37,10 +57,10 @@ class RecipientsImport implements ToModel, WithHeadingRow
             throw new \Exception("User không tồn tại: email={$email}");
         }
 
-        Log::info([
-            'user_id' => $user->id,
-            'email' => $email,
-        ]);
+        // Log::info([
+        //     'user_id' => $user->id,
+        //     'email' => $email,
+        // ]);
 
         return new TradeUnionRecipient([
             'recipient_list_id' => $this->recipientListId,
@@ -49,5 +69,15 @@ class RecipientsImport implements ToModel, WithHeadingRow
             'price' => $row['price']  ?? null,
             'status' => 'pending'
         ]);
+    }
+
+    public function batchSize(): int
+    {
+        return 1000;
+    }
+
+    public function chunkSize(): int
+    {
+        return 1000;
     }
 }
