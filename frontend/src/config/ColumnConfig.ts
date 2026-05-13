@@ -4,7 +4,7 @@ export interface ColumnFormat {
     label: string,
     name: string,
     type: "string" | "number" | "select" | "image" | "date" | "menu",
-    align?: "center" | "left" | "right"
+    align?: "center" | "left" | "right",
     width?: number, 
     flex?: number,
     options?: { value: any, label: string }[],
