@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
@@ -60,6 +61,7 @@ class ProjectController extends Controller
         catch(\Exception $e)
         {
             Log::error("Project display fails. " . $e->getMessage());
+            
             return response()->json([
                 'status_code' => 500,
                 'message' => 'Project display fails. ' . $e->getMessage(),
@@ -84,8 +86,8 @@ class ProjectController extends Controller
             $perPage = $request->input('perPage', 10);
 
             $search = $request->input('searchTerm');
-            $searchFromDate = Carbon::parse($request->input('searchFromDate'));
-            $searchToDate = Carbon::parse($request->input('searchToDate'));
+            $searchFromDate = $request->input('searchFromDate') ? Carbon::parse($request->input('searchFromDate')) : null;
+            $searchToDate = $request->input('searchToDate') ? Carbon::parse($request->input('searchToDate')) : null;
 
             if(in_array(Auth::user()->userDetails->role->name, ['Admin', 'Finance'])){
                 $query = Project::with([
@@ -138,16 +140,35 @@ class ProjectController extends Controller
                 });
             }
 
-            $query->when($searchFromDate && $searchToDate, function($q) use ($searchFromDate, $searchToDate){
-                return $q->whereHas('projectDetails', function(Builder $sub) use ($searchFromDate, $searchToDate){
-                    $sub->whereBetween('planned_field_start', [
-                        $searchFromDate,
-                        $searchToDate
-                    ]);
+            if($searchFromDate && $searchToDate){
+                $query->when($searchFromDate && $searchToDate, function($q) use ($searchFromDate, $searchToDate){
+                    return $q->whereHas('projectDetails', function(Builder $sub) use ($searchFromDate, $searchToDate){
+                        $sub->whereBetween('planned_field_start', [
+                            $searchFromDate,
+                            $searchToDate
+                        ]);
+                    });
                 });
-            });
+            }
 
-            $query->orderBy('id', 'asc');
+            $query->orderByRaw("
+                (
+                    SELECT 
+                        CASE project_details.status
+                            WHEN 'on going' THEN 1
+                            WHEN 'in coming' THEN 2
+                            WHEN 'planned' THEN 3
+                            WHEN 'on hold' THEN 4
+                            WHEN 'completed' THEN 5
+                            WHEN 'cancelled' THEN 6
+                        END
+                    FROM project_details
+                    WHERE project_details.project_id = projects.id
+                    LIMIT 1
+                )
+            ");
+            
+            $query->latest();
 
             //$projects = $query->get();
             // Laravel paginator
@@ -264,6 +285,9 @@ class ProjectController extends Controller
                 DB::commit();
                 
                 Log::info('The project stored successfully.');
+
+                Cache::forget('cati_projects');
+                Cache::forget('metadata_projects');
 
                 return response()->json([
                     'message' => 'The project stored successfully.',
@@ -403,6 +427,9 @@ class ProjectController extends Controller
                     }
                 }
 
+                Cache::forget('cati.projects');
+                Cache::forget('cati.filters.all');
+
                 DB::commit();
                 
                 Log::info('The project editted successfully.');
@@ -500,6 +527,9 @@ class ProjectController extends Controller
                     'status' => $validatedRequest['status']
                 ]);
             }
+
+            Cache::forget('cati.projects');
+            Cache::forget('cati.filters.all');
 
             Log::info('The project is updated successfully.');
             return response()->json([
@@ -616,6 +646,51 @@ class ProjectController extends Controller
         }
     }
     
+    public function assignUsers(Request $request, $projectId)
+    {
+        try
+        {
+            $validated = $request->validate([
+                'user_ids' => 'required|array',
+                'user_ids.*' => 'required|integer|exists:users,id'
+            ]);
+
+            $userIds = $validated['user_ids'];
+
+            $project = Project::with([
+                'projectDetails.createdBy',
+                'projectPermissions'
+            ])->findOrFail($projectId);
+
+            $creatorId = $project->projectDetails->createdBy->id;
+
+            if(!in_array($creatorId, $userIds, true)){
+                return response()->json([
+                    'status_code' => 400,
+                    'error' => 'Project creator cannot be removed from permissions.'
+                ], 400);
+            }
+
+            $project->projectPermissions()->sync($userIds);
+
+            $project->load('projectPermissions');
+
+            return response()->json([
+                'status_code' => 200,
+                'message' => 'Users assigned successfully.',
+                'data' => new ProjectResource($project)
+            ]);
+
+        } catch(Exception $e){
+            Log::error('Assignment failed: ' . $e->getMessage());
+
+            return response()->json([
+                'status_code' => 400,
+                'error' => 'Assignment failed: ' . $e->getMessage()
+            ]);
+        }
+    }
+
     public function bulkAddEmployees(ImportEmployeesRequest $request, $projectId)
     {
         try
