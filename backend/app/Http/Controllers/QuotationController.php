@@ -28,7 +28,7 @@ class QuotationController extends Controller
 
             $project = Project::findOrFail($projectId);
 
-            if($roleName === 'Researcher'){
+            if(in_array($roleName, ['Researcher', 'Admin'])){
                 $quotationVersions = $project->quotations()
                                             ->orderByDesc('version')
                                             ->get();
@@ -278,7 +278,8 @@ class QuotationController extends Controller
                 ], 403);
             }
 
-            if($logged_in_user !== $quotation->created_user_id){
+            $roleName = Auth::user()->userDetails->role->name;
+            if($roleName !== 'Admin' && $logged_in_user !== $quotation->created_user_id){
                 return response()->json([
                     'status_code' => 403,
                     'error' => 'You are not allowed to delete this version.'
@@ -357,10 +358,11 @@ class QuotationController extends Controller
                 ], 403);
             }
 
-            if($logged_in_user !== $quotation->created_user_id){
+            $roleName = Auth::user()->userDetails->role->name;
+            if($roleName !== 'Admin' && $logged_in_user !== $quotation->created_user_id){
                 return response()->json([
                     'status_code' => 403,
-                    'error' => 'You are not allowed to delete this version.'
+                    'error' => 'You are not allowed to submit this version.'
                 ], 403);
             }
 
@@ -415,7 +417,8 @@ class QuotationController extends Controller
                 ], 403);
             }
 
-            if($logged_in_user !== $quotation->created_user_id){
+            $roleName = Auth::user()->userDetails->role->name;
+            if($roleName !== 'Admin' && $logged_in_user !== $quotation->created_user_id){
                 return response()->json([
                     'status_code' => 403,
                     'error' => 'You are not allowed to approve this version.'

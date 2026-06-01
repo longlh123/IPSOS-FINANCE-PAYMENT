@@ -30,7 +30,7 @@ const Quotation: React.FC = () => {
     const [searchParams] = useSearchParams();
 
     const { user } = useAuth();
-    const canMutate = user?.role !== 'Field Manager'
+    const canMutate = user?.role !== 'Field Manager';
 
     const [ formKey, setFormKey ] = useState(0);
     const [ quotationSchema, setQuotationSchema ] = useState([]);

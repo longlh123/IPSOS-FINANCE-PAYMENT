@@ -1,5 +1,5 @@
 import "../../assets/css/components.css";
-import React, { useState } from "react";
+import { useState } from "react";
 import axios from "axios";
 import {
   TextField,
@@ -8,26 +8,25 @@ import {
   Typography,
   InputAdornment,
   IconButton,
-  Alert,
 } from "@mui/material";
 import LoadingButton from "@mui/lab/LoadingButton";
 import LockResetIcon from "@mui/icons-material/LockReset";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 import { ApiConfig } from "../../config/ApiConfig";
 
-const ForgotPassword = () => {
-  const [email, setEmail] = useState("");
+const SetPassword = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
 
+  const { clearMustChangePassword, logout } = useAuth();
   const navigate = useNavigate();
 
-  const handleReset = async () => {
+  const handleSubmit = async () => {
     if (password.length < 6) {
       setErrorMessage("Password must be at least 6 characters.");
       return;
@@ -39,25 +38,22 @@ const ForgotPassword = () => {
 
     setLoading(true);
     setErrorMessage("");
-    setSuccessMessage("");
 
     try {
-      await axios.post(ApiConfig.account.forgotPassword, {
-        email,
-        password,
-        password_confirmation: confirmPassword,
-      });
+      const token = localStorage.getItem("authToken");
+      await axios.post(
+        ApiConfig.account.setFirstPassword,
+        { password, password_confirmation: confirmPassword },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-      setSuccessMessage("Password reset successfully. You can now log in.");
+      clearMustChangePassword();
+      navigate("/project-management/projects", { replace: true });
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        const errors = error.response?.data?.errors;
-        if (errors) {
-          const first = Object.values(errors)[0] as string[];
-          setErrorMessage(first[0]);
-        } else {
-          setErrorMessage(error.response?.data?.message ?? "An error occurred.");
-        }
+        setErrorMessage(
+          error.response?.data?.message ?? "An error occurred. Please try again."
+        );
       }
     } finally {
       setLoading(false);
@@ -87,25 +83,17 @@ const ForgotPassword = () => {
         }}
       >
         <Typography variant="h5" textAlign="center">
-          Reset Password
+          Set Your Password
         </Typography>
         <Typography variant="body2" textAlign="center" color="text.secondary">
-          Enter your email and choose a new password.
+          Your account is new. Please set a password before continuing.
         </Typography>
 
-        {errorMessage && <Alert severity="error">{errorMessage}</Alert>}
-        {successMessage && (
-          <Alert severity="success">{successMessage}</Alert>
+        {errorMessage && (
+          <div className="message-invalid">
+            <span>{errorMessage}</span>
+          </div>
         )}
-
-        <FormControl fullWidth>
-          <TextField
-            label="Email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </FormControl>
 
         <FormControl fullWidth>
           <TextField
@@ -136,20 +124,19 @@ const ForgotPassword = () => {
 
         <LoadingButton
           fullWidth
-          onClick={handleReset}
+          onClick={handleSubmit}
           endIcon={<LockResetIcon />}
           loading={loading}
           variant="contained"
-          disabled={!!successMessage}
         >
-          RESET PASSWORD
+          SET PASSWORD
         </LoadingButton>
 
         <Typography
           variant="body2"
           textAlign="center"
           sx={{ cursor: "pointer", color: "text.secondary" }}
-          onClick={() => navigate("/login")}
+          onClick={logout}
         >
           Back to Login
         </Typography>
@@ -158,4 +145,4 @@ const ForgotPassword = () => {
   );
 };
 
-export default ForgotPassword;
+export default SetPassword;

@@ -5,7 +5,8 @@ import { useNavigate } from "react-router-dom";
 interface UserDetail {
     first_name: string,
     last_name: string,
-    role: string
+    role: string,
+    must_change_password?: boolean
 }
 
 interface AuthContextType {
@@ -13,6 +14,7 @@ interface AuthContextType {
     token: string | null;
     login: (token: string, user: UserDetail, redirectTo?: string) => void;
     logout: () => void;
+    clearMustChangePassword: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -73,11 +75,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         localStorage.removeItem('authToken');
         localStorage.removeItem('user');
 
-        navigate('/login', { replace: true }); // Redirect to login page after logout
+        navigate('/login', { replace: true });
+    };
+
+    const clearMustChangePassword = () => {
+        setUser((prev) => {
+            if (!prev) return prev;
+            const updated = { ...prev, must_change_password: false };
+            localStorage.setItem('user', JSON.stringify(updated));
+            return updated;
+        });
     };
 
     return (
-        <AuthContext.Provider value={{ user, token, login, logout }}>
+        <AuthContext.Provider value={{ user, token, login, logout, clearMustChangePassword }}>
           {!loading && children}
         </AuthContext.Provider>
     );

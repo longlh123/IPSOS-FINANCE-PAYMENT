@@ -29,6 +29,7 @@ import Settings from "./pages/Project/Settings";
 import AccountManagement from "./pages/AccountManagement/AccountManagement";
 import ConfirmPassword from "./pages/Auth/ConfirmPassword";
 import ForgotPassword from "./pages/Auth/ForgotPassword";
+import SetPassword from "./pages/Auth/SetPassword";
 import CATISettings from "./pages/Project/CATISettings";
 import MiniCATILogin from "./pages/MiniCATI/MiniCATILogin";
 import CATIProtectedRoute from "./routes/CATIProtectedRoute";
@@ -52,6 +53,7 @@ const App: React.FC = () => {
             <Route path="/login" element={<Login />} />
             <Route path="/confirm-password" element={<ConfirmPassword/>} />
             <Route path="/forgot-password" element={<ForgotPassword/>} />
+            <Route path="/set-password" element={<SetPassword/>} />
             <Route path="/page200" element={<Page200 messageSuccess="" />} />
             <Route path="/error" element={<ErrorPage />} />            
             <Route path="/custom-voucher/:token" element={<CustomVoucher />} />
