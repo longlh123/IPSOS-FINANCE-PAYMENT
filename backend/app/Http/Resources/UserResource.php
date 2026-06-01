@@ -26,8 +26,9 @@ class UserResource extends JsonResource
             'address'       => $this->userDetails->address,
             'role'          => $this->userDetails->role->name,
             'role_id'       => $this->userDetails->role_id,
-            'department'    => $this->userDetails->department->name,
-            'department_id' => $this->userDetails->department_id,
+            'department'           => $this->userDetails->department->name,
+            'department_id'        => $this->userDetails->department_id,
+            'must_change_password' => (bool) $this->must_change_password,
         ];
     }
 }

@@ -34,7 +34,7 @@ use App\Http\COntrollers\OperationsTemplateController;
 // ══════════════════════════════════════════════════════════
 
 Route::post('/login', [LoginController::class, 'login'])->name('index');
-Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail']);
+Route::post('/forgot-password', [ForgotPasswordController::class, 'resetPassword']);
 Route::post('/reset-password', [ResetPasswordController::class, 'reset']);
 
 Route::prefix('administrative-divisions')->group(function () {
@@ -57,6 +57,7 @@ Route::prefix('project-management')->group(function () {
 Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/logout', [LoginController::class, 'logout']);
+    Route::post('/set-first-password', [UserController::class, 'setFirstPassword']);
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::get('/notifications/unread-count', [NotificationController::class, 'countUnRead']);
 

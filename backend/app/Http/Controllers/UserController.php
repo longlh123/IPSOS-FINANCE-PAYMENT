@@ -73,7 +73,8 @@ class UserController extends Controller
             $user = User::create([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
-                'password' => Hash::make($validated['password'])
+                'password' => Hash::make($validated['password']),
+                'must_change_password' => true,
             ]);
 
             $user->userDetails()->create([
@@ -133,5 +134,22 @@ class UserController extends Controller
                 'error' => $e->getMessage()
             ], 400);
         }
+    }
+
+    public function setFirstPassword(Request $request)
+    {
+        $request->validate([
+            'password' => 'required|min:6|confirmed',
+        ]);
+
+        $user = $request->user();
+        $user->password = Hash::make($request->password);
+        $user->must_change_password = false;
+        $user->save();
+
+        return response()->json([
+            'status_code' => 200,
+            'message'     => 'Password set successfully',
+        ]);
     }
 }
