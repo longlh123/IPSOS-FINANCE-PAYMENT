@@ -1,11 +1,8 @@
 import "../Navbar/Navbar.css";
 import { useState } from "react";
 import IconSolar from "../Icon/IconSolar";
-import AccountMenu from "./AccountMenu";
-import IconMoon from "../Icon/IconMoon";
 import { IconButton } from "@mui/material";
-import IconNotify from "../Icon/IconNotify";
-import IconSun from "../Icon/IconSun";
+import NotificationBell from "./NotificationBell";
 
 interface NavBarProps {
   toggleSidebar: () => void;
@@ -33,22 +30,15 @@ const Navbar: React.FC<NavBarProps> = ({ toggleSidebar, navbarFullWidth }) => {
             </IconButton>
           </div>
         </div>
-        <div className="nav-right">
-          <AccountMenu />
-          {/* <IconButton onClick={handleDarkModeToggle} sx={styleIconNavbar}>
-            {darkMode ? <IconSun /> : <IconMoon />}
-          </IconButton>
-          <IconButton sx={styleIconNavbar}>
-            <img
-              src="https://cdn-icons-png.flaticon.com/128/197/197473.png"
-              alt=""
-              width="22"
-              height="22"
-            ></img>
-          </IconButton>
-          <IconButton sx={styleIconNavbar}>
-            <IconNotify />
-          </IconButton> */}
+        <div
+          className="nav-right"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          <NotificationBell />
         </div>
       </div>
     </>

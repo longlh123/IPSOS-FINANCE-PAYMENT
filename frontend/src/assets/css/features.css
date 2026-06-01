@@ -1,0 +1,232 @@
+/* ════════════════════════════════════════════
+   FEATURES — Page/widget-level styles
+   Dùng cho: widget, welcome section, legend,
+             chart, subtotal — những thứ chưa
+             chuyển sang MUI sx prop
+   ════════════════════════════════════════════ */
+
+/* ── Widget ─────────────────────────────────── */
+
+.widget-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+  flex-wrap: nowrap;
+  width: 100%;
+  padding: 1.25rem;
+  border-radius: 1.25rem !important;
+  box-shadow:
+    rgba(145, 158, 171, 0.3) 0 0 0.125rem 0,
+    rgba(145, 158, 171, 0.12) 0 0.75rem 1.5rem -0.25rem !important;
+}
+
+.widget-container .widget-title {
+  color: var(--font-primary);
+  font-weight: 500;
+  font-size: 1rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.widget-container .widget-content {
+  color: var(--font-fifth);
+  font-weight: 700;
+  font-size: 1rem;
+  overflow: hidden;
+  word-break: normal;
+  text-overflow: ellipsis;
+}
+
+.widget-container .widget-icon {
+  font-size: 1rem;
+}
+
+.widget-col-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.widget-row-item {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .widget-container .widget-title   { font-size: 1.25rem; }
+  .widget-container .widget-content { font-size: 2rem; }
+  .widget-container .widget-icon    { font-size: 1.2rem; }
+}
+
+@media (min-width: 1024px) {
+  .widget-container .widget-title   { font-size: 1.5rem; }
+  .widget-container .widget-content { font-size: 3.5rem; }
+  .widget-container .widget-icon    { font-size: 1.5rem; }
+}
+
+/* ── Welcome section ────────────────────────── */
+
+.welcome-header {
+  background-image: url(../img/ipsos_banner.jpeg);
+  background-repeat: no-repeat;
+  background-size: cover;
+  height: auto;
+  min-height: 13.75rem;
+}
+
+.welcome-container {
+  display: flex;
+  flex-direction: column;
+  margin-top: 1.25rem;
+  width: 100%;
+}
+
+.welcome-body {
+  display: flex;
+  flex-direction: column;
+  text-align: justify;
+  gap: 0.1875rem;
+  padding: 1.875rem;
+  width: 100%;
+  margin-bottom: 1.25rem;
+}
+
+.welcome-body .item {
+  padding: 0.625rem;
+  width: 100%;
+  font-weight: 400;
+  font-size: 1rem;
+  line-height: 2.5rem;
+}
+
+.welcome-body .action {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.625rem;
+  font-size: 1rem;
+  line-height: 2.5rem;
+}
+
+.welcome-footer {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  padding: 1.25rem;
+}
+
+.welcome-footer img {
+  margin-right: 1.25rem;
+}
+
+.welcome-footer .gotit-slogan,
+.welcome-footer .vinnet-slogan {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+/* ── Icon project ───────────────────────────── */
+
+.icon-project img {
+  width: 2.5rem;
+  text-align: center;
+}
+
+/* ── Legend ─────────────────────────────────── */
+
+.legend-container {
+  display: block;
+  width: 18.75rem;
+}
+
+.legend {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.legend-horizontal {
+  list-style: none;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+}
+
+.legend li,
+.legend-horizontal li {
+  display: flex;
+  flex-direction: row;
+  font-size: 0.75rem;
+  align-items: center;
+}
+
+.legend .legend-square,
+.legend-horizontal .legend-square {
+  display: inline-block;
+  width: 0.75rem;
+  height: 0.75rem;
+  margin-right: 0.3125rem;
+  vertical-align: middle;
+}
+
+/* ── Chart ──────────────────────────────────── */
+
+.chart-container {
+  width: 100%;
+  position: relative;
+}
+
+/* ── Subtotal ───────────────────────────────── */
+
+.subtotal-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: stretch;
+  align-items: center;
+  gap: 0.625rem;
+  font-size: 1.125rem;
+}
+
+.subtotal-container .row {
+  display: flex;
+  flex-direction: row;
+}
+
+/* ── Filter container (generic, non-table) ───── */
+
+.filter-container {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-start;
+  width: 50%;
+}
+
+.filter-container .filter-item {
+  width: 50%;
+}
+
+/* ── Tooltip ────────────────────────────────── */
+
+.tooltip {
+  position: absolute;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  padding: 0.3125rem;
+  border-radius: 0.1875rem;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+}

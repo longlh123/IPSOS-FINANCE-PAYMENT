@@ -7,7 +7,6 @@ import { OfflineProjectRespondentCellConfig, OfflineProjectRespondentData, Offli
 import { ColumnFormat } from "../../config/ColumnConfig";
 import SearchTextBox from "../../components/SearchTextBox";
 import ReusableTable from "../../components/Table/ReusableTable";
-import { useVisibility } from "../../hook/useVisibility";
 import * as XLSX from "xlsx";
 import AlertDialog from "../../components/AlertDialog/AlertDialog";
 import useDialog from "../../hook/useDialog";
@@ -21,8 +20,6 @@ const Gifts: React.FC = () => {
     const projectId = Number(id) || 0;
     const [ projectSelected, setProjectSelected] = useState<ProjectData | null>(null);
 
-    const { canView } = useVisibility();
-    
     const { open, title, message, showConfirmButton, openDialog, closeDialog, confirmDialog } = useDialog();
     
     const { getProject } = useProjects();
@@ -261,20 +258,16 @@ const Gifts: React.FC = () => {
                     </div>
                 </div>
                 <div className="filter-right">
-                {canView("gifts.functions.visible_import_respondents") && (
-                    <>
-                        <Button className="btn btn-primary" onClick={() => fileInputRef.current?.click()}>
-                            Import Respondents
-                        </Button>
-                        <input
-                            type="file"
-                            accept=".xlsx,.xls"
-                            ref={fileInputRef}
-                            style={{ display: "none" }}
-                            onChange={handleImportFile}
-                        />
-                    </>
-                )}
+                    <Button className="btn btn-primary" onClick={() => fileInputRef.current?.click()}>
+                        Import Respondents
+                    </Button>
+                    <input
+                        type="file"
+                        accept=".xlsx,.xls"
+                        ref={fileInputRef}
+                        style={{ display: "none" }}
+                        onChange={handleImportFile}
+                    />
                 </div>
             </div>
             <div className="filter">

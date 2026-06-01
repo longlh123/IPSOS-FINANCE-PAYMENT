@@ -22,16 +22,16 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
       return <Navigate to="/project-management/projects" replace />;
     }
 
-    //Nếu có giới hạn role → kiểm tra
-    // if(allowedRoles && user && user.role && !allowedRoles.includes(user.role)){
+    // Nếu có giới hạn role -> kiểm tra theo role từ login response.
+    // if(!isAllowedRole(user?.role, allowedRoles)){
     //   return <Navigate
-    //             to="/error"
-    //             state={{
-    //               errorCode: 3,
-    //               errorMessage: "Bạn không có quyền truy cập trang này."
-    //             }}
-    //             replace
-    //           />
+    //           to="/error"
+    //           state={{
+    //             errorCode: 3,
+    //             errorMessage: "Bạn không có quyền truy cập trang này."
+    //           }}
+    //           replace
+    //         />
     // }
   
     return <>{children}</>;

@@ -7,7 +7,6 @@ import ReusableTable from "../../components/Table/ReusableTable";
 import { useProjects } from "../../hook/useProjects";
 import { ProjectData } from "../../config/ProjectFieldsConfig";
 import { useEffect, useRef, useState } from "react";
-import { useVisibility } from "../../hook/useVisibility";
 import * as XLSX from "xlsx";
 import useDialog from "../../hook/useDialog";
 import AlertDialog from "../../components/AlertDialog/AlertDialog";
@@ -21,7 +20,6 @@ const CATISettings = () => {
     const { id } = useParams<{id: string}>();
     const projectId = Number(id) || 0;
 
-    const { canView } = useVisibility();
     const { open, title, message, showConfirmButton, openDialog, closeDialog, confirmDialog } = useDialog();
 
     const [ projectSelected, setProjectSelected ] = useState<ProjectData | null>(null);

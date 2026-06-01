@@ -81,17 +81,21 @@ const EditableRow = memo(({ row, isEditing, isActive, onStartEdit, onStopEdit, o
     } 
 
     return (
-        <TableRow>
-            <TableCell 
+        <TableRow
+            sx={{
+                "&:hover": { backgroundColor: "rgba(0, 157, 156, 0.05)" },
+                "&:last-child td": { border: 0 },
+            }}
+        >
+            <TableCell
                 width={300}
-                sx={{
-                    fontWeight: 600
-                }}
+                sx={{ fontWeight: 600, fontSize: "0.8125rem", color: "var(--text-color)" }}
             >
                 {row.label}
             </TableCell>
             <TableCell
                 ref={ref}
+                sx={{ fontSize: "0.8125rem", color: "var(--text-color)" }}
                 onClick={() => {
                     if(isEditing) onStartEdit();
                 }}
@@ -113,7 +117,7 @@ const EditableRow = memo(({ row, isEditing, isActive, onStartEdit, onStopEdit, o
                                         rel="noopener noreferrer"
                                         onClick={(e) => e.stopPropagation()}
                                         style={{
-                                            color: "#1976d2", 
+                                            color: "var(--text-secondary-color)",
                                             textDecoration: "underline"
                                         }}
                                     >

@@ -1,166 +1,75 @@
-import { Accordion, AccordionDetails, AccordionSummary, Autocomplete, Box, Button, Card, CardContent, CardHeader, Checkbox, FormControl, FormControlLabel, FormLabel, Grid, IconButton, MenuItem, Paper, Radio, RadioGroup, Select, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from "@mui/material";
+import { 
+    Button, 
+    Paper, 
+    Table, 
+    TableBody, 
+    TableContainer
+} from "@mui/material";
 import { useCallback, useEffect, useState } from "react";
-import DeleteIcon from "@mui/icons-material/Delete";
-import { ProjectData } from "../../../config/ProjectFieldsConfig";
-import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
-import EditableRow from "./EditableRow";
-import RichTextRow from "./RichTextRow";
-import RadioRow from "./RadioRow";
-import MultiSelectRow from "./MultiSelectRow";
-import RepeaterRow from "./RepeaterRow";
-import SectionRow from "./SectionRow";
+import { DynamicFormProps, renderField } from "../../../utils/renderFields";
 
-interface LayoutSchema {
-    xs: number,
-    sm: number,
-    md: number
-}
+const QuotationDynamicForm: React.FC<DynamicFormProps> = ({ schema, initialData, isEditting, onSubmit, onProjectTypeChange }) => {
 
-export interface FieldSchema {
-    name: string;
-    label: string;
-    type: string;
-    required?: boolean;
-    default?: string | number;
-    layout?: LayoutSchema,
-    hidden: boolean,
-    options?: {value: string, label: string}[];
-    fields?: FieldSchema[];
-}
-
-interface DynamicFormProps {
-    schema: FieldSchema[];
-    onSubmit: (data: any) => void;
-    initialQuotationData?: any,
-    isEditting: boolean,
-}
-
-const QuotationDynamicForm: React.FC<DynamicFormProps> = ({ schema, initialQuotationData, isEditting, onSubmit }) => {
-
-    const [ rows, setRows ] = useState<any>({}); 
+    const [ rows, setRows ] = useState<any>({});
 
     useEffect(() => {
-        if(initialQuotationData) {
-            setRows(initialQuotationData);
+        if(initialData) {
+            setRows(initialData);
         }
-    }, [initialQuotationData]);
+    }, [initialData]);
 
     const updateRow = useCallback((id: string, value: any) => {
         setRows((prev: any) => ({
             ...prev,
             [id]: value
         }));
-    }, []);
+        if (id === 'project_types' && onProjectTypeChange) {
+            const type = Array.isArray(value) ? value[0] : value;
+            if (type) onProjectTypeChange(type);
+        }
+    }, [onProjectTypeChange]);
 
     const shouldShowBoosterCondition = rows['sam']
 
     const [ editingId, setEditingId ] = useState<string | null>(null);
 
-    const renderField = (field: FieldSchema) => {
-        if(field.type === 'text' || field.type === 'number'){
-            let disabled = field.name == 'internal_code' ? true : !isEditting;
-            
-            const rule = field.name === 'project_name' ? "uppercaseNoSpecial" : (field.name === 'internal_code' ? "maskXXXX_XXXX" : undefined);
-
-            return (
-                <EditableRow
-                    key={field.name}
-                    row={{
-                        id: field.name, 
-                        label: field.label, 
-                        type: field.type,
-                        value: rows[field.name], 
-                        ...(rule ? { rule } : {})
-                    }}
-                    isEditing={isEditting}
-                    isActive={editingId === field.name}
-                    onStartEdit={() => setEditingId(field.name)}
-                    onStopEdit={() => setEditingId(field.name)}
-                    onChange={updateRow}
-                />
-            )
-        }
-
-        if(field.type === 'textarea'){
-            return (
-                <RichTextRow
-                    key={field.name}
-                    row={{id: field.name, label: field.label, value: rows[field.name]}}
-                    isEditing={isEditting}
-                    isActive={editingId === field.name}
-                    onStartEdit={() => setEditingId(field.name)}
-                    onStopEdit={() => setEditingId(field.name)}
-                    onChange={updateRow}
-                />
-            )
-        }
-
-        if(field.type === 'radio'){
-            return (
-                <RadioRow
-                    key={field.name}
-                    row={{id: field.name, label: field.label, value: rows[field.name], options: field.options ?? []}}
-                    isEditing={isEditting}
-                    onChange={updateRow}
-                />
-            )
-        }
-
-        if(field.type === 'multi-select'){
-            return (
-                <MultiSelectRow
-                    key={field.name}
-                    row={{id: field.name, label: field.label, value: rows[field.name], options: field.options ?? []}}
-                    isEditing={isEditting}
-                    onChange={updateRow} 
-                />
-            )
-        }
-
-        if(field.type === 'repeater'){
-            return (
-                <RepeaterRow
-                    key={field.name}
-                    row={{id:field.name, label: field.label, value: rows[field.name], fields: field.fields ?? []}}
-                    isEditing={isEditting}
-                    onChange={updateRow}
-                />
-            )
-        }
-
-        if(field.type === 'section'){
-            return (
-                <SectionRow
-                    key={field.name}
-                    row={{id: field.name, label: field.label, value: rows[field.name], fields: field.fields ?? []}}
-                    isEditing={isEditting}
-                    onChange={updateRow}
-                />
-            )
-        }
-    }
-
     return (
         <form
             onSubmit={(e) => {
-                console.log(rows)
                 e.preventDefault();
                 onSubmit(rows);
             }}
         >
-            <TableContainer component={Paper}>
-                <Table size="small">
-                    <TableBody> 
-                        {schema.map((field) => {
-                            return renderField(field)
-                        })}
-                    </TableBody>
-                </Table>
-            </TableContainer>
+            <Paper
+                elevation={0}
+                sx={{
+                    border: "1px solid",
+                    borderColor: "var(--body-color)",
+                    borderRadius: "12px",
+                    overflow: "hidden",
+                    backgroundColor: "var(--background-color)",
+                }}
+            >
+                <TableContainer>
+                    <Table size="small">
+                        <TableBody>
+                            {schema.map((field) => renderField({
+                                    field,
+                                    rows,
+                                    isEditting,
+                                    editingId,
+                                    setEditingId,
+                                    updateRow
+                                })
+                            )}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+            </Paper>
             <Button
                 type="submit"
-                variant="contained"
-                sx={{mt: 3}}
+                className="btn"
+                sx={{ mt: 2 }}
                 disabled={!isEditting}
             >
                 Save

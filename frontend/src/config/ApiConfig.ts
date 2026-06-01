@@ -7,8 +7,8 @@ export const ApiConfig = {
     viewProject: `${host}/api/project-management/projects?platform=ifield&created_user_id=`,
     updateStatusOfProject: `${host}/api/project-management/projects/{projectId}/status`,
     updateProjectInfo: `${host}/api/project-management/projects/{projectId}/update-info`,
-    getMetadata: `${host}/api/project-management/metadata`,
     addProject: `${host}/api/project-management/projects/store`,
+    assignUsers: `${host}/api/project-management/projects/{projectId}/assign-users`,
     getProjectTypes: `${host}/api/project-management/project-types`,
     getDepartments: `${host}/api/project-management/departments`,
     getTeams: `${host}/api/project-management/{department_id}/teams`,
@@ -22,6 +22,8 @@ export const ApiConfig = {
     offlineTransactionSending: `${host}/api/project-management/projects/{projectId}/offline/respondents/{projectRespondentId}/transaction`,
     verifyTransactionToken: `${host}/api/project-management/project/verify_token`,
     
+    getMetadata: `${host}/api/project-management/metadata`,
+
     //Quotation API
     getQuotationSchema: `${host}/api/project-management/projects/{projectId}/quotation-template`,
     viewQuotation: `${host}/api/project-management/projects/{projectId}/quotation/{versionId}/view`,
@@ -32,7 +34,12 @@ export const ApiConfig = {
     cloneQuotationVersion: `${host}/api/project-management/projects/{projectId}/quotation/{versionId}/clone`,
     submitQuotationVersion: `${host}/api/project-management/projects/{projectId}/quotation/{versionId}/submit`,
     approveQuotationVersion: `${host}/api/project-management/projects/{projectId}/quotation/{versionId}/approve`,
-    rejectQuotationVersion: `${host}/api/project-management/projects/{projectId}/quotation/reject`
+    withdrawQuotationVersion: `${host}/api/project-management/projects/{projectId}/quotation/{versionId}/withdraw`,
+
+    //Operations
+    getOperationsSchema: `${host}/api/project-management/projects/{projectId}/operations-template`,
+    getOperations: `${host}/api/project-management/projects/{projectId}/versions/{versionId}/operations`,
+    addOperations: `${host}/api/project-management/projects/{projectId}/versions/{versionId}/operations/store`
   },
   respondent: {
     viewRespondents: `${host}/api/project-management/projects/{projectId}/respondents/show`,
@@ -80,7 +87,10 @@ export const ApiConfig = {
     forgotPassword: `${host}/api/forgot-password`,
     resetPassword: `${host}/api/reset-password`,
     viewAccounts: `${host}/api/users/show`,
-    storeAccount: `${host}/api/users`
+    storeAccount: `${host}/api/users`,
+    updateAccount: `${host}/api/users/{userId}`,
+    viewNotifications: `${host}/api/notifications`,
+    countUnRead: `${host}/api/notifications/unread-count`
   },
   minicati: {
     showBatches: `${host}/api/project-management/projects/{projectId}/mini-cati/batches/show`,

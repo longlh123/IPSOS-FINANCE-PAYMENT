@@ -9,10 +9,6 @@ class UserDetail extends Model
 {
     use HasFactory;
 
-    protected $primaryKey = 'email';
-    public $incrementing = false;
-    protected $keyType = 'string';
-
     protected $fillable = [
         'user_id',
         'first_name',

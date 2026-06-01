@@ -1,0 +1,42 @@
+/* ════════════════════════════════════════════
+   LAYOUT — App shell, page wrapper, content area
+   ════════════════════════════════════════════ */
+
+.wrapper {
+  display: flex;
+  background-color: var(--background-color);
+}
+
+.content {
+  min-height: 100vh;
+  position: relative;
+  width: calc(100% - var(--sidebar-expanded));
+  left: var(--sidebar-expanded);
+  transition: var(--transition-02);
+  border-radius: 1.25rem;
+  padding: 1.5rem;
+}
+
+.content-detail {
+  margin: 0.625rem auto;
+}
+
+/* ── Responsive ─────────────────────────────── */
+
+/* Từ tablet trở lên: Sidebar.css dùng .sidebar ~ .content để canh vị trí,
+   nên reset left/width ở đây để tránh double-shift */
+@media (min-width: 768px) {
+  .content {
+    width: 100%;
+    left: 0;
+    border-radius: 0;
+    padding: 1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .content-detail {
+    width: 100%;
+    margin: 1.25rem auto 0 auto;
+  }
+}

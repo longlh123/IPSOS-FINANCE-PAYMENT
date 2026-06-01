@@ -52,8 +52,9 @@ const Login = () => {
         throw new Error(response.data.message);
       }
 
-      // Store token in local storage or cookies
-      login(response.data.token, response.data.user);
+      const from = location.state?.from;
+      const redirectTo = from ? `${from.pathname}${from.search ?? ''}` : undefined;
+      login(response.data.token, response.data.user, redirectTo);
 
       setIsError(false);
     } catch (error) {

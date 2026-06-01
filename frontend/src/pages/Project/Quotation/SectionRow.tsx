@@ -1,11 +1,11 @@
 import { memo, useEffect, useState } from "react";
-import { FieldSchema } from "./QuotationDynamicForm";
 import { Box, FormControl, FormControlLabel, Paper, Radio, RadioGroup, Table, TableBody, TableCell, TableContainer, TableRow } from "@mui/material";
 import RadioRow from "./RadioRow";
 import RangeRow from "./RangeRow";
 import MultiSelectRow from "./MultiSelectRow";
 import RichTextRow from "./RichTextRow";
 import EditableRow from "./EditableRow";
+import { FieldSchema } from "../../../utils/renderFields";
 
 export interface SectionRowData {
     [key: string]: any
@@ -131,16 +131,19 @@ const SectionRow = memo(({row, isEditing, onChange}: Props) => {
     }
 
     return (
-         <TableRow>
-            <TableCell 
+        <TableRow
+            sx={{
+                "&:hover": { backgroundColor: "rgba(0, 157, 156, 0.05)" },
+                "&:last-child td": { border: 0 },
+            }}
+        >
+            <TableCell
                 width={400}
-                sx={{
-                    fontWeight: 600
-                }}
+                sx={{ fontWeight: 600, fontSize: "0.8125rem", color: "var(--text-color)" }}
             >
                 {row.label}
             </TableCell>
-            <TableCell>
+            <TableCell sx={{ fontSize: "0.8125rem", color: "var(--text-color)" }}>
                 { renderMiniTable(row.fields) }
             </TableCell>
         </TableRow>

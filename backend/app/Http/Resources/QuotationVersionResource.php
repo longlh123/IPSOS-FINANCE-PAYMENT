@@ -18,7 +18,7 @@ class QuotationVersionResource extends JsonResource
             'id' => $this->id,
             'version' => $this->version,
             'status' => $this->status,
-            'quotation' => $this->data,
+            'quotation_data' => $this->data,
             'created_user' => [
                 'id' => $this->creator->id,
                 'name' => $this->creator->name,

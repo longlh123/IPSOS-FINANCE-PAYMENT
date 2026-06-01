@@ -10,9 +10,8 @@
 }
 .table-cell {
   white-space: nowrap !important;
-  height: 50px !important;
-  /* padding: 0 !important; */
-  font-size: 14px !important;
+  height: 44px !important;
+  font-size: 0.8125rem !important;
   color: var(--text-color) !important;
 }
 
@@ -37,6 +36,12 @@
 .filter-item {
   display: flex;
   align-items: center;
+}
+
+.filter-title {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: var(--text-color);
 }
 
 .project-info {
@@ -70,27 +75,6 @@
   padding: 0 auto !important;
 } */
 
-.MuiTableCell-head {
-  /* background-color: var(--main-color); */
-  /* color: #fff !important; */
-  height: 20px !important;
-  padding: 10px 5px 10px 10px !important;
-  font-weight: 450 !important;
-  font-size: 15px !important;
-  color: var(--text-color) !important;
-}
-.MuiTableRow-root {
-  height: 10px !important;
-  padding: 0 !important;
-  margin: 0 !important;
-}
-.MuiTableCell-body {
-  height: 10px !important;
-  padding: 10px 5px 10px 10px !important;
-}
-.MuiTableBody-root .MuiTableRow-root:nth-child(even) {
-  background-color: var(--body-color);
-}
 
 .icon-status {
   position: relative;

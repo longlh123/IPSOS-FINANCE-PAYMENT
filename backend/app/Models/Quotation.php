@@ -32,6 +32,11 @@ class Quotation extends Model
         return $this->belongsTo(Project::class);
     }
 
+    public function operations()
+    {
+        return $this->hasOne(Operations::class);
+    }
+
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_user_id');

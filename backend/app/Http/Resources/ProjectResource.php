@@ -67,7 +67,9 @@ class ProjectResource extends JsonResource
                 ];
             })->values(),
             'count_respondents' => $this->count_respondents,
-            'count_employees' => $this->count_employees
+            'count_employees' => $this->count_employees,
+            'has_submitted_quotation' => (bool) ($this->has_submitted_quotation ?? $this->quotations()->whereIn('status', ['submitted', 'approved'])->exists()),
+            'has_approved_quotation' => (bool) ($this->has_approved_quotation ?? $this->quotations()->where('status', 'approved')->exists())
         ];
     }
 }

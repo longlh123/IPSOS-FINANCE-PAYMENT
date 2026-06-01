@@ -1,16 +1,13 @@
-import { Autocomplete, Box, Checkbox, IconButton, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField } from "@mui/material";
-import { memo, useEffect, useMemo, useState } from "react";
-import { FieldSchema } from "./QuotationDynamicForm";
+import { Autocomplete, Box, Checkbox, IconButton, TableCell, TableRow, TextField } from "@mui/material";
+import { memo, useMemo, useState } from "react";
 import SaveIcon from '@mui/icons-material/Save';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { BorderRight, Rowing } from "@mui/icons-material";
-import { RowType } from "./EditableRow";
+import { FieldSchema } from "../../../utils/renderFields";
+import { useInputRule } from "../../../hook/useInputRule";
 
 export interface RepeaterRowData {
     [key: string]: any
 };
-
-type Option = { value: string, label: string };
 
 type Props = {
     row: {
@@ -141,7 +138,7 @@ const RepeaterRow = memo(({ row, isEditing, onChange}: Props) => {
                             options={field.options || []} 
                             value={draft[field.name] || []}
                             disabled={!isEditing}
-                            onChange={(event, newValue) => handleFieldChange(field.name, newValue)}
+                            onChange={(_, newValue) => handleFieldChange(field.name, newValue)}
                             getOptionLabel={(option) => option.label} //quyết định hiển thị label
                             isOptionEqualToValue={(option, value) => (
                                 option.value === value.value
@@ -181,8 +178,9 @@ const RepeaterRow = memo(({ row, isEditing, onChange}: Props) => {
         return (isEditing || repeaterRows.length > 0) ? (
             <Box
                 sx={{
-                    border: "1px solid #e0e0e0",
-                    borderRadius: 1,
+                    border: "1px solid",
+                    borderColor: "var(--body-color)",
+                    borderRadius: "8px",
                     overflow: "hidden"
                 }}
             >
@@ -190,8 +188,9 @@ const RepeaterRow = memo(({ row, isEditing, onChange}: Props) => {
                     sx={{
                         display: "grid",
                         gridTemplateColumns: gridTemplate,
-                        backgroundColor: "#f5f5f5",
-                        borderBottom: "1px solid #e0e0e0"
+                        backgroundColor: "var(--body-color)",
+                        borderBottom: "1px solid",
+                        borderBottomColor: "rgba(0, 157, 156, 0.2)",
                     }}
                 >
                     {fields.map((subField) => (
@@ -272,16 +271,19 @@ const RepeaterRow = memo(({ row, isEditing, onChange}: Props) => {
     };
 
     return (
-        <TableRow>
-            <TableCell 
+        <TableRow
+            sx={{
+                "&:hover": { backgroundColor: "rgba(0, 157, 156, 0.05)" },
+                "&:last-child td": { border: 0 },
+            }}
+        >
+            <TableCell
                 width={400}
-                sx={{
-                    fontWeight: 600
-                }}
+                sx={{ fontWeight: 600, fontSize: "0.8125rem", color: "var(--text-color)" }}
             >
                 {row.label}
             </TableCell>
-            <TableCell>
+            <TableCell sx={{ fontSize: "0.8125rem", color: "var(--text-color)" }}>
                 { renderMiniTable(row.fields) }
             </TableCell>
         </TableRow>

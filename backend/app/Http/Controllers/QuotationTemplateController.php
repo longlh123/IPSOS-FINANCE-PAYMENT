@@ -13,11 +13,12 @@ class QuotationTemplateController extends Controller
     {
         $project = Project::findOrFail($projectId);
 
-        $projectTypes = $project->projectTypes()->pluck('name')->implode(',');
+        $projectType = $request->query('project_type')
+            ?? $project->projectTypes()->pluck('name')->implode(',');
 
         $filePath = storage_path('schema/quotation_template.xlsx');
 
-        $schema = $parser->parse($filePath, $projectTypes);
+        $schema = $parser->parse($filePath, $projectType);
 
         return response()->json($schema);
     }

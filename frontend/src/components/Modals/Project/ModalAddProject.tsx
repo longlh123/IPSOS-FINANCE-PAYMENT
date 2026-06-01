@@ -11,9 +11,9 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import LoadingButton from "@mui/lab/LoadingButton";
 import "../../../assets/css/modal.css";
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { SelectChangeEvent } from "@mui/material/Select";
 import { useNavigate } from "react-router-dom";
 import { ColumnFormat } from "../../../config/ColumnConfig";
@@ -34,10 +34,7 @@ interface ModalProps {
 const ModalAddProject: React.FC<ModalProps> = ({ openModal, onClose, metadata }) => {
   const navigate = useNavigate();
   
-  const [statusMessage, setStatusMessage] = useState<string>("");
-  const [isError, setIsError] = useState<boolean>(false);
-
-  const { addProject } = useProjects();
+  const { addProject, actionState } = useProjects();
 
   const [formFieldsConfig, setFormFieldsConfig] = useState(ProjectGeneralFieldsConfig);
   const [formValues, setFormValues] = useState<ProjectData>({
@@ -96,16 +93,12 @@ const ModalAddProject: React.FC<ModalProps> = ({ openModal, onClose, metadata })
   const handleSelectChange = (e: SelectChangeEvent<string | string[]>) => {
     const { name, value } = e.target;
 
-    if(name === 'platform'){
-      setFormValues({
-        ...formValues,
-        platform : value as string
-      });
+    if (name === 'platform') {
+      setFormValues({ ...formValues, platform: value as string });
+    } else if (name === 'project_types') {
+      setFormValues({ ...formValues, project_types: [value as string] });
     } else {
-      setFormValues({
-        ...formValues,
-        [name]: Array.from(value)
-      });
+      setFormValues({ ...formValues, [name]: value as string[] });
     }
   };
 
@@ -116,6 +109,7 @@ const ModalAddProject: React.FC<ModalProps> = ({ openModal, onClose, metadata })
     if (column.type === "string" || column.type === "number" || column.type === "date") {
       return (
         <TextField
+          size="small"
           name={column.name}
           className="textfield-add"
           type={column.type === "string" ? "text" : column.type}
@@ -125,17 +119,23 @@ const ModalAddProject: React.FC<ModalProps> = ({ openModal, onClose, metadata })
         />
       );
     } else if (column.type === "select") { //&& column.options?.length > 0
-      const isMultiSelect = column.name === 'teams' || column.name === 'project_types';
+      const isMultiSelect = column.name === 'teams';
       const currentValue = formValues[column.name as keyof typeof formValues];
+      const selectValue = isMultiSelect
+        ? (currentValue as string[])
+        : Array.isArray(currentValue)
+          ? (currentValue as string[])[0] ?? ''
+          : (currentValue as string);
 
       return (
         <FormControl fullWidth>
           <Select
+            size="small"
             name={column.name}
             multiple={isMultiSelect}
             labelId={`${column.name}-label`}
             id={column.name}
-            value={isMultiSelect ? (currentValue as string[]) : (currentValue as string)}
+            value={selectValue}
             onChange={handleSelectChange}
           >
             {column.options?.map((option, index) => (
@@ -154,14 +154,10 @@ const ModalAddProject: React.FC<ModalProps> = ({ openModal, onClose, metadata })
   const handleSave = async () => {
     try {
       const new_project = await addProject(formValues);
-      console.log("Add successful");
       onClose();
       navigate(`/project-management/projects/${new_project.id}/quotation`);
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        setStatusMessage(error.response?.data.message ?? error.message);
-        setIsError(true);
-      }
+    } catch {
+      // actionState.error + actionState.message đã được set trong hook
     }
   };
 
@@ -178,13 +174,14 @@ const ModalAddProject: React.FC<ModalProps> = ({ openModal, onClose, metadata })
             variant="h6"
             component="h2"
             textAlign="center"
+            noWrap
           >
             Add New Project
           </Typography>
           <Divider />
           <div className="error-control">
-            {isError && (
-              <Alert severity="error">{statusMessage}</Alert> 
+            {actionState.error && (
+              <Alert severity="error">{actionState.message}</Alert>
             )}
           </div>
           <Grid
@@ -196,12 +193,14 @@ const ModalAddProject: React.FC<ModalProps> = ({ openModal, onClose, metadata })
             {formFieldsConfig.map((column, index) => (
               <Grid key={index} item xs={12}>
                 <Grid container alignItems="center">
-                  <Grid item xs={2}>
-                    <Typography sx={{ fontWeight: "500", fontSize: "14px" }}>
+                  <Grid item xs={4}>
+                    <Typography 
+                      noWrap
+                    >
                       {column.label}:
                     </Typography>
                   </Grid>
-                  <Grid item xs={10}>
+                  <Grid item xs={8}>
                     {renderField(column)}
                   </Grid>
                 </Grid>
@@ -212,13 +211,14 @@ const ModalAddProject: React.FC<ModalProps> = ({ openModal, onClose, metadata })
             <Button className="btn-modal-cancel" onClick={onClose}>
               Cancel
             </Button>
-            <Button
+            <LoadingButton
               className="btn-modal-submit"
               variant="contained"
+              loading={actionState.loading}
               onClick={handleSave}
             >
               Save
-            </Button>
+            </LoadingButton>
           </Box>
         </Box>
       </Modal>

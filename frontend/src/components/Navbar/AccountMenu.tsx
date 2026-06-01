@@ -10,7 +10,6 @@ import Typography from '@mui/material/Typography';
 import Tooltip from '@mui/material/Tooltip';
 import Logout from '@mui/icons-material/Logout';
 import { useAuth } from '../../contexts/AuthContext';
-import { VisibilityConfig } from '../../config/RoleConfig';
 
 export default function AccountMenu() {
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
@@ -20,8 +19,6 @@ export default function AccountMenu() {
 
     const storedUser = localStorage.getItem('user');
     const user = storedUser ? JSON.parse(storedUser) : null;
-    
-    const visibilityConfig = VisibilityConfig[user.role as keyof typeof VisibilityConfig];
     
     const handleClick = (event: React.MouseEvent<HTMLElement>) => {
         setAnchorEl(event.currentTarget);

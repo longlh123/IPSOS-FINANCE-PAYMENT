@@ -1,17 +1,21 @@
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, InputLabel, MenuItem, Select, Stack, TextField } from "@mui/material";
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, IconButton, InputLabel, MenuItem, Select, Stack, TextField } from "@mui/material";
 import { ColumnFormat } from "../../config/ColumnConfig";
 import { AccountCellConfig, AccountData } from "../../config/AccountFieldsConfig";
 import { useAccounts } from "../../hook/useAccounts";
 import ReusableTable from "../../components/Table/ReusableTable";
 import { useMetadata } from "../../hook/useMetadata";
 import { useMemo, useState } from "react";
-import { error } from "console";
+import LoadingButton from "@mui/lab/LoadingButton";
+import { EditOutlined } from "@mui/icons-material";
 
 const AccountManagement = () => {
-    const { data, isLoading } = useMetadata();
-    const { accounts, meta, total, page, setPage, rowsPerPage, setRowsPerPage, searchTerm, setSearchTerm, loading: loadingAccount, error: errorAccounts, message: messageAccount, storeAccount, fetchAcounts } = useAccounts();
+    const { data } = useMetadata();
+    const { accounts, total, page, setPage, rowsPerPage, setRowsPerPage, searchTerm, setSearchTerm, actionState, storeAccount, updateAccount } = useAccounts();
     
     const [ openCreateDialog, setOpenCreateDialog ] = useState<boolean>(false);
+    const [ openEditDialog, setOpenEditDialog ] = useState<boolean>(false);
+    const [ editTarget, setEditTarget ] = useState<AccountData | null>(null);
+    const [ formEditData, setFormEditData ] = useState<{ role: number; department: number }>({ role: 0, department: 0 });
 
     const initialAccountData: AccountData = {
         name: "",
@@ -28,7 +32,29 @@ const AccountManagement = () => {
     const [ isCreateDisabled, setIsCreateDisabled ] = useState<boolean>(false);
 
     const columns: ColumnFormat[] = [
-        ...AccountCellConfig
+        ...AccountCellConfig,
+        {
+            label: "",
+            name: "action",
+            type: "menu",
+            align: "center",
+            width: 60,
+            renderCell: (row: AccountData) => (
+                <IconButton
+                    size="small"
+                    onClick={() => handleOpenEditDialog(row)}
+                    sx={{
+                        backgroundColor: '#f6f6f6',
+                        borderRadius: '8px',
+                        border: '1px solid #e8e8e8',
+                        '&:hover': { backgroundColor: '#e0e0e0' },
+                        padding: '5px',
+                    }}
+                >
+                    <EditOutlined fontSize="small" />
+                </IconButton>
+            )
+        }
     ];
 
     const handleChangePage = (event: any, newPage: number) => {
@@ -55,12 +81,35 @@ const AccountManagement = () => {
         setOpenCreateDialog(true);
     }
 
+    const handleOpenEditDialog = (account: AccountData) => {
+        setEditTarget(account);
+        setFormEditData({
+            role: account.role_id ?? 0,
+            department: account.department_id ?? 0,
+        });
+        setOpenEditDialog(true);
+    };
+
+    const handleCloseEditDialog = () => {
+        setOpenEditDialog(false);
+        setEditTarget(null);
+    };
+
+    const handleUpdateUser = async () => {
+        if (!editTarget?.id) return;
+        await updateAccount(editTarget.id, formEditData);
+        setOpenEditDialog(false);
+    };
+
+    const filteredEditRoles = useMemo(() => {
+        if (!formEditData.department) return [];
+        return data.roles.filter((r: { id: number; department_id: number }) => r.department_id === formEditData.department);
+    }, [data.roles, formEditData.department]);
+
     const handleCreateUser = async () => {
-        await storeAccount(formCreateData);
+        const response = await storeAccount(formCreateData);
 
         setOpenCreateDialog(false);
-
-        await fetchAcounts();
     }
 
     const filteredRoles = useMemo(() => {
@@ -75,12 +124,7 @@ const AccountManagement = () => {
                 title="Employees"
                 columns={columns}
                 data={accounts}
-                actionStatus={{
-                    type: 'fetch',
-                    loading: loadingAccount,
-                    error: errorAccounts,
-                    message: messageAccount
-                }}
+                actionStatus={actionState}
                 page = {page}
                 rowsPerPage = {rowsPerPage}
                 total = {total}
@@ -212,9 +256,65 @@ const AccountManagement = () => {
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={handleCloseCreateDialog}>Cancel</Button>
-                    <Button variant="contained" onClick={handleCreateUser} disabled={isCreateDisabled}>
-                        Create
-                    </Button>
+                    <LoadingButton
+                        onClick={handleCreateUser}
+                        size="small"
+                        loading={actionState.loading}
+                        loadingPosition="end"
+                        variant="contained"
+                        className='btn bg-vinnet-primary'
+                        >
+                            <span>CREATE</span>
+                    </LoadingButton>
+                </DialogActions>
+            </Dialog>
+            <Dialog open={openEditDialog} onClose={handleCloseEditDialog} fullWidth maxWidth="xs">
+                <DialogTitle>Edit Role & Department</DialogTitle>
+                <DialogContent>
+                    <Stack spacing={2} sx={{ mt: 1 }}>
+                        <FormControl fullWidth required>
+                            <InputLabel id="edit-department-label">Department</InputLabel>
+                            <Select
+                                labelId="edit-department-label"
+                                label="Department"
+                                value={formEditData.department || ""}
+                                onChange={(e) =>
+                                    setFormEditData({ role: 0, department: Number(e.target.value) })
+                                }
+                            >
+                                {data.departments.map((d: { id: number; name: string }) => (
+                                    <MenuItem key={d.id} value={d.id}>{d.name}</MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+
+                        <FormControl fullWidth required disabled={!formEditData.department}>
+                            <InputLabel id="edit-role-label">Role</InputLabel>
+                            <Select
+                                labelId="edit-role-label"
+                                label="Role"
+                                value={formEditData.role || ""}
+                                onChange={(e) =>
+                                    setFormEditData(prev => ({ ...prev, role: Number(e.target.value) }))
+                                }
+                            >
+                                {filteredEditRoles.map((r: { id: number; name: string }) => (
+                                    <MenuItem key={r.id} value={r.id}>{r.name}</MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    </Stack>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCloseEditDialog}>Cancel</Button>
+                    <LoadingButton
+                        onClick={handleUpdateUser}
+                        loading={actionState.loading}
+                        variant="contained"
+                        disabled={!formEditData.role || !formEditData.department}
+                    >
+                        Save
+                    </LoadingButton>
                 </DialogActions>
             </Dialog>
         </Box>

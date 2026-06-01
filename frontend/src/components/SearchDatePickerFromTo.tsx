@@ -54,7 +54,7 @@ const SearchDatePickerFromTo: React.FC<SearchDatePickerFromToProps> = ({
                 loadingPosition="end"
                 variant="contained"
                 disabled={isApplyFilter}
-                className='btn bg-vinnet-primary'
+                className="btn btn-primary"
                 >
                     <span>{buttonLabel ?? "APPLY"}</span>
             </LoadingButton>

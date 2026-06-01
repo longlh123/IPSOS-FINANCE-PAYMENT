@@ -1,47 +1,33 @@
+/* ════════════════════════════════════════════
+   COMPONENTS — Shared UI utilities
+   Dùng cho: button, status badge, action menu,
+             row layout, background utilities
+   ════════════════════════════════════════════ */
+
+/* ── Reset ──────────────────────────────────── */
+
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  font-family: var(--main-font);
 }
 
-*{
-  font-style: var(--main-font);
-}
+/* ── Button ─────────────────────────────────── */
 
-.wrapper {
-  display: flex;
-  background-color: var(--background-color);
+.btn {
+  padding: 0.5rem 1.375rem !important;
+  background-color: var(--main-color) !important;
+  color: #fff !important;
+  border: 0 !important;
+  font-size: 0.875rem !important;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  box-shadow:
+    0 0.1875rem 0.0625rem -0.125rem rgba(0, 0, 0, 0.2),
+    0 0.125rem 0.125rem 0 rgba(0, 0, 0, 0.14),
+    0 0.0625rem 0.3125rem 0 rgba(0, 0, 0, 0.12);
 }
-
-.content {
-  min-height: 92vh;
-  position: relative;
-  width: calc(100% - 15.625rem); /* 250px → rem */
-  left: 15.625rem;
-  transition: var(--transition-02);
-  margin-top: 3.75rem; /* 60px */
-  border-radius: 1.25rem;
-  padding: 1.875rem; /* 30px */
-}
-
-.content-detail {
-  margin: 0.625rem auto;
-}
-
-.btn{
-    padding: 0.5rem 1.375rem !important;
-    background-color: var(--main-color) !important;
-    color: #fff !important;
-    border: 0 !important;
-    font-size: 0.9375rem !important;
-    font-weight: 500;
-    border-radius: 0.5rem;
-    box-shadow:
-        0 0.1875rem 0.0625rem -0.125rem rgba(0, 0, 0, 0.2),
-        0 0.125rem 0.125rem 0 rgba(0, 0, 0, 0.14),
-        0 0.0625rem 0.3125rem 0 rgba(0, 0, 0, 0.12);
-}
-
 
 .btn:hover {
   background-color: var(--main-color);
@@ -50,365 +36,115 @@
   transition: var(--transition-02);
 }
 
-.btn:disabled{
-    opacity: 0.5;
+.btn:disabled {
+  opacity: 0.5;
 }
 
-.bg-primary { background-color: var(--main-color) !important; }
-.bg-reject { background-color: var(--status-cancelled-color) !important; }
+/* ── Background utilities ───────────────────── */
 
-.bg-gotit-primary { background-color: var(--gotit-color-secondary) !important; }
-.bg-gotit-secondary { background-color: var(--gotit-color-primary) !important; }
+.bg-primary          { background-color: var(--main-color) !important; }
+.bg-reject           { background-color: var(--status-cancelled-color) !important; }
+.bg-gotit-primary    { background-color: var(--gotit-color-secondary) !important; }
+.bg-gotit-secondary  { background-color: var(--gotit-color-primary) !important; }
+.bg-vinnet-primary   { background-color: var(--vinnet-color-primary) !important; }
 
-.bg-vinnet-primary { background-color: var(--vinnet-color-primary) !important; }
-
-h4 span { 
-    font-weight: 600;
-    color: var(--text-forth-color); 
-} 
-
-.message-invalid span {
-    color: rgb(214, 67, 67);
-}
-
-.row {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.625rem; /* 10px */
-    padding: 0.625rem;
-    width: 100%;
-    border-radius: 0.625rem;
-    text-align: justify;
-    background-color: var(--background-color);
-}
+/* ── Project status dot ─────────────────────── */
 
 .icon-status-project {
-    width: 0.9375rem; /* 15px */
-    height: 0.9375rem;
-    border-radius: 50%;
-    position: relative;
-    cursor: pointer;
+  width: 0.9375rem;
+  height: 0.9375rem;
+  border-radius: 50%;
+  position: relative;
+  cursor: pointer;
 }
+
+.planned    { background-color: #FFA500 !important; }
+.in-coming  { background-color: #FFD700 !important; }
+.on-going   { background-color: #00BFFF !important; }
+.completed  { background-color: #32CD32 !important; }
+.on-hold    { background-color: #FF6347 !important; }
+.cancelled  { background-color: #B22222 !important; }
 
 .txt-status-project {
-    padding: 0.25rem;
-    border-radius: 0.625rem;
-    font-size: 0.75rem;
-    font-weight: 500;
+  padding: 0.25rem;
+  border-radius: 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 500;
 }
 
-.icon-project img {
-    text-align: center;
+/* ── Transaction status ─────────────────────── */
+
+.success    { background-color: var(--status-completed-color); }
+.pending    { background-color: var(--status-in-coming-color); }
+.suppended  { background-color: var(--status-on-hold-color); }
+.refused    { background-color: var(--status-cancelled-color); }
+.failed     { background-color: var(--status-planned-color); }
+
+.box-status-button {
+  font-size: 0.8125rem;
+  padding: 0.3125rem;
+  border-radius: 0.3125rem;
+  color: #fff;
+  font-weight: 600;
+  min-width: 0.8125rem;
 }
 
-.icon-project img {
-    width: 2.5rem;
-    text-align: center;
+.box-status-button:hover {
+  opacity: 0.5;
 }
 
-.planned { background-color: var(--status-planned-color); }
-.in-coming { background-color: var(--status-in-coming-color); }
-.on-going { background-color: var(--status-on-going-color); }
-.completed { background-color: var(--status-completed-color); }
-.on-hold { background-color: var(--status-on-hold-color); }
-.cancelled { background-color: var(--status-cancelled-color); }
+/* ── Row layout ─────────────────────────────── */
 
-.success { background-color: var(--status-completed-color); }
-.pending { background-color: var(--status-in-coming-color); }
-.suppended { background-color: var(--status-on-hold-color); }
-.refused { background-color: var(--status-cancelled-color); }
-.failed { background-color: var(--status-planned-color); }
-  
-.box-status-button{
-    font-size: 0.8125rem;
-    padding: 0.3125rem;
-    border-radius: 0.3125rem;
-    color: #fff;
-    font-weight: 600;
-    min-width: 0.8125rem;
+.row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.625rem;
+  padding: 0.625rem;
+  width: 100%;
+  border-radius: 0.625rem;
+  text-align: justify;
+  background-color: var(--background-color);
 }
 
-.box-status-button:hover{
-    opacity: 0.5;
-}
+/* ── Action menu ────────────────────────────── */
 
-/* =========================
-   Action menu
-========================= */
 .actions-menu-item {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-around;
-    align-items: center;
-    padding: 0.3125rem 0;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: center;
+  padding: 0.3125rem 0;
 }
 
 .actions-menu-item .text {
-    text-align: center;
-    vertical-align: middle;
-    margin-left: 0.625rem;
+  text-align: center;
+  vertical-align: middle;
+  margin-left: 0.625rem;
 }
 
-/* =========================
-   Subtotal
-========================= */
-.subtotal-container {
-    display: flex;
-    flex-direction: column;
-    justify-content: stretch;
-    align-items: center;
-    gap: 0.625rem;
-    font-size: 1.125rem;
+/* ── Validation message ─────────────────────── */
+
+.message-invalid {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
 }
 
-.subtotal-container .row {
-    display: flex;
-    flex-direction: row;
+.message-invalid span {
+  color: rgb(214, 67, 67);
 }
 
-.filter-container {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    align-items: center;
-    justify-content: flex-start;
-    width: 50%;
-}
+/* ── Typography helpers ─────────────────────── */
 
-.filter-container .filter-item {
-    width: 50%;
-}
-
-.chart-container {
-    width: 100%; /* or a specific width like 500px */
-    position: relative; /* Ensure SVG positioning is relative to this container */
-}
-
-/* =========================
-   Widget
-========================= */
-.widget-container {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: stretch;
-    flex-wrap: nowrap;
-    width: 100%;
-    padding: 1.25rem;
-    border-radius: 1.25rem !important;
-    box-shadow:
-        rgba(145, 158, 171, 0.3) 0 0 0.125rem 0,
-        rgba(145, 158, 171, 0.12) 0 0.75rem 1.5rem -0.25rem !important;
-}
-
-.widget-container .widget-title {
-    color: var(--font-primary);
-    font-weight: 500;
-    font-size: 1rem;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    overflow: hidden;
-}
-
-.widget-container .widget-content {
-    color: var(--font-fifth);
-    font-weight: 700;
-    font-size: 1rem;
-    overflow: hidden;
-    word-break:normal;
-    text-overflow: ellipsis;
-}
-
-.widget-container .widget-icon {
-    font-size: 1rem;
-}
-
-.widget-col-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-}
-
-.widget-row-item {
-    position: relative;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    width: 100%;
-}
-
-/* =========================
-   Legend
-========================= */
-.legend-container {
-    display: block;
-    width: 18.75rem;
-}
-
-.legend {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-}
-
-.legend-horizontal {
-    list-style: none;
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    align-items: center;
-}
-
-.legend li, 
-.legend-horizontal li {
-    display: flex;
-    flex-direction: row;
-    font-size: 0.75rem;
-    align-items:center;
-}
-
-.legend .legend-square,
-.legend-horizontal .legend-square {
-    display: inline-block;
-    width: 0.75rem;  /* Adjust size as needed */
-    height: 0.75rem; /* Adjust size as needed */
-    margin-right: 0.3125rem;  /* Space between the square and the label */
-    vertical-align: middle;  /* Aligns the square with the text */
-}
-
-/* =========================
-   Tooltip
-========================= */
-.tooltip {
-    position: absolute;
-    background-color: #fff;
-    border: 1px solid #ccc;
-    padding: 0.3125rem;
-    border-radius: 0.1875rem;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.2s;
-}
-
-/* =========================
-   Welcome section
-========================= */
-.welcome-header {
-    background-image: url(../img/ipsos_banner.jpeg);
-    background-repeat: no-repeat;
-    background-size: cover;
-    height: auto;
-    min-height: 13.75rem;
-}
-
-.welcome-container {
-    display: flex;
-    flex-direction: column;
-    margin-top: 1.25rem;
-    width: 100%;
-}
-
-.welcome-body {
-    display: flex;
-    flex-direction: column;
-    text-align: justify;
-    gap: 0.1875rem;
-    padding: 1.875rem;
-    width: 100%;
-    margin-bottom: 1.25rem;
-}
-
-.welcome-body .item {
-    padding: 0.625rem;
-    width: 100%;
-    font-weight: 400;
-    font-size: 1rem;
-    line-height: 2.5rem;
-}
-
-.welcome-body .action {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0.625rem;
-    font-size: 1rem;
-    line-height: 2.5rem;
-}
-
-.welcome-footer {
-    display: flex;
-    flex-direction: row;
-    width: 100%;
-    align-items: center;
-    justify-content: center;
-    gap: 0.625rem;
-    padding: 1.25rem;
-}
-
-.welcome-footer img {
-    margin-right: 1.25rem;
-}
-
-.welcome-footer .gotit-slogan {
-    font-size: 1.25rem;
-    font-weight: 600;
-}
-
-.welcome-footer .vinnet-slogan {
-    font-size: 1.25rem;
-    font-weight: 600;
+h4 span {
+  font-weight: 600;
+  color: var(--text-forth-color);
 }
 
 .provider-warning {
-    color: var(--status-cancelled-color);
-    font-size: 1.125rem;
-    font-weight: 600;
+  color: var(--status-cancelled-color);
+  font-size: 1.125rem;
+  font-weight: 600;
 }
-
-.message-invalid {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-}
-
-/* Tablet */
-@media (min-width: 768px) {
-  .content {
-    width: 100%;
-    left: 0;
-    border-radius: 0;
-    padding: 1rem;
-  }
-  .widget-container .widget-title {
-    font-size: 1.25rem;
-  }
-  .widget-container .widget-content {
-    font-size: 2rem;
-  }
-  .widget-container .widget-icon {
-    font-size: 1.2rem;
-  }
-}
-
-/* Laptop nhỏ */
-@media (min-width: 1024px) {
-  .content-detail {
-    width: 100%;
-    margin: 1.25rem auto 0 auto; /* 20px */
-  }
-  .widget-container .widget-title {
-    font-size: 1.5rem;
-  }
-  .widget-container .widget-content {
-    font-size: 3.5rem;
-  }
-  .widget-container .widget-icon {
-    font-size: 1.5rem;
-  }
-}
-
-

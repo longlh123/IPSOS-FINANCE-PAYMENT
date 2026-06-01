@@ -23,7 +23,6 @@ import MiniCATI from "./pages/MiniCATI/MiniCATI";
 import CustomVoucher from "./pages/CustomVoucher/CustomVoucher";
 import CustomVoucherLog from "./pages/CustomVoucher/CustomVoucherLog";
 import DashboardProject from "./pages/Project/ProgressReport";
-import TradeUnionTransactions from "./pages/TradeUnion/TradeUnionTransactions";
 import Gifts from "./pages/Project/Gifts";
 import Transactions from "./pages/Transaction/Transactions";
 import Settings from "./pages/Project/Settings";
@@ -33,6 +32,7 @@ import ForgotPassword from "./pages/Auth/ForgotPassword";
 import CATISettings from "./pages/Project/CATISettings";
 import MiniCATILogin from "./pages/MiniCATI/MiniCATILogin";
 import CATIProtectedRoute from "./routes/CATIProtectedRoute";
+import Assignment from "./pages/Project/Assignment";
 
 // Fetch the CSRF token from the meta tag
 const csrfToken = document
@@ -85,7 +85,7 @@ const App: React.FC = () => {
             <Route
               path="/project-management/projects/:id"
               element={
-                <ProtectedRoute allowedRoles={["admin", "scripter"]}>
+                <ProtectedRoute allowedRoles={["Admin", "Scripter"]}>
                   <ProjectLayout />
                 </ProtectedRoute>
               }
@@ -93,6 +93,10 @@ const App: React.FC = () => {
               <Route
                 path="quotation"
                 element={<Quotation />}
+              />
+              <Route
+                path="assignment"
+                element={<Assignment />}
               />
               <Route
                 path="parttime-employees"

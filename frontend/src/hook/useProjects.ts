@@ -70,22 +70,31 @@ export function useProjects() {
             } else {
                 message = error.response?.error
             }
-            
-            setActionState((prev) => ({
-                ...prev,
-                loading: false,
-                error: true,
-                ...(options?.silent ? {} : {
+
+            if(error.response.status === 403){
+                setActionState((prev) => ({
+                    ...prev,
+                    loading: false,
+                    error: true,
                     message: message
-                })
-            }));
+                }));
+            } else {
+                setActionState((prev) => ({
+                    ...prev,
+                    loading: false,
+                    error: true,
+                    ...(options?.silent ? {} : {
+                        message: message
+                    })
+                }));
+            }
         }; 
 
     }, [page, rowsPerPage, searchTerm, searchFromDate, searchToDate]);
 
     const addProject = useCallback(async (payload: Partial<ProjectData>) => {
-        try
-        {
+        setActionState({ type: 'add', loading: true, error: false, message: '' });
+        try {
             const token = localStorage.getItem("authToken");
 
             const response = await axios.post(ApiConfig.project.addProject, payload, {
@@ -95,9 +104,15 @@ export function useProjects() {
                 },
             });
 
+            setActionState({ type: 'add', loading: false, error: false, message: '' });
             await fetchProjects();
             return response.data.data;
-        } catch(error){
+        } catch (error) {
+            let message = 'Failed to create project';
+            if (axios.isAxiosError(error)) {
+                message = error.response?.data.message ?? error.message;
+            }
+            setActionState({ type: 'add', loading: false, error: true, message });
             throw error;
         }
     }, [fetchProjects]);
@@ -123,6 +138,69 @@ export function useProjects() {
         return response.data.data;
 
     }, [fetchProjects]);
+
+    const assignUsers = async(id: number, user_ids: number[]) => {
+        
+        try
+        {
+            setActionState({
+                type: 'update',
+                loading: true,
+                error: false,
+                message: ""
+            });
+
+            const token = localStorage.getItem("authToken");
+
+            const url = ApiConfig.project.assignUsers.replace('{projectId}', id.toString());
+            
+            const response = await axios.put(url, { user_ids: user_ids }, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+            });
+            
+            if(response.data.status_code === 400){
+                setActionState({
+                    type: 'update',
+                    loading: false,
+                    error: true,
+                    message: response.data.error
+                });
+            } else {
+                const project = response.data.data;
+
+                setProjects(prev => prev.map(p => p.id === id ? project : p));
+
+                setActionState({
+                    type: 'update',
+                    loading: false,
+                    error: false,
+                    message: response.data.message
+                });
+            }
+            
+            return response.data;
+        } catch(error: any){
+            let message = 'Failed to assign Permissions';
+            
+            if(axios.isAxiosError(error)){
+                message = error.response?.data.message || error.response?.data.error || error.message
+            } else {
+                message = error.response?.error
+            }
+            
+            setActionState((prev) => ({
+                ...prev,
+                loading: false,
+                error: true
+            }));
+
+            throw error;
+        };
+    }
 
     const getProject = useCallback(async (id: number) => {
         
@@ -164,6 +242,7 @@ export function useProjects() {
         fetchProjects,
         getProject,
         addProject,
-        updateProjectStatus
+        updateProjectStatus,
+        assignUsers
     };
 }
