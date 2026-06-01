@@ -1,5 +1,6 @@
 import { Box, IconButton, List, ListItemButton, ListItemText, Popover } from "@mui/material";
 import React, { useState } from "react";
+import { formatClass, toProperCase } from "../../utils/format";
 
 type Props = {
     value: string;
@@ -7,13 +8,6 @@ type Props = {
     onChange: (newStatus: string) => void;
     disabled?: boolean
 }
-
-const formatClass = (status: string) =>
-    status.toLowerCase().replace(/\s+/g, "-");
- 
-const toProperCase = (str: string) =>
-    str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase());
- 
 
 export const StatusDropdown: React.FC<Props> = ({
     value,

@@ -6,7 +6,6 @@ import { EmployeeCellConfig, EmployeeData } from "../../../config/EmployeeFields
 import useDialog from "../../../hook/useDialog";
 import UniversalInputDialog from "../../../components/Dialogs/UniversalInputDialog";
 import AlertDialog from "../../../components/AlertDialog/AlertDialog";
-import { useVisibility } from "../../../hook/useVisibility";
 import SearchTextBox from "../../../components/SearchTextBox";
 import { useEmployees } from "../../../hook/useEmployees";
 import ReusableTable from "../../../components/Table/ReusableTable";
@@ -21,8 +20,6 @@ const ParttimeEmployees = () => {
 
     const { getProject } = useProjects();
     const { employees, meta, total, page, setPage, rowsPerPage, setRowsPerPage, searchTerm, setSearchTerm, loading: loadingEmployees, error: errorEmployees, message: messageEmployees, addEmployees, removeEmployee } = useEmployees(projectId);
-    
-    const { canView } = useVisibility();
     
     const [ employeeCellConfig, setEmployeeCellConfig ] = useState(EmployeeCellConfig)
     const { open, title, message, showConfirmButton, openDialog, closeDialog, confirmDialog } = useDialog();
@@ -155,11 +152,9 @@ const ParttimeEmployees = () => {
                 </Box>
 
                 {/* Add Employee Button */}
-                {canView("employees.functions.visible_import_employees") && (
                     <Button variant="contained" color="primary" onClick={() => setOpenImportEmployeesDialog(true)}>
-                    Add / Import Employees
+                        Add / Import Employees
                     </Button>
-                )}
                 </Box>
             <Box
                 sx={{

@@ -1,28 +1,56 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
-import GridViewIcon from "@mui/icons-material/GridView";
 import "../Sidebar/Sidebar.css";
-import { Drawer, Divider } from "@mui/material";
+import { Divider, IconButton, Tooltip, Typography } from "@mui/material";
 import { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
 import logo from "../../assets/img/Ipsos logo.png";
-import { LibraryBooks } from "@mui/icons-material";
-import { useVisibility } from "../../hook/useVisibility";
+import { ChevronLeft, ChevronRight, FolderOpen, Logout, ManageAccounts, Payments } from "@mui/icons-material";
+import { useAuth } from "../../contexts/AuthContext";
 
 interface SideBarProps {
   isOpen: boolean;
   toggleSidebar: () => void;
 }
 
+interface NavItem {
+  label: string;
+  to: string;
+  icon: React.ElementType;
+  allowedRoles: string[] | null; // null = tất cả roles đều thấy
+}
+
+const NAV_ITEMS: NavItem[] = [
+  {
+    label: "Projects",
+    to: "/project-management/projects",
+    icon: FolderOpen,
+    allowedRoles: null,
+  },
+  {
+    label: "Transactions",
+    to: "/transaction-manager/transactions",
+    icon: Payments,
+    allowedRoles: ["Admin"],
+  },
+  {
+    label: "Accounts",
+    to: "/account-management/accounts",
+    icon: ManageAccounts,
+    allowedRoles: ["Admin"],
+  },
+];
+
+const isNavVisible = (allowedRoles: string[] | null, userRole: string): boolean => {
+  if (!allowedRoles) return true;
+  return allowedRoles.some((r) => r.toLowerCase() === userRole.toLowerCase());
+};
+
 const Sidebar: React.FC<SideBarProps> = ({ isOpen, toggleSidebar }) => {
+  const { user, logout } = useAuth();
   const [isSmallScreen, setIsSmallScreen] = useState<boolean>(false);
 
-  const storedUser = localStorage.getItem("user");
-  const user = storedUser ? JSON.parse(storedUser) : null;
-
-  const { canView } = useVisibility();
-
   useEffect(() => {
-    const mediaQuery = window.matchMedia("(max-width: 767px)"); // mobile < 768px
+    const mediaQuery = window.matchMedia("(max-width: 767px)");
     setIsSmallScreen(mediaQuery.matches);
 
     const handleResize = (e: MediaQueryListEvent) => {
@@ -35,10 +63,27 @@ const Sidebar: React.FC<SideBarProps> = ({ isOpen, toggleSidebar }) => {
     };
   }, []);
 
+  const visibleNavs = NAV_ITEMS.filter((nav) =>
+    isNavVisible(nav.allowedRoles, user?.role ?? "")
+  );
+
   return (
     <div className={`sidebar ${isOpen ? "open" : "close"}`}>
-      <div className="logo-sidebar">
-        <img src={logo} alt="Logo" />
+      <div className="sidebar-header">
+        <img src={logo} alt="Logo" className="sidebar-logo" />
+        <Tooltip title={isOpen ? "Thu nhỏ" : "Mở rộng"} placement="right">
+          <IconButton
+            onClick={toggleSidebar}
+            size="small"
+            sx={{
+              bgcolor: "var(--body-color)",
+              "&:hover": { bgcolor: "rgba(0, 157, 156, 0.12)" },
+              flexShrink: 0,
+            }}
+          >
+            {isOpen ? <ChevronLeft fontSize="small" /> : <ChevronRight fontSize="small" />}
+          </IconButton>
+        </Tooltip>
       </div>
 
       <div className="menu">
@@ -47,52 +92,59 @@ const Sidebar: React.FC<SideBarProps> = ({ isOpen, toggleSidebar }) => {
         </div>
 
         <ul className="menu-links">
-          <li className="nav-link">
-            <NavLink
-              to="/project-management/projects"
-              onClick={() => {
-                if (isSmallScreen) toggleSidebar(); // chỉ đóng nếu là mobile
-              }}
+          {visibleNavs.map((nav) => (
+            <Tooltip
+              key={nav.to}
+              title={nav.label}
+              placement="right"
+              disableHoverListener={isOpen}
             >
-              <i className="icon">
-                <LibraryBooks style={{ fontSize: "18px" }} />
-              </i>
-              <span className="text nav-text">Projects</span>
-            </NavLink>
-          </li>
-          {canView("sidebar.visible_transactions") && (
-            <li className="nav-link">
-              <NavLink
-                to="/transaction-manager/transactions"
-                onClick={() => {
-                  if (isSmallScreen) toggleSidebar();
-                }}
-              >
-                <i className="icon">
-                  <GridViewIcon style={{ fontSize: "18px" }} />
-                </i>
-                <span className="text nav-text">Transactions</span>
-              </NavLink>
-            </li>
-          )}
-          {canView("sidebar.visible_accounts") && (
-            <li className="nav-link">
-              <NavLink
-                to="/account-management/accounts"
-                onClick={() => {
-                  if (isSmallScreen) toggleSidebar();
-                }}
-              >
-                <i className="icon">
-                  <GridViewIcon style={{ fontSize: "18px" }} />
-                </i>
-                <span className="text nav-text">Accounts</span>
-              </NavLink>
-            </li>
-          )}
+              <li className="nav-link">
+                <NavLink
+                  to={nav.to}
+                  onClick={() => {
+                    if (isSmallScreen) toggleSidebar();
+                  }}
+                >
+                  <span className="nav-icon-wrap">
+                    <nav.icon style={{ fontSize: "20px" }} />
+                  </span>
+                  <span className="text nav-text">{nav.label}</span>
+                </NavLink>
+              </li>
+            </Tooltip>
+          ))}
         </ul>
 
         <Divider style={{ margin: "18px 0" }} />
+      </div>
+
+      <div className="sidebar-bottom">
+        <Divider sx={{ mb: 1.5 }} />
+        <div className="sidebar-user">
+          {isOpen && (
+            <Typography
+              variant="body2"
+              sx={{
+                fontWeight: 600,
+                fontSize: "0.875rem",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                color: "var(--text-primary-color)",
+                mb: 0.75,
+              }}
+            >
+              {user?.first_name} {user?.last_name}
+            </Typography>
+          )}
+          <Tooltip title="Đăng xuất" placement="right" disableHoverListener={isOpen}>
+            <button className="sidebar-logout-btn" onClick={logout}>
+              <Logout sx={{ fontSize: "16px" }} />
+              {isOpen && <span>Log out</span>}
+            </button>
+          </Tooltip>
+        </div>
       </div>
     </div>
   );

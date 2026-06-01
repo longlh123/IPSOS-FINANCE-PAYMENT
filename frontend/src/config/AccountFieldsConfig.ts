@@ -1,5 +1,11 @@
 import { ColumnFormat } from "./ColumnConfig"
 
+export interface UserData {
+    id: number,
+    name: string,
+    email: string
+}
+
 export interface AccountData {
     id?: number,
     name: string,
@@ -9,7 +15,9 @@ export interface AccountData {
     date_of_birth?: Date | null,
     address?: string,
     role: string,
+    role_id?: number,
     department: string,
+    department_id?: number,
     password?: string,
     password_confirmation?: string,
 }

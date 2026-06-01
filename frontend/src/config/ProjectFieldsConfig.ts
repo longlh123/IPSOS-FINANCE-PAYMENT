@@ -1,3 +1,4 @@
+import { UserData } from "./AccountFieldsConfig";
 import { ColumnFormat } from "./ColumnConfig";
 
 export const ProjectCellConfig: ColumnFormat[] = [
@@ -47,6 +48,8 @@ export interface ProjectData {
     teams: string[];
     project_types: string[];
     provinces?: ProvinceData[];
+    creator?: UserData;
+    permissions?: UserData[];
     planned_field_start: string;
     planned_field_end: string;
     actual_field_start?: string;
@@ -56,6 +59,8 @@ export interface ProjectData {
     remember_uuid?: string,
     count_respondents?: number,
     count_employees?: number,
+    has_submitted_quotation?: boolean,
+    has_approved_quotation?: boolean,
 };
 
 export const ProjectGeneralFieldsConfig: ColumnFormat[] = [

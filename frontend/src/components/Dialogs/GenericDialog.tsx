@@ -15,7 +15,12 @@ const GenericDialog: React.FC<GenericDialogProps> = ({ open, title, children, on
     return (
         <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
             <DialogTitle>{title}</DialogTitle>
-            <DialogContent>
+            <DialogContent
+                sx={{
+                    width: '100%',
+                    pt: 2
+                }}
+            >
                 {children}
             </DialogContent>
             <DialogActions>

@@ -1,13 +1,10 @@
-import { Box, Button, IconButton } from "@mui/material";
+import { Avatar, Box, Button, IconButton, Typography } from "@mui/material";
 import ReusableTable from "../../components/Table/ReusableTable";
-import TableProjects from "../../components/Table/TableProjects";
 import { useProjects } from "../../hook/useProjects";
 import { useMetadata } from "../../hook/useMetadata";
 import { ColumnFormat } from "../../config/ColumnConfig";
 import { ProjectCellConfig, ProjectData, ProvinceData } from "../../config/ProjectFieldsConfig";
-import logo from "../../assets/img/Ipsos logo.svg";
 import { StatusDropdown } from "../../components/Table/StatusDropdown";
-import { useVisibility } from "../../hook/useVisibility";
 import useDialog from "../../hook/useDialog";
 import AlertDialog from "../../components/AlertDialog/AlertDialog";
 import axios from "axios";
@@ -18,13 +15,13 @@ import SearchDatePickerFromTo from "../../components/SearchDatePickerFromTo";
 import SearchTextBox from "../../components/SearchTextBox";
 import ModalAddProject from "../../components/Modals/Project/ModalAddProject";
 import { Dayjs } from "dayjs";
+import { formatClass } from "../../utils/format";
 
 const Projects = () => {
   const navigate = useNavigate();
 
   const { projects, actionState, page, rowsPerPage, total, setPage, setRowsPerPage, searchTerm, setSearchTerm, searchFromDate, setSearchFromDate, searchToDate, setSearchToDate, updateProjectStatus } = useProjects();
   const { data } = useMetadata();
-  const { canView } = useVisibility();
   const { open, title, message, showConfirmButton, openDialog, closeDialog, confirmDialog } = useDialog();
   
   const [ updatingId, setUpdatingId ] = useState<number | null>(null);
@@ -56,17 +53,18 @@ const Projects = () => {
       align: "center",
       width: 40,
       renderCell: (row: ProjectData) => {
-          return (
-            <Box
-              component="img"
-              src={logo}
-              sx={{
-                width: 32,
-                height: 32,
-                objectFit: "contain"
-              }}
-            />
-          );
+        return (
+          <Avatar
+            className={formatClass(row.status || "")}
+            sx={{
+              width: '28px',
+              height: '28px',
+              fontSize: '8px'
+            }}
+          >
+            {row.id}
+          </Avatar>
+        );
       }
     },
     ...ProjectCellConfig,
@@ -100,7 +98,7 @@ const Projects = () => {
             value={row.status ?? STATUS.PLANNED}
             transitions={statusTransitions}
             onChange={(newStatus) => handleUpdateStatus(row, newStatus)}
-            disabled={!canView("projects.functions.visible_change_status_of_project") || updatingId === row.id}
+            disabled={updatingId === row.id}
           />
         )
       }
@@ -125,16 +123,17 @@ const Projects = () => {
                 navigate(`/project-management/projects/${row.id}/quotation`)
               }
               sx={{
-                backgroundColor: '#f6f6f6', 
+                backgroundColor: 'var(--body-color)',
                 borderRadius: '8px',
-                border: '1px solid #e8e8e8',
+                border: '1px solid',
+                borderColor: 'rgba(0,0,0,0.08)',
                 '&:hover': {
-                  backgroundColor: '#e0e0e0',
+                  backgroundColor: 'rgba(0, 157, 156, 0.08)',
                 },
                 padding: '5px',
               }}
             >
-              <ArrowForwardIosIcon />
+              <ArrowForwardIosIcon sx={{ fontSize: '0.875rem' }} />
             </IconButton>
           </Box>
         )
@@ -169,6 +168,12 @@ const Projects = () => {
   }
 
   const handleUpdateStatus = async (project: ProjectData, status: string) => {
+    if(status === STATUS.IN_COMING && !project.has_submitted_quotation){
+      return showError(
+        'Vui lòng submit quotation trước khi chuyển dự án sang "in coming"!'
+      );
+    }
+
     if(project.count_employees === 0 && status === STATUS.ON_GOING){
       return showError(
         'Vui lòng cập nhật danh sách phỏng vấn viên trước khi "on going" dự án!'
@@ -226,9 +231,8 @@ const Projects = () => {
   };
   
   return (
-    <Box>
+    <>
       <ReusableTable
-          title="Projects"
           columns={columns}
           data={projects}
           actionStatus={{
@@ -237,42 +241,32 @@ const Projects = () => {
               error: actionState.error,
               message: actionState.message
           }}
-          page = {page}
-          rowsPerPage = {rowsPerPage}
-          total = {total}
+          page={page}
+          rowsPerPage={rowsPerPage}
+          total={total}
           onPageChange={handleChangePage}
           onRowsPerPageChange={handleChangeRowsPerPage}
           topToolbar={(
-            <Box>
-              <div className="filter">
-                <div className="filter-left">
-                  <h2 className="filter-title">Projects</h2>
-                </div>
-                <div className="filter-right">
-                  {canView("projects.functions.visible_add_new_project") && (
-                    <Button className="btn btn-primary" onClick={() => setOpenModalAdd(true)}>
-                      Add New Project
-                    </Button>
-                  )}
-                </div>
-              </div>
-              <div className="filter">
-                {/* LEFT: Add button */}
-                <div className="filter-left">
-                  <SearchDatePickerFromTo fromValue={searchFromDate} toValue={searchToDate} onSearchChange={handleDateChange}/>
-                </div>
-
-                {/* RIGHT: Search + Date filter */}
-                <div className="filter-right">
-                  <SearchTextBox
-                    placeholder="Search project name, internal code,..."
-                    onSearchChange={handleSearchChange}
-                  />
-                </div>
-              </div>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.25 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Typography sx={{ fontSize: '1.0625rem', fontWeight: 600, color: 'var(--text-color)' }}>
+                  Projects
+                </Typography>
+                <Button className="btn" onClick={() => setOpenModalAdd(true)}>
+                  Add New Project
+                </Button>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
+                <SearchDatePickerFromTo fromValue={searchFromDate} toValue={searchToDate} onSearchChange={handleDateChange} />
+                <SearchTextBox
+                  placeholder="Search project name, internal code,..."
+                  onSearchChange={handleSearchChange}
+                />
+              </Box>
             </Box>
           )}
       />
+
 
       <AlertDialog
         open={open}
@@ -283,12 +277,12 @@ const Projects = () => {
         onConfirm={confirmDialog}
       />
 
-      <ModalAddProject 
-        openModal={openModalAdd} 
-        onClose={handleCloseModal} 
+      <ModalAddProject
+        openModal={openModalAdd}
+        onClose={handleCloseModal}
         metadata={data}
       />
-    </Box>
+    </>
   );
 };
 

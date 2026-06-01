@@ -8,7 +8,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 const ErrorPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { errorCode, errorMessage } = location.state || {};
+  const { errorCode, errorMessage, blockedApi } = location.state || {};
 
   return (
     <>
@@ -32,11 +32,16 @@ const ErrorPage = () => {
                 </div>
               </div>
             </div>
-            <div className="number">{errorCode}</div>
+            <div className="number">{errorCode.toString().slice(-1)}</div>
           </div>
           <div className="text-404">
             {errorMessage}
           </div>
+          {blockedApi && (
+            <div style={{ marginTop: "12px", fontSize: "0.8125rem", color: "#888", fontFamily: "monospace" }}>
+              {blockedApi}
+            </div>
+          )}
             {/* <Button
                 variant="contained"
                 color="primary"

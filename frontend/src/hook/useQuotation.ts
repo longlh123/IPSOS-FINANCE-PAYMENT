@@ -18,7 +18,7 @@ export function useQuotation(projectId?: number) {
         message: ""
     });
 
-    const getQuotationVersions = useCallback(async (options?: { silent?: boolean}) => {
+    const getQuotationVersions = useCallback(async (options?: { silent?: boolean, keepSelectedId?: number }) => {
         try
         {
             if(!projectId) return;
@@ -45,8 +45,10 @@ export function useQuotation(projectId?: number) {
             setVersions(response.data.versions);
 
             if(response.data.versions.length > 0){
-                const latest = response.data.versions[0];
-                setSelectedVersion(latest);
+                const toSelect = options?.keepSelectedId
+                    ? (response.data.versions.find((v: QuotationVersionData) => v.id === options.keepSelectedId) ?? response.data.versions[0])
+                    : response.data.versions[0];
+                setSelectedVersion(toSelect);
 
                 setCanEdit(true);
             } else {
@@ -59,14 +61,31 @@ export function useQuotation(projectId?: number) {
                 ...options?.silent ? {} : { message: response.data.message }
             }));
         } catch(error: any){
-            setActionState((prev) => ({
-                ...prev,
-                loading: false,
-                error: true,
-                ...(options?.silent ? {} : {
-                    message: error.response.data.error || 'Failed to get quotation versions!'
-                })
-            }));
+            let message = 'Failed to get quotation versions.';
+            
+            if(axios.isAxiosError(error)){
+                message = error.response?.data.message || error.response?.data.error || error.message
+            } else {
+                message = error.response?.error
+            }
+
+            if(error.response.status === 403){
+                setActionState((prev) => ({
+                    ...prev,
+                    loading: false,
+                    error: true,
+                    message: message
+                }));
+            } else {
+                setActionState((prev) => ({
+                    ...prev,
+                    loading: false,
+                    error: true,
+                    ...(options?.silent ? {} : {
+                        message: message
+                    })
+                }));
+            }
         }
     }, [projectId]);
     
@@ -381,6 +400,61 @@ export function useQuotation(projectId?: number) {
         }
     }, [projectId, selectedVersion]);
 
+    const withdrawQuotationVersion = useCallback(async () => {
+        try
+        {
+            if(!projectId) return;
+            if(!selectedVersion) return;
+
+            setActionState({
+                type: 'update',
+                loading: true,
+                error: false,
+                message: ""
+            });
+
+            const token = localStorage.getItem('authToken');
+
+            const url = ApiConfig.project.withdrawQuotationVersion
+                .replace("{projectId}", projectId.toString())
+                .replace("{versionId}", selectedVersion.id.toString());
+
+            const response = await axios.post(url, null, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            const version = response.data.data;
+
+            setVersions(prev => prev?.map(v => v.id === version.id ? version : v));
+            setSelectedVersion(version);
+
+            setActionState({
+                type: 'update',
+                loading: false,
+                error: false,
+                message: response.data.message
+            });
+        } catch(error: any){
+            let message = 'Failed to withdraw Quotation';
+
+            if(axios.isAxiosError(error)){
+                message = error.response?.data.message || error.response?.data.error || error.message;
+            } else {
+                message = error.response?.error;
+            }
+
+            setActionState({
+                type: 'update',
+                loading: false,
+                error: true,
+                message: message
+            });
+        }
+    }, [projectId, selectedVersion]);
+
     useEffect(() => {
         getQuotationVersions();
     }, [projectId]);
@@ -399,6 +473,7 @@ export function useQuotation(projectId?: number) {
         destroyQuotationVersion,
         submitQuotationVersion,
         cloneQuotationVersion,
-        approveQuotationVersion
+        approveQuotationVersion,
+        withdrawQuotationVersion
     }
 }

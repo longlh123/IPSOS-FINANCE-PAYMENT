@@ -81,6 +81,7 @@ class ProjectController extends Controller
             $status = $request->input('status');
             
             $logged_in_user = Auth::user()->id;
+            $role = Auth::user()->userDetails->role->name;
             
             //page = số trang | per_page = số dòng mỗi trang
             $perPage = $request->input('perPage', 10);
@@ -89,30 +90,34 @@ class ProjectController extends Controller
             $searchFromDate = $request->input('searchFromDate') ? Carbon::parse($request->input('searchFromDate')) : null;
             $searchToDate = $request->input('searchToDate') ? Carbon::parse($request->input('searchToDate')) : null;
 
-            if(in_array(Auth::user()->userDetails->role->name, ['Admin', 'Finance'])){
-                $query = Project::with([
-                    'projectDetails', 
-                    'projectDetails.createdBy'
-                ])
-                ->withCount([
-                    'projectRespondents as count_respondents' => function($q) {
-                        $q->where('environment', 'live');
-                    }
-                ])
-                ->withCount('projectEmployees as count_employees');
-            } else {
-                $query = Project::with(['projectDetails', 'projectDetails.createdBy'])
-                    ->withCount([
-                        'projectRespondents as count_respondents' => function($q) {
-                            $q->where('environment', 'live');
-                        }
-                    ])
-                    ->withCount('projectEmployees as count_employees')
-                    ->whereHas('projectPermissions', function($q) use ($logged_in_user) {
-                        $q->where('user_id', $logged_in_user);
-                    });
+            $query = Project::withCount([
+                'projectRespondents as count_respondents' => function($q) {
+                    $q->where('environment', 'live');
+                },
+                'projectEmployees as count_employees'
+            ]);
+
+            $query->withExists([
+                'quotations as has_submitted_quotation' => function($q) {
+                    $q->whereIn('status', ['submitted', 'approved']);
+                },
+                'quotations as has_approved_quotation' => function($q) {
+                    $q->where('status', 'approved');
+                }
+            ]);
+
+            if(!in_array($role, ['Admin','Finance'])){
+                $query->whereHas('projectPermissions', function($q) use ($logged_in_user) {
+                    $q->where('user_id', $logged_in_user);
+                });
+            };
+
+            if(!in_array($role, ['Admin','Researcher'])){
+                $query->whereHas('quotations', function($q) {
+                    $q->whereIn('status', ['submitted', 'approved']);
+                });
             }
-            
+
             if($showOnlyEnabled)
             {
                 $query->when($showOnlyEnabled, function($query, $showOnlyEnabled){
@@ -245,9 +250,7 @@ class ProjectController extends Controller
                     'planned_field_end' => $validatedRequest['planned_field_end']
                 ]);
 
-                $project->projectPermissions()->create([
-                    'user_id' => $user->id,
-                ]);
+                $project->projectPermissions()->attach($user->id);
 
                 $projectTypes = $validatedRequest['project_types'];
                 

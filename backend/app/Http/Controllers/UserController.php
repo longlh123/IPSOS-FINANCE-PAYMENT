@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Hash;
 use Symfony\Component\HttpFoundation\Response;
 use App\Models\User;
 use App\Http\Resources\UserResource;
+use App\Http\Requests\UpdateUserRequest;
 
 class UserController extends Controller
 {
@@ -98,6 +99,34 @@ class UserController extends Controller
         {
             DB::rollBack();
 
+            Log::error($e->getMessage());
+            return response()->json([
+                'status_code' => 400,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+    public function update(UpdateUserRequest $request, $id)
+    {
+        try
+        {
+            $validated = $request->validated();
+
+            $user = User::findOrFail($id);
+
+            $user->userDetails()->update([
+                'role_id'       => $validated['role'],
+                'department_id' => $validated['department'],
+            ]);
+
+            return response()->json([
+                'status_code' => 200,
+                'message'     => 'User updated successfully',
+                'data'        => new UserResource($user->fresh('userDetails')),
+            ]);
+        } catch(\Exception $e)
+        {
             Log::error($e->getMessage());
             return response()->json([
                 'status_code' => 400,

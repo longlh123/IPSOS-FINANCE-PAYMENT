@@ -38,13 +38,12 @@ class QuotationController extends Controller
                                             ->orderByDesc('version')
                                             ->get();
             }
-            
 
             return response()->json([
                 'status_code' => 200,
                 'project' => new ProjectResource($project),
                 'versions' => QuotationVersionResource::collection($quotationVersions)
-            ],200);
+            ], 200);
         } catch(\Exception $e)
         {
             Log::error($e->getMessage());
@@ -444,31 +443,55 @@ class QuotationController extends Controller
         }
     }
 
-    public function reject($quotationId)
+    public function withdraw($projectId, $versionId)
     {
         try
         {
-            $quotation = Quotation::findOrFail($quotationId);
+            $logged_in_user = Auth::user()->id;
+
+            $project = Project::findOrFail($projectId);
+
+            $quotation = $project->quotations()->where('id', $versionId)->first();
+
+            if(!$quotation){
+                return response()->json([
+                    'status_code' => 404,
+                    'error' => 'Quotation not found.'
+                ], 404);
+            }
 
             if($quotation->status !== 'submitted'){
                 return response()->json([
                     'status_code' => 403,
-                    'error' => 'Only submitted can be rejected.'
+                    'error' => 'Only submitted quotations can be withdrawn.'
                 ], 403);
             }
 
             $quotation->update([
-                'status' => 'rejected'
+                'status' => 'draft'
             ]);
+
+            $projectPermissions = $project->projectPermissions;
+
+            foreach($projectPermissions as $projectPermission){
+                Notification::create([
+                    'user_id' => $projectPermission->id,
+                    'project_id' => $project->id,
+                    'created_by' => $logged_in_user,
+                    'type' => 'quotation_withdrawn',
+                    'message' => "Quotation v{$quotation->version} withdrawn for {$project->internal_code} - {$project->project_name}",
+                    'url' => "/project-management/projects/{$project->id}/quotation"
+                ]);
+            }
 
             return response()->json([
                 'status_code' => 200,
-                'quotation' => new QuotationVersionResource($quotation),
-                'message' => 'The quotation rejected successfully.'
+                'data' => new QuotationVersionResource($quotation),
+                'message' => 'The quotation withdrawn successfully.'
             ]);
         } catch(\Exception $e){
             Log::error($e->getMessage());
-            
+
             return response()->json([
                 'status_code' => 400,
                 'error' => $e->getMessage(),

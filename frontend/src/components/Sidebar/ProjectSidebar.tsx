@@ -1,61 +1,124 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
 import "../Sidebar/Sidebar.css";
-import { Divider } from "@mui/material";
+import { Divider, IconButton, Tooltip } from "@mui/material";
 import { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
 import logo from "../../assets/img/Ipsos logo.png";
-import { LibraryBooks } from "@mui/icons-material";
-import { useVisibility } from "../../hook/useVisibility";
-import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
+import {
+  HomeOutlined,
+  RequestQuoteOutlined,
+  AssignmentIndOutlined,
+  GroupsOutlined,
+  CardGiftcardOutlined,
+  HeadsetMicOutlined,
+  SettingsOutlined,
+  ChevronLeft,
+  ChevronRight,
+} from "@mui/icons-material";
 import { useProjects } from "../../hook/useProjects";
 import { ProjectData } from "../../config/ProjectFieldsConfig";
 
 interface ProjectSidebarProps {
-    projectId: number,
-    isOpen: boolean;
-    toggleSidebar: () => void;
+  projectId: number;
+  isOpen: boolean;
+  toggleSidebar: () => void;
 }
+
+interface NavItem {
+  label: string;
+  to: string;
+  icon: React.ElementType;
+  showIf?: (project: ProjectData | null) => boolean;
+}
+
+const buildNavItems = (projectId: number): NavItem[] => [
+  {
+    label: "Quotation",
+    to: `/project-management/projects/${projectId}/quotation`,
+    icon: RequestQuoteOutlined,
+  },
+  {
+    label: "Assignment",
+    to: `/project-management/projects/${projectId}/assignment`,
+    icon: AssignmentIndOutlined,
+  },
+  {
+    label: "Interviewers",
+    to: `/project-management/projects/${projectId}/parttime-employees`,
+    icon: GroupsOutlined,
+    showIf: (p) => p?.has_approved_quotation ?? false,
+  },
+  {
+    label: "Gifts",
+    to: `/project-management/projects/${projectId}/gifts`,
+    icon: CardGiftcardOutlined,
+    showIf: (p) => p?.has_approved_quotation ?? false,
+  },
+  {
+    label: "CATI Settings",
+    to: `/project-management/projects/${projectId}/cati-settings`,
+    icon: HeadsetMicOutlined,
+    showIf: (p) => p?.project_types?.includes("CATI") ?? false,
+  },
+];
 
 const ProjectSidebar: React.FC<ProjectSidebarProps> = ({ projectId, isOpen, toggleSidebar }) => {
   const [isSmallScreen, setIsSmallScreen] = useState<boolean>(false);
-
+  const [projectSelected, setProjectSelected] = useState<ProjectData | null>(null);
   const { getProject } = useProjects();
 
-  const [ projectSelected, setProjectSelected ] = useState<ProjectData | null>(null);
-
   useEffect(() => {
-    async function fetchProject(){
-        try{
-            const p = await getProject(projectId);
-            setProjectSelected(p);
-        }catch(error){
-            console.log(error);
-        }
-    }
-
-    fetchProject();
+    getProject(projectId)
+      .then(setProjectSelected)
+      .catch(console.error);
   }, [projectId]);
 
-  const { canView } = useVisibility();
-
   useEffect(() => {
-    const mediaQuery = window.matchMedia("(max-width: 767px)"); // mobile < 768px
+    const mediaQuery = window.matchMedia("(max-width: 767px)");
     setIsSmallScreen(mediaQuery.matches);
-
-    const handleResize = (e: MediaQueryListEvent) => {
-      setIsSmallScreen(e.matches);
-    };
-
+    const handleResize = (e: MediaQueryListEvent) => setIsSmallScreen(e.matches);
     mediaQuery.addEventListener("change", handleResize);
-    return () => {
-      mediaQuery.removeEventListener("change", handleResize);
-    };
+    return () => mediaQuery.removeEventListener("change", handleResize);
   }, []);
+
+  const handleClick = () => {
+    if (isSmallScreen) toggleSidebar();
+  };
+
+  const navItems = buildNavItems(projectId).filter(
+    (item) => !item.showIf || item.showIf(projectSelected)
+  );
+
+  const renderNavLink = (item: NavItem) => (
+    <Tooltip key={item.to} title={item.label} placement="right" disableHoverListener={isOpen}>
+      <li className="nav-link">
+        <NavLink to={item.to} onClick={handleClick}>
+          <span className="nav-icon-wrap">
+            <item.icon style={{ fontSize: "20px" }} />
+          </span>
+          <span className="text nav-text">{item.label}</span>
+        </NavLink>
+      </li>
+    </Tooltip>
+  );
 
   return (
     <div className={`sidebar ${isOpen ? "open" : "close"}`}>
-      <div className="logo-sidebar">
-        <img src={logo} alt="Logo" />
+      <div className="sidebar-header">
+        <img src={logo} alt="Logo" className="sidebar-logo" />
+        <Tooltip title={isOpen ? "Thu nhỏ" : "Mở rộng"} placement="right">
+          <IconButton
+            onClick={toggleSidebar}
+            size="small"
+            sx={{
+              bgcolor: "var(--body-color)",
+              "&:hover": { bgcolor: "rgba(0, 157, 156, 0.12)" },
+              flexShrink: 0,
+            }}
+          >
+            {isOpen ? <ChevronLeft fontSize="small" /> : <ChevronRight fontSize="small" />}
+          </IconButton>
+        </Tooltip>
       </div>
 
       <div className="menu">
@@ -64,90 +127,39 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({ projectId, isOpen, togg
         </div>
 
         <ul className="menu-links">
-            <li className="home-link">
-                <NavLink
-                    to={`/project-management/projects`}
-                    onClick={() => {
-                    if (isSmallScreen) toggleSidebar(); // chỉ đóng nếu là mobile
-                    }}
-                >
-                    <i className="icon">
-                        <HomeOutlinedIcon style={{ fontSize: "18px" }} />
-                    </i>
-                    <span className="text nav-text">All Projects</span>
-                </NavLink>
-            </li>
-            <Divider style={{ margin: "12px 0" }} />
+          <Tooltip title="All Projects" placement="right" disableHoverListener={isOpen}>
             <li className="nav-link">
-              <NavLink
-                to={`/project-management/projects/${projectId}/quotation`}
-                onClick={() => {
-                  if (isSmallScreen) toggleSidebar(); // chỉ đóng nếu là mobile
-                }}
-              >
-                <i className="icon">
-                  <LibraryBooks style={{ fontSize: "18px" }} />
-                </i>
-                <span className="text nav-text">Quotation</span>
+              <NavLink to="/project-management/projects" onClick={handleClick}>
+                <span className="nav-icon-wrap">
+                  <HomeOutlined style={{ fontSize: "20px" }} />
+                </span>
+                <span className="text nav-text">All Projects</span>
               </NavLink>
             </li>
-            <li className="nav-link">
-                <NavLink
-                    to={`/project-management/projects/${projectId}/parttime-employees`}
-                    onClick={() => {
-                    if (isSmallScreen) toggleSidebar(); // chỉ đóng nếu là mobile
-                    }}
-                >
-                    <i className="icon">
-                    <LibraryBooks style={{ fontSize: "18px" }} />
-                    </i>
-                    <span className="text nav-text">Interviewers</span>
-                </NavLink>
-            </li>
-            <li className="nav-link">
-              <NavLink
-                  to={`/project-management/projects/${projectId}/gifts`}
-                  onClick={() => {
-                  if (isSmallScreen) toggleSidebar(); // chỉ đóng nếu là mobile
-                  }}
-              >
-                  <i className="icon">
-                  <LibraryBooks style={{ fontSize: "18px" }} />
-                  </i>
-                  <span className="text nav-text">Gifts</span>
-              </NavLink>
-            </li>
-            {projectSelected?.project_types.includes('CATI') && (
-              <li className="nav-link">
-                <NavLink
-                    to={`/project-management/projects/${projectId}/cati-settings`}
-                    onClick={() => {
-                    if (isSmallScreen) toggleSidebar(); // chỉ đóng nếu là mobile
-                    }}
-                >
-                    <i className="icon">
-                    <LibraryBooks style={{ fontSize: "18px" }} />
-                    </i>
-                    <span className="text nav-text">CATI Settings</span>
-                </NavLink>
-              </li>
-            )}
+          </Tooltip>
+
+          <Divider style={{ margin: "8px 0" }} />
+
+          {navItems.map(renderNavLink)}
         </ul>
-        <Divider style={{ margin: "18px 0" }} />
-        <ul className="menu-links">
-          <li className="nav-link">
-            <NavLink
+      </div>
+
+      <div className="sidebar-bottom">
+        <Divider sx={{ mb: 1.5 }} />
+        <ul className="menu-links" style={{ padding: 0 }}>
+          <Tooltip title="Settings" placement="right" disableHoverListener={isOpen}>
+            <li className="nav-link">
+              <NavLink
                 to={`/project-management/projects/${projectId}/settings`}
-                onClick={() => {
-                if (isSmallScreen) toggleSidebar(); // chỉ đóng nếu là mobile
-                }}
-            >
-                <i className="icon">
-                <LibraryBooks style={{ fontSize: "18px" }} />
-                </i>
+                onClick={handleClick}
+              >
+                <span className="nav-icon-wrap">
+                  <SettingsOutlined style={{ fontSize: "20px" }} />
+                </span>
                 <span className="text nav-text">Settings</span>
-            </NavLink>
-          </li>
+              </NavLink>
+            </li>
+          </Tooltip>
         </ul>
       </div>
     </div>

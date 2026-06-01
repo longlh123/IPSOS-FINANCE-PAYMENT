@@ -1,6 +1,5 @@
 import axios from "axios";
-import React from "react";
-import { createContext, ReactNode, useContext, useState } from "react";
+import { createContext, ReactNode, useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 interface UserDetail {
@@ -10,9 +9,9 @@ interface UserDetail {
 }
 
 interface AuthContextType {
-    user: UserDetail | null;  
+    user: UserDetail | null;
     token: string | null;
-    login: (token: string, user: UserDetail) => void;
+    login: (token: string, user: UserDetail, redirectTo?: string) => void;
     logout: () => void;
 }
 
@@ -24,29 +23,47 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [loading, setLoading] = useState<boolean>(true);
     const navigate = useNavigate();
 
-    React.useEffect(() => {
+    useEffect(() => {
         const storedToken = localStorage.getItem("authToken");
         const storedUser = localStorage.getItem("user");
-        
+
         if (storedToken) setToken(storedToken);
         if (storedUser) setUser(JSON.parse(storedUser));
 
         setLoading(false);
     }, []);
 
-    const login = (token: string, userData: UserDetail) => {
+    useEffect(() => {
+        const interceptorId = axios.interceptors.response.use(
+            (response) => response,
+            (error) => {
+                if (axios.isAxiosError(error) && error.response?.status === 403) {
+                    const method = error.config?.method?.toUpperCase() ?? '';
+                    const url = error.config?.url ?? '';
+                    
+                    navigate('/error', {
+                        state: {
+                            errorCode: 403,
+                            errorMessage: 'Bạn không có quyền thực hiện thao tác này.',
+                            blockedApi: `${method} ${url}`,
+                        },
+                        replace: true,
+                    });
+                }
+                return Promise.reject(error);
+            }
+        );
+        return () => axios.interceptors.response.eject(interceptorId);
+    }, [navigate]);
+
+    const login = (token: string, userData: UserDetail, redirectTo?: string) => {
         setToken(token);
         setUser(userData);
-        
-        localStorage.setItem('authToken', token);
-        localStorage.setItem('user', JSON.stringify(userData))
 
-        const headers = {
-            Authorization: `Bearer ${token}`,
-            Accept: "application/json",
-        };
-        
-        navigate('/project-management/projects', { replace: true }); // Redirect to the desired page after login
+        localStorage.setItem('authToken', token);
+        localStorage.setItem('user', JSON.stringify(userData));
+
+        navigate(redirectTo || '/project-management/projects', { replace: true });
     };
 
     const logout = () => {
