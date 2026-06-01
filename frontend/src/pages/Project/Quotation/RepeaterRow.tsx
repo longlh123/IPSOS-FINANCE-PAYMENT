@@ -1,8 +1,9 @@
 import { Autocomplete, Box, Checkbox, IconButton, TableCell, TableRow, TextField } from "@mui/material";
 import { memo, useMemo, useState } from "react";
-import { FieldSchema } from "./QuotationDynamicForm";
 import SaveIcon from '@mui/icons-material/Save';
 import DeleteIcon from '@mui/icons-material/Delete';
+import { FieldSchema } from "../../../utils/renderFields";
+import { useInputRule } from "../../../hook/useInputRule";
 
 export interface RepeaterRowData {
     [key: string]: any

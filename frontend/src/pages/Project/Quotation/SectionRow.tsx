@@ -1,11 +1,11 @@
 import { memo, useEffect, useState } from "react";
-import { FieldSchema } from "./QuotationDynamicForm";
 import { Box, FormControl, FormControlLabel, Paper, Radio, RadioGroup, Table, TableBody, TableCell, TableContainer, TableRow } from "@mui/material";
 import RadioRow from "./RadioRow";
 import RangeRow from "./RangeRow";
 import MultiSelectRow from "./MultiSelectRow";
 import RichTextRow from "./RichTextRow";
 import EditableRow from "./EditableRow";
+import { FieldSchema } from "../../../utils/renderFields";
 
 export interface SectionRowData {
     [key: string]: any
