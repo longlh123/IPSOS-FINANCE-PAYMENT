@@ -9,7 +9,7 @@ import LoadingButton from "@mui/lab/LoadingButton";
 import { EditOutlined } from "@mui/icons-material";
 
 const AccountManagement = () => {
-    const { data } = useMetadata();
+    const { data, invalidate: invalidateMetadata } = useMetadata();
     const { accounts, total, page, setPage, rowsPerPage, setRowsPerPage, searchTerm, setSearchTerm, actionState, storeAccount, updateAccount } = useAccounts();
     
     const [ openCreateDialog, setOpenCreateDialog ] = useState<boolean>(false);
@@ -108,6 +108,10 @@ const AccountManagement = () => {
 
     const handleCreateUser = async () => {
         const response = await storeAccount(formCreateData);
+
+        if (response?.status_code === 200) {
+            invalidateMetadata();
+        }
 
         setOpenCreateDialog(false);
     }

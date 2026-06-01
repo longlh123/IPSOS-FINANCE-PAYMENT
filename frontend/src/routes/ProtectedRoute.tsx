@@ -8,16 +8,18 @@ interface ProtectedRouteProps {
   allowedRoles?: string[]
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles: _allowedRoles }) => {
     const { token, user } = useAuth();
     const location = useLocation();
 
-    //Chưa đăng nhập → quay về trang login
     if (!token) {
       return <Navigate to="/login" state={{ from: location }} replace />;
     }
-    
-    //Nếu đã login và cố vào "/" → chuyển sang trang chính
+
+    if (user?.must_change_password) {
+      return <Navigate to="/set-password" replace />;
+    }
+
     if (location.pathname === '/') {
       return <Navigate to="/project-management/projects" replace />;
     }

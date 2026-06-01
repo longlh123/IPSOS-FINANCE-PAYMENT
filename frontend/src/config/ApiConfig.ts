@@ -85,6 +85,7 @@ export const ApiConfig = {
     login: `${host}/api/login`,
     forgotPassword: `${host}/api/forgot-password`,
     resetPassword: `${host}/api/reset-password`,
+    setFirstPassword: `${host}/api/set-first-password`,
     viewAccounts: `${host}/api/users/show`,
     storeAccount: `${host}/api/users`,
     updateAccount: `${host}/api/users/{userId}`,

@@ -52,9 +52,13 @@ const Login = () => {
         throw new Error(response.data.message);
       }
 
-      const from = location.state?.from;
-      const redirectTo = from ? `${from.pathname}${from.search ?? ''}` : undefined;
-      login(response.data.token, response.data.user, redirectTo);
+      if (response.data.user?.must_change_password) {
+        login(response.data.token, response.data.user, '/set-password');
+      } else {
+        const from = location.state?.from;
+        const redirectTo = from ? `${from.pathname}${from.search ?? ''}` : undefined;
+        login(response.data.token, response.data.user, redirectTo);
+      }
 
       setIsError(false);
     } catch (error) {

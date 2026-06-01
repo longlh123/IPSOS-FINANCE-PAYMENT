@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -82,10 +81,6 @@ class UserController extends Controller
                 'last_name' => $validated['last_name'],
                 'role_id' => $validated['role'],
                 'department_id' => $validated['department'],
-            ]);
-
-            Password::sendResetLink([
-                'email' => $user->email
             ]);
 
             DB::commit();

@@ -133,6 +133,8 @@ export function useAccounts() {
                 error: false,
                 message: response.data.message
             });
+
+            return response.data;
         }catch(error: any){
             let message = 'Failed to store Account.';
             
