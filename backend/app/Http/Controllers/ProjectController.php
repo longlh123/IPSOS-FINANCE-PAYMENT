@@ -232,7 +232,8 @@ class ProjectController extends Controller
 
                 $project = Project::create([
                     'internal_code' => $tempInternalCode,
-                    'project_name' => $validatedRequest['project_name']
+                    'project_name' => $validatedRequest['project_name'],
+                    'disabled' => false
                 ]);
 
                 $year = date('Y');

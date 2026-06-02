@@ -3,6 +3,7 @@ import { Box, FormControl, FormControlLabel, Paper, Radio, RadioGroup, Table, Ta
 import RadioRow from "./RadioRow";
 import RangeRow from "./RangeRow";
 import MultiSelectRow from "./MultiSelectRow";
+import SingleSelectRow from "./SingleSelectRow";
 import RichTextRow from "./RichTextRow";
 import EditableRow from "./EditableRow";
 import { FieldSchema } from "../../../utils/renderFields";
@@ -26,10 +27,17 @@ const SectionRow = memo(({row, isEditing, onChange}: Props) => {
     const [ draft, setDraft ] = useState<SectionRowData>(row.value || {});
 
     const handleFieldChange = (fieldName: string, value: any) => {
-        const newDraft = {
+        let newDraft = {
             ...draft,
             [fieldName]: value
         };
+
+        // Clear dependent fields when parent changes (applies to both single-select and multi-select)
+        if (fieldName === 'industry') {
+            newDraft = { ...newDraft, category: undefined, subcategory: undefined };
+        } else if (fieldName === 'category') {
+            newDraft = { ...newDraft, subcategory: undefined };
+        }
 
         setDraft(newDraft);
 
@@ -102,16 +110,85 @@ const SectionRow = memo(({row, isEditing, onChange}: Props) => {
             )
         }
         if(field.type === 'multi-select'){
+            let disabled = false;
+            let options = field.options ?? [];
+
+            if(field.name === 'category'){
+                disabled = !isEditing || !draft['industry'];
+
+                // industry có thể là single-select (string) hoặc multi-select (Option object)
+                const rawIndustry = Array.isArray(draft['industry']) ? draft['industry'][0] : draft['industry'];
+                const industryOption = typeof rawIndustry === 'object' && rawIndustry !== null
+                    ? rawIndustry
+                    : row.fields.find(f => f.name === 'industry')?.options?.find(o => o.label === rawIndustry);
+                if (industryOption) {
+                    options = options.filter(o => String(o.parent) === String(industryOption.value));
+                }
+            }
+            if(field.name === 'subcategory'){
+                disabled = !isEditing || !draft['industry'] || !draft['category'];
+
+                // category có thể là single-select (string) hoặc multi-select (Option object)
+                const rawCategory = Array.isArray(draft['category']) ? draft['category'][0] : draft['category'];
+                const categoryOption = typeof rawCategory === 'object' && rawCategory !== null
+                    ? rawCategory
+                    : row.fields.find(f => f.name === 'category')?.options?.find(o => o.label === rawCategory);
+                if (categoryOption) {
+                    options = options.filter(o => String(o.parent) === String(categoryOption.value));
+                }
+            }
+
             return (
                 <MultiSelectRow
                     key={field.name}
-                    row={{id: field.name, label: field.label, value: draft[field.name], options: field.options ?? []}}
+                    row={{id: field.name, label: field.label, value: draft[field.name], options: options ?? []}}
                     isEditing={isEditing}
-                    onChange={handleFieldChange} 
+                    isDisabled={disabled}
+                    onChange={handleFieldChange}
                 />
             )
         }
-        
+        if(field.type === 'single-select'){
+            let disabled = false;
+            let options = field.options ?? [];
+
+            if(field.name === 'category'){
+                disabled = !isEditing || !draft['industry'];
+
+                // industry có thể là single-select (string) hoặc multi-select (Option object)
+                const rawIndustry = Array.isArray(draft['industry']) ? draft['industry'][0] : draft['industry'];
+                const industryOption = typeof rawIndustry === 'object' && rawIndustry !== null
+                    ? rawIndustry
+                    : row.fields.find(f => f.name === 'industry')?.options?.find(o => o.label === rawIndustry);
+                if (industryOption) {
+                    options = options.filter(o => String(o.parent) === String(industryOption.value));
+                }
+            }
+            if(field.name === 'subcategory'){
+                disabled = !isEditing || !draft['industry'] || !draft['category'];
+
+                // category có thể là single-select (string) hoặc multi-select (Option object)
+                const rawCategory = Array.isArray(draft['category']) ? draft['category'][0] : draft['category'];
+                const categoryOption = typeof rawCategory === 'object' && rawCategory !== null
+                    ? rawCategory
+                    : row.fields.find(f => f.name === 'category')?.options?.find(o => o.label === rawCategory);
+                if (categoryOption) {
+                    options = options.filter(o => String(o.parent) === String(categoryOption.value));
+                }
+            }
+
+            return (
+                <SingleSelectRow
+                    key={field.name}
+                    row={{id: field.name, label: field.label, value: draft[field.name], options}}
+                    isEditing={isEditing}
+                    isDisabled={disabled}
+                    onChange={handleFieldChange}
+                    confirmMessage={field.confirmMessage || undefined}
+                />
+            )
+        }
+
     }
 
     const renderMiniTable = (fields: FieldSchema[]) => {

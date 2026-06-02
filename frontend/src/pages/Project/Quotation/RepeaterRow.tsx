@@ -125,6 +125,30 @@ const RepeaterRow = memo(({ row, isEditing, onChange}: Props) => {
                         />
                     </Box>
                 )
+            case "single-select":
+                return (
+                    <Box
+                        key={field.name}
+                        sx={cellStyle}
+                    >
+                        <Autocomplete
+                            fullWidth
+                            options={field.options || []}
+                            value={draft[field.name] || null}
+                            disabled={!isEditing}
+                            onChange={(_, newValue) => handleFieldChange(field.name, newValue)}
+                            getOptionLabel={(option) => option.label}
+                            isOptionEqualToValue={(option, value) => option.value === value.value}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    size="small"
+                                    placeholder="Select..."
+                                />
+                            )}
+                        />
+                    </Box>
+                )
             default:
                 return (
                     <Box

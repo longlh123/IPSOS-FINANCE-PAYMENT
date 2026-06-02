@@ -25,6 +25,7 @@ export function useProjects() {
 
     const [ meta, setMeta ] = useState<any>(null);
     const [ total, setTotal ] = useState(0); //Tổng số projects từ backend
+    const [ showDisabled, setShowDisabled ] = useState(false);
 
     const fetchProjects = useCallback(async (options?: {silent?: boolean}) => {
         try{
@@ -42,7 +43,7 @@ export function useProjects() {
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`,
-                    'Show-Only-Enabled': '1',
+                    ...(!showDisabled && { 'Show-Only-Enabled': '1' }),
                 },
                 params: {
                     page: page + 1,        // Laravel dùng page = 1,2,3...
@@ -90,7 +91,7 @@ export function useProjects() {
             }
         }; 
 
-    }, [page, rowsPerPage, searchTerm, searchFromDate, searchToDate]);
+    }, [page, rowsPerPage, searchTerm, searchFromDate, searchToDate, showDisabled]);
 
     const addProject = useCallback(async (payload: Partial<ProjectData>) => {
         setActionState({ type: 'add', loading: true, error: false, message: '' });
@@ -132,12 +133,28 @@ export function useProjects() {
         });
 
         const project = response.data.data;
-        
+
         setProjects(prev => prev.map(p => p.id == project.id ? { ...p, status} : p));
 
         return response.data.data;
 
     }, [fetchProjects]);
+
+    const updateDisabled = useCallback(async (id: number, disabled: boolean) => {
+        const token = localStorage.getItem("authToken");
+        const url = ApiConfig.project.updateDisabledProject.replace('{projectId}', id.toString());
+
+        const response = await axios.put(url, { disabled }, {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+        });
+
+        setProjects(prev => prev.filter(p => p.id !== id));
+
+        return response.data;
+    }, []);
 
     const assignUsers = async(id: number, user_ids: number[]) => {
         
@@ -243,6 +260,9 @@ export function useProjects() {
         getProject,
         addProject,
         updateProjectStatus,
-        assignUsers
+        updateDisabled,
+        assignUsers,
+        showDisabled,
+        setShowDisabled,
     };
 }

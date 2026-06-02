@@ -6,7 +6,7 @@ type Props = {
         id: string,
         label: string,
         value: string,
-        options: { value: string, label: string}[]
+        options: { value: string | number, label: string, parent?: string | number}[]
     };
     isEditing: boolean;
     onChange: (id: string, value: string) => void

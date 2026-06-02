@@ -1,7 +1,7 @@
 import { Autocomplete, Checkbox, TableCell, TableRow, TextField } from "@mui/material";
 import { memo } from "react";
 
-type Option = { value: string, label: string };
+type Option = { value: string | number, label: string, parent?: string | number };
 
 type Props = {
     row: {
@@ -11,10 +11,11 @@ type Props = {
         options: Option[]
     };
     isEditing: boolean;
+    isDisabled?: boolean;
     onChange: (id: string, value: any) => void; 
 }
 
-const MultiSelectRow = memo(({ row, isEditing, onChange}: Props) => {
+const MultiSelectRow = memo(({ row, isEditing, isDisabled, onChange}: Props) => {
     return (
         <TableRow>
             <TableCell 
@@ -33,7 +34,7 @@ const MultiSelectRow = memo(({ row, isEditing, onChange}: Props) => {
                             disableCloseOnSelect //Khi chọn 1 option thì dropdown không bị đóng lại
                             options={row.options || []} 
                             value={row.value || []}
-                            disabled={!isEditing}
+                            disabled={isDisabled}
                             sx={{
                                 "& .Mui-disabled": {
                                     WebkitTextFillColor: "#000",

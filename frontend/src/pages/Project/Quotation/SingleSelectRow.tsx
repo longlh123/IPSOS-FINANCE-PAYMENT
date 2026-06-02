@@ -2,20 +2,21 @@ import { Autocomplete, TableCell, TableRow, TextField } from "@mui/material";
 import { memo, useState } from "react";
 import AlertDialog from "../../../components/AlertDialog/AlertDialog";
 
-type Option = { value: string; label: string };
+type Option = { value: string | number; label: string; parent?: string | number };
 
 type Props = {
     row: {
         id: string;
         label: string;
-        value: any; // string[] | Option[] | string | Option từ data cũ
+        value: any;
         options: Option[];
     };
     isEditing: boolean;
+    isDisabled?: boolean;
     onChange: (id: string, value: string[]) => void;
+    confirmMessage?: string;
 };
 
-// Normalize data cũ (Option | Option[] | string | string[]) về string
 const toSingleString = (value: any): string => {
     if (!value) return "";
     if (Array.isArray(value)) {
@@ -28,7 +29,7 @@ const toSingleString = (value: any): string => {
     return "";
 };
 
-const SingleSelectRow = memo(({ row, isEditing, onChange }: Props) => {
+const SingleSelectRow = memo(({ row, isEditing, isDisabled, onChange, confirmMessage }: Props) => {
     const selected = toSingleString(row.value);
     const selectedOption = row.options.find((o) => o.label === selected) ?? null;
 
@@ -37,8 +38,12 @@ const SingleSelectRow = memo(({ row, isEditing, onChange }: Props) => {
 
     const handleChange = (_: any, newValue: Option | null) => {
         if (!newValue || newValue.label === selected) return;
-        setPendingOption(newValue);
-        setConfirmOpen(true);
+        if (confirmMessage) {
+            setPendingOption(newValue);
+            setConfirmOpen(true);
+        } else {
+            onChange(row.id, [newValue.label]);
+        }
     };
 
     const handleConfirm = () => {
@@ -78,6 +83,7 @@ const SingleSelectRow = memo(({ row, isEditing, onChange }: Props) => {
                                 <TextField {...params} size="small" placeholder="Select..." />
                             )}
                             sx={{ maxWidth: 320 }}
+                            disabled={isDisabled}
                         />
                     ) : (
                         <span>{selected || "-"}</span>
@@ -85,14 +91,16 @@ const SingleSelectRow = memo(({ row, isEditing, onChange }: Props) => {
                 </TableCell>
             </TableRow>
 
-            <AlertDialog
-                open={confirmOpen}
-                title="Thay đổi loại hình dự án"
-                message={`Thay đổi loại hình dự án sang "${pendingOption?.label}" sẽ ảnh hưởng đến nội dung quotation.\n\nBạn có chắc chắn muốn thay đổi không?`}
-                showConfirmButton={true}
-                onClose={handleCancel}
-                onConfirm={handleConfirm}
-            />
+            {confirmMessage && (
+                <AlertDialog
+                    open={confirmOpen}
+                    title="Xác nhận thay đổi"
+                    message={confirmMessage.replace("{value}", pendingOption?.label ?? "")}
+                    showConfirmButton={true}
+                    onClose={handleCancel}
+                    onConfirm={handleConfirm}
+                />
+            )}
         </>
     );
 });

@@ -21,8 +21,9 @@ export interface FieldSchema {
     default?: string | number;
     layout?: LayoutSchema,
     hidden: boolean,
-    options?: {value: string, label: string}[];
+    options?: {value: string | number, label: string, parent?: string | number}[];
     fields?: FieldSchema[];
+    confirmMessage?: string;
 }
 
 export interface DynamicFormProps {
@@ -100,17 +101,21 @@ export function renderField({
         )
     }
 
+    if(field.type === 'single-select'){
+        const confirmMessage = field.confirmMessage || (field.name === 'project_types' ? "Changing project type may affect other fields. Are you sure you want to change?" : undefined);
+            
+        return (
+            <SingleSelectRow
+                key={field.name}
+                row={{ id: field.name, label: field.label, value: rows[field.name], options: field.options ?? [] }}
+                isEditing={isEditting}
+                onChange={updateRow}
+                confirmMessage={confirmMessage}
+            />
+        )
+    }
+
     if(field.type === 'multi-select'){
-        if(field.name === 'project_types'){
-            return (
-                <SingleSelectRow
-                    key={field.name}
-                    row={{ id: field.name, label: field.label, value: rows[field.name], options: field.options ?? [] }}
-                    isEditing={isEditting}
-                    onChange={updateRow}
-                />
-            )
-        }
         return (
             <MultiSelectRow
                 key={field.name}
