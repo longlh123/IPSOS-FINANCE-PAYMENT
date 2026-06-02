@@ -3,7 +3,7 @@ import React from "react";
 export interface ColumnFormat {
     label: string,
     name: string,
-    type: "string" | "number" | "select" | "image" | "date" | "menu",
+    type: "string" | "number" | "select" | "image" | "date" | "menu" | "boolean",
     align?: "center" | "left" | "right"
     width?: number, 
     flex?: number,

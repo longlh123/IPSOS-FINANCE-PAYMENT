@@ -89,17 +89,31 @@ class TemplateParserService
                 'hidden' => !in_array($projectType, $projectTypeOptions)
             ];
 
-            if($type === 'select' && $optionsKey || $type === 'multi-select' || $type === 'radio'){
+            if($type === 'select' && $optionsKey || $type === 'single-select' || $type === 'multi-select' || $type === 'radio' || $type === 'checkbox'){
                 if(str_starts_with($optionsKey, 'db:')){
                     $table_name = str_replace('db:', '', $optionsKey);
 
-                    $field['options'] = DB::table($table_name)
-                                            ->select('id as value', 'name as label')
+                    if($table_name === 'categories' || $table_name === 'subcategories'){
+                        $parent_id = $table_name === 'categories' ? 'industry_id' : 'category_id';
+
+                        $field['options'] = DB::table($table_name)
+                                            ->select("id as value", "name as label", "{$parent_id} as parent")
+                                            ->get()
+                                            ->map(fn($item) => [
+                                                'value' => $item->value,
+                                                'label' => $item->label,
+                                                "parent" => $item->parent
+                                            ]);
+                    } else {
+                        $field['options'] = DB::table($table_name)
+                                            ->select("id as value", "name as label")
                                             ->get()
                                             ->map(fn($item) => [
                                                 'value' => $item->value,
                                                 'label' => $item->label
                                             ]);
+                    }
+                    
                 } else {
                     $optionsKey = str_replace('excel:', '', $optionsKey);
 
@@ -147,7 +161,7 @@ class TemplateParserService
                 ]
             ];
 
-            if($type === 'select' || $type === 'multi-select' || $type === 'radio' || $type === 'checkbox'){
+            if($type === 'select' || $type === 'single-select' || $type === 'multi-select' || $type === 'radio' || $type === 'checkbox'){
                 if(str_starts_with($optionsKey, 'db:')){
                     $table_name = str_replace('db:', '', $optionsKey);
 

@@ -22,6 +22,7 @@ import { useAuth } from "../../../contexts/AuthContext";
 import OperationsDynamicForm from "./OperationsDynamicForm";
 import { useOperations } from "../../../hook/useOperations";
 import EstimateCostTable, { EstimateCostNode, normalizeNodes } from "./EstimateCostTable";
+import { createDefaultEstimateCost } from "./EstimateCostTemplate";
 import CalculateIcon from '@mui/icons-material/Calculate';
 
 const Quotation: React.FC = () => {
@@ -599,6 +600,9 @@ const Quotation: React.FC = () => {
                         variant="outlined"
                         startIcon={<CalculateIcon />}
                         onClick={() => {
+                            if (estimateCostItems.length === 0) {
+                                setEstimateCostItems(createDefaultEstimateCost());
+                            }
                             setShowEstimatedCost(true);
                             setValue('three');
                         }}
@@ -622,13 +626,31 @@ const Quotation: React.FC = () => {
                     onChange={setEstimateCostItems}
                 />
                 {!canMutate && (
-                    <Button
-                        className="btn"
-                        sx={{ mt: 2 }}
-                        onClick={handleSaveEstimateCost}
-                    >
-                        Save
-                    </Button>
+                    <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
+                        <Button
+                            className="btn"
+                            onClick={handleSaveEstimateCost}
+                        >
+                            Save
+                        </Button>
+                        <Button
+                            variant="outlined"
+                            sx={{
+                                borderColor: "var(--main-color)",
+                                color: "var(--main-color)",
+                                textTransform: "none",
+                                fontSize: "0.8125rem",
+                                '&:hover': { borderColor: "var(--main-color)", backgroundColor: "rgba(0,157,156,0.06)" }
+                            }}
+                            onClick={() => {
+                                if (window.confirm('Reset về template mặc định? Dữ liệu hiện tại sẽ bị xóa.')) {
+                                    setEstimateCostItems(createDefaultEstimateCost());
+                                }
+                            }}
+                        >
+                            Load Template
+                        </Button>
+                    </Box>
                 )}
             </TabPanel>
 

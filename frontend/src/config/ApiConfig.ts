@@ -5,6 +5,7 @@ export const ApiConfig = {
     viewProjects: `${host}/api/project-management/projects`,
     viewProject: `${host}/api/project-management/projects?platform=ifield&created_user_id=`,
     updateStatusOfProject: `${host}/api/project-management/projects/{projectId}/status`,
+    updateDisabledProject: `${host}/api/project-management/projects/{projectId}/disabled`,
     updateProjectInfo: `${host}/api/project-management/projects/{projectId}/update-info`,
     addProject: `${host}/api/project-management/projects/store`,
     assignUsers: `${host}/api/project-management/projects/{projectId}/assign-users`,

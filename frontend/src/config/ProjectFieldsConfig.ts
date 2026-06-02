@@ -42,6 +42,7 @@ export interface ProjectData {
     id?: number,
     internal_code?: string;
     project_name: string;
+    disabled: boolean;
     status?: string,
     symphony?: string;
     platform: string;

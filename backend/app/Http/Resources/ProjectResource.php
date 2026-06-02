@@ -28,6 +28,7 @@ class ProjectResource extends JsonResource
             'id' => $this->id,
             'internal_code' => $this->internal_code,
             'project_name' => $this->project_name,
+            'disabled' => $this->disabled,
             'symphony' => $this->projectDetails->symphony ?? null,
             'job_number' => $this->projectDetails->job_number ?? null,
             'remember_token' => $this->projectDetails->remember_token ?? null,
