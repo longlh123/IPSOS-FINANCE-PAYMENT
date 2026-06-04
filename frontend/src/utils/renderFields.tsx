@@ -6,6 +6,7 @@ import RepeaterRow from "../pages/Project/Quotation/RepeaterRow";
 import RichTextRow from "../pages/Project/Quotation/RichTextRow";
 import SectionRow from "../pages/Project/Quotation/SectionRow";
 import SingleSelectRow from "../pages/Project/Quotation/SingleSelectRow";
+import { FeedbacksMap, FeedbackThread } from "../config/QuotationConfig";
 
 export interface LayoutSchema {
     xs: number,
@@ -32,6 +33,9 @@ export interface DynamicFormProps {
     initialData?: any,
     isEditting: boolean,
     onProjectTypeChange?: (projectType: string) => void,
+    feedbacks?: FeedbacksMap,
+    onFeedbackSave?: (section: string, content: string) => void | Promise<any>,
+    onFeedbackResponse?: (section: string, status: 'resolved' | 'rejected', content: string) => void | Promise<any>,
 }
 
 interface Props {
@@ -40,7 +44,10 @@ interface Props {
     isEditting: boolean,
     editingId: string | null,
     setEditingId: (id: string | null) => void,
-    updateRow: (id: string, value: any) => void
+    updateRow: (id: string, value: any) => void,
+    feedbacks?: FeedbacksMap,
+    onFeedbackSave?: (section: string, content: string) => void | Promise<any>,
+    onFeedbackResponse?: (section: string, status: 'resolved' | 'rejected', content: string) => void | Promise<any>,
 }
 
 export function renderField({
@@ -49,7 +56,10 @@ export function renderField({
     isEditting,
     editingId,
     setEditingId,
-    updateRow
+    updateRow,
+    feedbacks,
+    onFeedbackSave,
+    onFeedbackResponse,
 }: Props) {
 
     if(field.type === 'text' || field.type === 'number'){
@@ -133,6 +143,9 @@ export function renderField({
                 row={{id:field.name, label: field.label, value: rows[field.name], fields: field.fields ?? []}}
                 isEditing={isEditting}
                 onChange={updateRow}
+                feedbackThread={feedbacks?.[field.name]}
+                onFeedbackSave={onFeedbackSave ? (content: string) => onFeedbackSave(field.name, content) : undefined}
+                onFeedbackResponse={onFeedbackResponse ? (status: 'resolved' | 'rejected', content: string) => onFeedbackResponse(field.name, status, content) : undefined}
             />
         )
     }
@@ -144,6 +157,9 @@ export function renderField({
                 row={{id: field.name, label: field.label, value: rows[field.name], fields: field.fields ?? []}}
                 isEditing={isEditting}
                 onChange={updateRow}
+                feedbackThread={feedbacks?.[field.name]}
+                onFeedbackSave={onFeedbackSave ? (content: string) => onFeedbackSave(field.name, content) : undefined}
+                onFeedbackResponse={onFeedbackResponse ? (status: 'resolved' | 'rejected', content: string) => onFeedbackResponse(field.name, status, content) : undefined}
             />
         )
     }

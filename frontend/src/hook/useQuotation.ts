@@ -344,6 +344,61 @@ export function useQuotation(projectId?: number) {
         }
     }, [projectId, selectedVersion]);
 
+    const confirmFmVersion = useCallback(async () => {
+        try
+        {
+            if(!projectId) return;
+            if(!selectedVersion) return;
+
+            setActionState({
+                type: 'update',
+                loading: true,
+                error: false,
+                message: ""
+            });
+
+            const token = localStorage.getItem('authToken');
+
+            const url = ApiConfig.project.confirmFmQuotationVersion
+                .replace("{projectId}", projectId.toString())
+                .replace("{versionId}", selectedVersion.id.toString());
+
+            const response = await axios.put(url, null, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            const version = response.data.data;
+
+            setVersions(prev => prev?.map(v => v.id === version.id ? version : v));
+            setSelectedVersion(version);
+
+            setActionState({
+                type: 'update',
+                loading: false,
+                error: false,
+                message: response.data.message
+            });
+        } catch(error: any){
+            let message = 'Failed to confirm FM review';
+
+            if(axios.isAxiosError(error)){
+                message = error.response?.data.message || error.response?.data.error || error.message;
+            } else {
+                message = error.response?.error;
+            }
+
+            setActionState({
+                type: 'update',
+                loading: false,
+                error: true,
+                message: message
+            });
+        }
+    }, [projectId, selectedVersion]);
+
     const approveQuotationVersion = useCallback(async () => {
         try
         {
@@ -455,6 +510,76 @@ export function useQuotation(projectId?: number) {
         }
     }, [projectId, selectedVersion]);
 
+    const saveFeedback = useCallback(async (section: string, content: string) => {
+        try
+        {
+            if (!projectId) return;
+            if (!selectedVersion) return;
+
+            const token = localStorage.getItem('authToken');
+
+            const url = ApiConfig.project.saveQuotationFeedback
+                .replace("{projectId}", projectId.toString())
+                .replace("{versionId}", selectedVersion.id.toString());
+
+            const response = await axios.put(url, { section, content }, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            const version = response.data.data;
+            setVersions(prev => prev?.map(v => v.id === version.id ? { ...v, feedbacks: version.feedbacks } : v));
+            setSelectedVersion(prev => prev ? { ...prev, feedbacks: version.feedbacks } : version);
+
+            return version;
+        } catch (error: any) {
+            let message = 'Failed to save feedback';
+
+            if (axios.isAxiosError(error)) {
+                message = error.response?.data.message || error.response?.data.error || error.message;
+            }
+
+            setActionState(prev => ({ ...prev, error: true, message }));
+        }
+    }, [projectId, selectedVersion]);
+
+    const saveFeedbackResponse = useCallback(async (section: string, status: 'resolved' | 'rejected', content: string) => {
+        try
+        {
+            if (!projectId) return;
+            if (!selectedVersion) return;
+
+            const token = localStorage.getItem('authToken');
+
+            const url = ApiConfig.project.saveQuotationFeedbackResponse
+                .replace("{projectId}", projectId.toString())
+                .replace("{versionId}", selectedVersion.id.toString());
+
+            const response = await axios.put(url, { section, status, content }, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            const version = response.data.data;
+            setVersions(prev => prev?.map(v => v.id === version.id ? { ...v, feedbacks: version.feedbacks } : v));
+            setSelectedVersion(prev => prev ? { ...prev, feedbacks: version.feedbacks } : version);
+
+            return version;
+        } catch (error: any) {
+            let message = 'Failed to save response';
+
+            if (axios.isAxiosError(error)) {
+                message = error.response?.data.message || error.response?.data.error || error.message;
+            }
+
+            setActionState(prev => ({ ...prev, error: true, message }));
+        }
+    }, [projectId, selectedVersion]);
+
     useEffect(() => {
         getQuotationVersions();
     }, [projectId]);
@@ -473,7 +598,10 @@ export function useQuotation(projectId?: number) {
         destroyQuotationVersion,
         submitQuotationVersion,
         cloneQuotationVersion,
+        confirmFmVersion,
         approveQuotationVersion,
-        withdrawQuotationVersion
+        withdrawQuotationVersion,
+        saveFeedback,
+        saveFeedbackResponse
     }
 }

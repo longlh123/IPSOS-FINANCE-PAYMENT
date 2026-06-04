@@ -88,7 +88,7 @@ const EditableRow = memo(({ row, isEditing, isActive, onStartEdit, onStopEdit, o
             }}
         >
             <TableCell
-                width={300}
+                width={200}
                 sx={{ fontWeight: 600, fontSize: "0.8125rem", color: "var(--text-color)" }}
             >
                 {row.label}

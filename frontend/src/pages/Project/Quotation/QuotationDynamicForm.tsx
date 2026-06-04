@@ -1,14 +1,14 @@
-import { 
-    Button, 
-    Paper, 
-    Table, 
-    TableBody, 
+import {
+    Button,
+    Paper,
+    Table,
+    TableBody,
     TableContainer
 } from "@mui/material";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { DynamicFormProps, renderField } from "../../../utils/renderFields";
 
-const QuotationDynamicForm: React.FC<DynamicFormProps> = ({ schema, initialData, isEditting, onSubmit, onProjectTypeChange }) => {
+const QuotationDynamicForm: React.FC<DynamicFormProps> = ({ schema, initialData, isEditting, onSubmit, onProjectTypeChange, feedbacks, onFeedbackSave, onFeedbackResponse }) => {
 
     const [ rows, setRows ] = useState<any>({});
 
@@ -31,6 +31,28 @@ const QuotationDynamicForm: React.FC<DynamicFormProps> = ({ schema, initialData,
 
     const shouldShowBoosterCondition = rows['sam']
 
+    // Derive target_audience options from target_audiences repeater data
+    const enrichedSchema = useMemo(() => {
+        const audiences: any[] = rows['target_audiences'] || [];
+        const audienceOptions = audiences
+            .filter((a: any) => a?.target_audience)
+            .map((a: any) => ({ value: a.target_audience, label: a.target_audience }));
+
+        if (audienceOptions.length === 0) return schema;
+
+        return schema.map((field: any) => {
+            if (field.name !== 'implementation_area') return field;
+            return {
+                ...field,
+                fields: (field.fields || []).map((subField: any) =>
+                    subField.name === 'target_audience'
+                        ? { ...subField, options: audienceOptions }
+                        : subField
+                )
+            };
+        });
+    }, [schema, rows['target_audiences']]);
+
     const [ editingId, setEditingId ] = useState<string | null>(null);
 
     return (
@@ -51,15 +73,24 @@ const QuotationDynamicForm: React.FC<DynamicFormProps> = ({ schema, initialData,
                 }}
             >
                 <TableContainer>
-                    <Table size="small">
+                    <Table size="small" sx={{ tableLayout: 'fixed' }}>
+                        <colgroup>
+                            <col style={{ width: '250px' }} />
+                            <col />
+                        </colgroup>
                         <TableBody>
-                            {schema.map((field) => renderField({
+                            {enrichedSchema
+                                .filter((field) => !field.hidden)
+                                .map((field) => renderField({
                                     field,
                                     rows,
                                     isEditting,
                                     editingId,
                                     setEditingId,
-                                    updateRow
+                                    updateRow,
+                                    feedbacks,
+                                    onFeedbackSave,
+                                    onFeedbackResponse,
                                 })
                             )}
                         </TableBody>

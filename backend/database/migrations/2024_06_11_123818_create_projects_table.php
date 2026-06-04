@@ -33,6 +33,7 @@ return new class extends Migration
             $table->foreignId('project_id')->constrained('projects')->onDelete('cascade');
             $table->string('symphony')->nullable(); //Symphony (External code for the project)
             $table->string('job_number')->nullable(); //job number code for the project
+            $table->text('project_objectives')->nullable(); //objectives of the project
             $table->enum('status', ['planned', 'in coming', 'on going', 'completed', 'on hold', 'cancelled'])->default('planned'); //status of the project
             $table->foreignId('created_user_id')->constrained('users')->onDelete('cascade');
             $table->enum('platform', ['ifield', 'dimensions','other']); //platform the project run on

@@ -32,6 +32,7 @@ const Quotation: React.FC = () => {
 
     const { user } = useAuth();
     const canMutate = user?.role !== 'Field Manager';
+    const canApprove = ['Admin', 'Researcher'].includes(user?.role ?? '');
 
     const [ formKey, setFormKey ] = useState(0);
     const [ quotationSchema, setQuotationSchema ] = useState([]);
@@ -51,8 +52,11 @@ const Quotation: React.FC = () => {
             destroyQuotationVersion,
             submitQuotationVersion,
             cloneQuotationVersion,
+            confirmFmVersion,
             approveQuotationVersion,
-            withdrawQuotationVersion
+            withdrawQuotationVersion,
+            saveFeedback,
+            saveFeedbackResponse
     } = useQuotation(Number(id));
 
     const { selectedOperations, 
@@ -109,8 +113,22 @@ const Quotation: React.FC = () => {
     }, [projectId]);
 
     useEffect(() => {
-        loadQuotationSchema();
+        if (versions.length === 0) loadQuotationSchema();
     }, [loadQuotationSchema]);
+
+    // Reload schema with the selected version's own project_type when switching versions
+    useEffect(() => {
+        if (!selectedVersion) return;
+        const projectTypes = selectedVersion.quotation_data?.project_types;
+        let type: string | undefined;
+        if (Array.isArray(projectTypes) && projectTypes.length > 0) {
+            const first = projectTypes[0];
+            type = typeof first === 'object' ? (first as any)?.label : first;
+        } else if (typeof projectTypes === 'string') {
+            type = projectTypes;
+        }
+        loadQuotationSchema(type);
+    }, [selectedVersion?.id]);
 
     useEffect(() => {
         loadOperationSchema();
@@ -217,10 +235,17 @@ const Quotation: React.FC = () => {
     };
 
     const handleCancel = () => {
-        setSelectedVersion(selectedVersion);
         setIsEditing(false);
         setFormKey(formKey + 1);
-        loadQuotationSchema();
+        const projectTypes = selectedVersion?.quotation_data?.project_types;
+        let type: string | undefined;
+        if (Array.isArray(projectTypes) && projectTypes.length > 0) {
+            const first = projectTypes[0];
+            type = typeof first === 'object' ? (first as any)?.label : first;
+        } else if (typeof projectTypes === 'string') {
+            type = projectTypes;
+        }
+        loadQuotationSchema(type);
     }
 
     const handleRemove = () => {
@@ -285,6 +310,19 @@ const Quotation: React.FC = () => {
             }
         });
     }
+
+    const handleConfirmFm = () => {
+        openDialog({
+            title: 'Xác nhận FM Review',
+            message: `Bạn có chắc chắn muốn xác nhận đã review xong quotation này không?\n\nSau khi xác nhận:\n• FM sẽ không thể feedback thêm\n• Researcher có thể approve quotation`,
+            showConfirmButton: true,
+            onConfirm: async () => {
+                await confirmFmVersion();
+                setAlertSource('quotation');
+                setOpenAlert(true);
+            }
+        });
+    };
 
     const handleOpenCloneNewVersionDialog = () => {
         setOpenCloneNewVersion(true);
@@ -389,10 +427,10 @@ const Quotation: React.FC = () => {
                                                 <span>Version {v.version}</span>
                                                 
                                                 <Chip
-                                                    label={v.status}
+                                                    label={v.status === 'fm_confirmed' ? 'FM Confirmed' : v.status}
                                                     size="small"
                                                     color={
-                                                        v.status === "draft" ? "default" : v.status === "submitted" ? "warning" : "success"
+                                                        v.status === "draft" ? "default" : v.status === "submitted" ? "warning" : v.status === "fm_confirmed" ? "info" : "success"
                                                     }
                                                 />
                                             </Box>
@@ -444,18 +482,32 @@ const Quotation: React.FC = () => {
                                     )}
 
                                     {selectedVersion.status === 'submitted' && (
-                                        <>
-                                            <Tooltip title="Approve Version">
-                                                <IconButton
-                                                    color="success"
-                                                    onClick={handleApprove}
-                                                    disabled={isEditing}
-                                                >
-                                                    <CheckCircleIcon />
-                                                </IconButton>
-                                            </Tooltip>
+                                        <Tooltip title="Withdraw (Rút lại)">
+                                            <IconButton
+                                                color="error"
+                                                onClick={handleWithdraw}
+                                                disabled={isEditing}
+                                            >
+                                                <UndoIcon />
+                                            </IconButton>
+                                        </Tooltip>
+                                    )}
 
-                                            <Tooltip title="Withdraw (Rút lại)">
+                                    {selectedVersion.status === 'fm_confirmed' && (
+                                        <>
+                                            {canApprove && (
+                                                <Tooltip title="Approve Version">
+                                                    <IconButton
+                                                        color="success"
+                                                        onClick={handleApprove}
+                                                        disabled={isEditing}
+                                                    >
+                                                        <CheckCircleIcon />
+                                                    </IconButton>
+                                                </Tooltip>
+                                            )}
+
+                                            <Tooltip title="Withdraw (Rút lại về submitted)">
                                                 <IconButton
                                                     color="error"
                                                     onClick={handleWithdraw}
@@ -471,6 +523,7 @@ const Quotation: React.FC = () => {
                                         <IconButton
                                             color="success"
                                             onClick={handleOpenCloneNewVersionDialog}
+                                            disabled={isEditing}
                                         >
                                             <AddIcon />
                                         </IconButton>
@@ -478,6 +531,26 @@ const Quotation: React.FC = () => {
 
                                 </>
                             )}
+
+                            {!canMutate && selectedVersion.status === 'submitted' && (() => {
+                                const hasPending = Object.values(selectedVersion.feedbacks ?? {}).some(thread => {
+                                    if (!Array.isArray(thread) || thread.length === 0) return false;
+                                    return thread[thread.length - 1].type === 'feedback';
+                                });
+                                return (
+                                    <Tooltip title={hasPending ? 'Còn feedback chưa được xử lý. Researcher phải resolve/reject tất cả trước khi FM confirm.' : 'Xác nhận FM đã review xong'}>
+                                        <span>
+                                            <IconButton
+                                                color="info"
+                                                onClick={handleConfirmFm}
+                                                disabled={hasPending}
+                                            >
+                                                <CheckCircleIcon />
+                                            </IconButton>
+                                        </span>
+                                    </Tooltip>
+                                );
+                            })()}
 
                         </Box>
                         <Divider style={{ margin: "10px 0" }} />
@@ -506,6 +579,21 @@ const Quotation: React.FC = () => {
                                 </Typography>
                             )}
                         </Box>
+                        {selectedVersion && selectedVersion.fm_confirmed_user && selectedVersion.fm_confirmed_at && (
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                                <Typography sx={{ fontSize: "0.8125rem", color: "var(--text-primary-color)" }}>
+                                    FM Confirmed by: {" "}
+                                    <strong>
+                                        {selectedVersion.fm_confirmed_user?.name} ({selectedVersion.fm_confirmed_user?.email})
+                                    </strong>
+                                </Typography>
+                                <Typography sx={{ fontSize: "0.8125rem", color: "var(--text-primary-color)" }}>
+                                    FM Confirmed at: {" "}
+                                    {new Date(selectedVersion.fm_confirmed_at).toLocaleDateString()}
+                                </Typography>
+                            </Box>
+                        )}
+
                         {selectedVersion && selectedVersion.approved_user && selectedVersion.approved_at && (
                             <Box
                                 sx={{
@@ -530,7 +618,7 @@ const Quotation: React.FC = () => {
                             </Box>
                         )}
 
-                        {selectedVersion && ['submitted', 'approved'].includes(selectedVersion.status) && (
+                        {selectedVersion && ['submitted', 'fm_confirmed', 'approved'].includes(selectedVersion.status) && (
                             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                                 <Typography sx={{ fontSize: "0.8125rem", color: "var(--text-primary-color)", whiteSpace: "nowrap" }}>
                                     Quotation Link:
@@ -579,17 +667,20 @@ const Quotation: React.FC = () => {
 
             <TabPanel value={value} index="one">
                 <QuotationDynamicForm
-                    key={formKey}
+                    key={`${selectedVersion?.id}-${formKey}`}
                     schema={quotationSchema}
                     initialData={selectedVersion?.quotation_data}
                     isEditting={versions?.length === 0 ? true : isEditing}
                     onSubmit={handleSaveVersion}
                     onProjectTypeChange={loadQuotationSchema}
+                    feedbacks={selectedVersion?.feedbacks}
+                    onFeedbackSave={!canMutate && selectedVersion?.status === 'submitted' ? (section, content) => saveFeedback(section, content) : undefined}
+                    onFeedbackResponse={canMutate && selectedVersion?.status === 'submitted' ? (section, status, content) => saveFeedbackResponse(section, status, content) : undefined}
                 />
             </TabPanel>
             <TabPanel value={value} index="two">
                 <OperationsDynamicForm
-                    key={formKey}
+                    key={`${selectedVersion?.id}-${formKey}`}
                     schema={operationSchema}
                     initialData={selectedOperations?.operations_data}
                     isEditting={!canMutate}
@@ -694,10 +785,10 @@ const Quotation: React.FC = () => {
                                         <span>Version {v.version}</span>
                                         
                                         <Chip
-                                            label={v.status}
+                                            label={v.status === 'fm_confirmed' ? 'FM Confirmed' : v.status}
                                             size="small"
                                             color={
-                                                v.status === "draft" ? "default" : v.status === "submitted" ? "warning" : "success"
+                                                v.status === "draft" ? "default" : v.status === "submitted" ? "warning" : v.status === "fm_confirmed" ? "info" : "success"
                                             }
                                         />
                                     </Box>

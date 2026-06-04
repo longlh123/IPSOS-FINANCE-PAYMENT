@@ -21,7 +21,7 @@ class TemplateParserService
         $dropdownMap = $this->parseSelectSheet($selectSheet);
         $configMap = $this->parseConfigSheet($configSheet, $dropdownMap, $projectType);
         
-        return $this->parseFieldSheet($fieldsSheet, $dropdownMap, $configMap);
+        return $this->parseFieldSheet($fieldsSheet, $dropdownMap, $configMap, $projectType);
     }
     
     private function getBySheetName(string $filePath, string $sheetName): array
@@ -127,7 +127,7 @@ class TemplateParserService
         return $configMap;
     }
 
-    private function parseFieldSheet(array $rows, array $dropdownMap, array $configMap): array
+    private function parseFieldSheet(array $rows, array $dropdownMap, array $configMap, string $projectType): array
     {
         $schema = [];
         $currentGroupIndex = null;
@@ -145,6 +145,7 @@ class TemplateParserService
             $layoutXS    = $row[7] ?? null;
             $layoutSM    = $row[8] ?? null;
             $layoutMD    = $row[9] ?? null;
+            $projectTypeOptions = explode(",", $row[10]) ?? null;
 
             if(!$fieldName) continue;
 
@@ -154,6 +155,7 @@ class TemplateParserService
                 'type'     => trim($type),
                 'required' => (bool)$required,
                 'default'  => $default,
+                'hidden' => !in_array($projectType, $projectTypeOptions),
                 'layout'   => [
                     'xs' => $layoutXS,
                     'sm' => $layoutSM,

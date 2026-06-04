@@ -33,8 +33,11 @@ export const ApiConfig = {
     destroyQuotationVersion: `${host}/api/project-management/projects/{projectId}/quotation/{versionId}/destroy`,
     cloneQuotationVersion: `${host}/api/project-management/projects/{projectId}/quotation/{versionId}/clone`,
     submitQuotationVersion: `${host}/api/project-management/projects/{projectId}/quotation/{versionId}/submit`,
+    confirmFmQuotationVersion: `${host}/api/project-management/projects/{projectId}/quotation/{versionId}/confirm-fm`,
     approveQuotationVersion: `${host}/api/project-management/projects/{projectId}/quotation/{versionId}/approve`,
     withdrawQuotationVersion: `${host}/api/project-management/projects/{projectId}/quotation/{versionId}/withdraw`,
+    saveQuotationFeedback: `${host}/api/project-management/projects/{projectId}/quotation/{versionId}/feedback`,
+    saveQuotationFeedbackResponse: `${host}/api/project-management/projects/{projectId}/quotation/{versionId}/feedback-response`,
 
     //Operations
     getOperationsSchema: `${host}/api/project-management/projects/{projectId}/operations-template`,

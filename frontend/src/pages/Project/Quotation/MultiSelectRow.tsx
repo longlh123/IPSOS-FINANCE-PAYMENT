@@ -19,7 +19,7 @@ const MultiSelectRow = memo(({ row, isEditing, isDisabled, onChange}: Props) => 
     return (
         <TableRow>
             <TableCell 
-                width={300}
+                width={200}
                 sx={{
                     fontWeight: 600
                 }}

@@ -14,17 +14,21 @@ class Quotation extends Model
     protected $fillable = [
         'project_id',
         'data',
+        'feedbacks',
         'version',
         'status',
         'created_user_id',
         'updated_user_id',
         'submitted_user_id',
         'approved_user_id',
-        'approved_at'
+        'approved_at',
+        'fm_confirmed_user_id',
+        'fm_confirmed_at',
     ];
 
     protected $casts = [
-        'data' => 'array'
+        'data' => 'array',
+        'feedbacks' => 'array'
     ];
 
     public function project()
@@ -50,5 +54,10 @@ class Quotation extends Model
     public function approver()
     {
         return $this->belongsTo(User::class, 'approved_user_id');
+    }
+
+    public function fmConfirmer()
+    {
+        return $this->belongsTo(User::class, 'fm_confirmed_user_id');
     }
 }

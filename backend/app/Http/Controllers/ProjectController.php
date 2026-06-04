@@ -99,7 +99,7 @@ class ProjectController extends Controller
 
             $query->withExists([
                 'quotations as has_submitted_quotation' => function($q) {
-                    $q->whereIn('status', ['submitted', 'approved']);
+                    $q->whereIn('status', ['submitted', 'fm_confirmed', 'approved']);
                 },
                 'quotations as has_approved_quotation' => function($q) {
                     $q->where('status', 'approved');
@@ -112,9 +112,9 @@ class ProjectController extends Controller
                 });
             };
 
-            if(!in_array($role, ['Admin','Researcher'])){
+            if(!in_array($role, ['Admin','Researcher','Field Manager'])){
                 $query->whereHas('quotations', function($q) {
-                    $q->whereIn('status', ['submitted', 'approved']);
+                    $q->whereIn('status', ['submitted', 'fm_confirmed', 'approved']);
                 });
             }
 

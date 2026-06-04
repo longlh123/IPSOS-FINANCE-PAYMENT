@@ -34,7 +34,7 @@ class QuotationController extends Controller
                                             ->get();
             } else {
                 $quotationVersions = $project->quotations()
-                                            ->whereIn('status', ['submitted','approved'])
+                                            ->whereIn('status', ['submitted','fm_confirmed','approved'])
                                             ->orderByDesc('version')
                                             ->get();
             }
@@ -400,6 +400,82 @@ class QuotationController extends Controller
         }
     }
 
+    public function confirmFm($projectId, $versionId)
+    {
+        try
+        {
+            $logged_in_user = Auth::user();
+
+            $roleName = $logged_in_user->userDetails->role->name;
+            if ($roleName !== 'Field Manager') {
+                return response()->json([
+                    'status_code' => 403,
+                    'error' => 'Only Field Manager can confirm FM review.'
+                ], 403);
+            }
+
+            $project = Project::findOrFail($projectId);
+
+            $quotation = $project->quotations()->where('id', $versionId)->first();
+
+            if (!$quotation) {
+                return response()->json([
+                    'status_code' => 404,
+                    'error' => 'Quotation not found.'
+                ], 404);
+            }
+
+            if ($quotation->status !== 'submitted') {
+                return response()->json([
+                    'status_code' => 403,
+                    'error' => 'Only submitted quotations can be confirmed by FM.'
+                ], 403);
+            }
+
+            foreach (($quotation->feedbacks ?? []) as $thread) {
+                $normalized = $this->normalizeThread($thread);
+                if (!empty($normalized) && end($normalized)['type'] === 'feedback') {
+                    return response()->json([
+                        'status_code' => 422,
+                        'error' => 'Còn feedback chưa được xử lý. Researcher phải resolve hoặc reject tất cả feedback trước khi FM confirm.'
+                    ], 422);
+                }
+            }
+
+            $quotation->update([
+                'status'               => 'fm_confirmed',
+                'fm_confirmed_user_id' => $logged_in_user->id,
+                'fm_confirmed_at'      => now(),
+            ]);
+
+            $projectPermissions = $project->projectPermissions;
+
+            foreach ($projectPermissions as $projectPermission) {
+                Notification::create([
+                    'user_id'    => $projectPermission->id,
+                    'project_id' => $project->id,
+                    'created_by' => $logged_in_user->id,
+                    'type'       => 'quotation_fm_confirmed',
+                    'message'    => "Quotation v{$quotation->version} confirmed by FM for {$project->internal_code} - {$project->project_name}",
+                    'url'        => "/project-management/projects/{$project->id}/quotation"
+                ]);
+            }
+
+            return response()->json([
+                'status_code' => 200,
+                'data'    => new QuotationVersionResource($quotation),
+                'message' => 'FM review confirmed successfully.'
+            ]);
+        } catch (\Exception $e) {
+            Log::error($e->getMessage());
+
+            return response()->json([
+                'status_code' => 400,
+                'error'       => $e->getMessage(),
+            ], 400);
+        }
+    }
+
     public function approve($projectId, $versionId)
     {
         try
@@ -410,15 +486,15 @@ class QuotationController extends Controller
 
             $quotation = $project->quotations()->where('id', $versionId)->first();
 
-            if($quotation->status !== 'submitted'){
+            if($quotation->status !== 'fm_confirmed'){
                 return response()->json([
                     'status_code' => 403,
-                    'error' => 'Only submit can be approved.'
+                    'error' => 'Only FM-confirmed quotations can be approved.'
                 ], 403);
             }
 
             $roleName = Auth::user()->userDetails->role->name;
-            if($roleName !== 'Admin' && $logged_in_user !== $quotation->created_user_id){
+            if(!in_array($roleName, ['Admin', 'Researcher'])){
                 return response()->json([
                     'status_code' => 403,
                     'error' => 'You are not allowed to approve this version.'
@@ -438,7 +514,150 @@ class QuotationController extends Controller
             ]);
         } catch(\Exception $e){
             Log::error($e->getMessage());
-            
+
+            return response()->json([
+                'status_code' => 400,
+                'error' => $e->getMessage(),
+            ], 400);
+        }
+    }
+
+    public function saveFeedback(Request $request, $projectId, $versionId)
+    {
+        try
+        {
+            $validator = Validator::make($request->all(), [
+                'section' => 'required|string',
+                'content' => 'required|string|max:2000',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'status_code' => 422,
+                    'error' => $validator->errors()->first()
+                ], 422);
+            }
+
+            $logged_in_user = Auth::user();
+
+            $project = Project::findOrFail($projectId);
+
+            $quotation = $project->quotations()->where('id', $versionId)->first();
+
+            if (!$quotation) {
+                return response()->json([
+                    'status_code' => 404,
+                    'error' => 'Quotation not found.'
+                ], 404);
+            }
+
+            if ($quotation->status !== 'submitted') {
+                return response()->json([
+                    'status_code' => 403,
+                    'error' => 'Feedback chỉ được phép khi quotation đang ở trạng thái submitted.'
+                ], 403);
+            }
+
+            $section   = $request->input('section');
+            $feedbacks = $quotation->feedbacks ?? [];
+            $thread    = $this->normalizeThread($feedbacks[$section] ?? []);
+
+            $thread[] = [
+                'type'       => 'feedback',
+                'content'    => $request->input('content'),
+                'user_id'    => $logged_in_user->id,
+                'user_name'  => $logged_in_user->name,
+                'created_at' => now()->toIso8601String(),
+            ];
+
+            $feedbacks[$section] = array_values($thread);
+
+            $quotation->update(['feedbacks' => $feedbacks]);
+
+            return response()->json([
+                'status_code' => 200,
+                'data' => new QuotationVersionResource($quotation),
+                'message' => 'Feedback saved.'
+            ]);
+        } catch (\Exception $e) {
+            Log::error($e->getMessage());
+
+            return response()->json([
+                'status_code' => 400,
+                'error' => $e->getMessage(),
+            ], 400);
+        }
+    }
+
+    public function saveFeedbackResponse(Request $request, $projectId, $versionId)
+    {
+        try
+        {
+            $validator = Validator::make($request->all(), [
+                'section'  => 'required|string',
+                'status'   => 'required|in:resolved,rejected',
+                'content'  => 'nullable|string|max:2000',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'status_code' => 422,
+                    'error' => $validator->errors()->first()
+                ], 422);
+            }
+
+            $logged_in_user = Auth::user();
+
+            $project = Project::findOrFail($projectId);
+
+            $quotation = $project->quotations()->where('id', $versionId)->first();
+
+            if (!$quotation) {
+                return response()->json([
+                    'status_code' => 404,
+                    'error' => 'Quotation not found.'
+                ], 404);
+            }
+
+            if ($quotation->status !== 'submitted') {
+                return response()->json([
+                    'status_code' => 403,
+                    'error' => 'Phản hồi feedback chỉ được phép khi quotation đang ở trạng thái submitted.'
+                ], 403);
+            }
+
+            $section   = $request->input('section');
+            $feedbacks = $quotation->feedbacks ?? [];
+            $thread    = $this->normalizeThread($feedbacks[$section] ?? []);
+
+            if (empty($thread)) {
+                return response()->json([
+                    'status_code' => 404,
+                    'error' => 'No feedback thread found for this section.'
+                ], 404);
+            }
+
+            $thread[] = [
+                'type'       => 'response',
+                'status'     => $request->input('status'),
+                'content'    => $request->input('content'),
+                'user_id'    => $logged_in_user->id,
+                'user_name'  => $logged_in_user->name,
+                'created_at' => now()->toIso8601String(),
+            ];
+
+            $feedbacks[$section] = array_values($thread);
+
+            $quotation->update(['feedbacks' => $feedbacks]);
+
+            return response()->json([
+                'status_code' => 200,
+                'data' => new QuotationVersionResource($quotation),
+                'message' => 'Response saved.'
+            ]);
+        } catch (\Exception $e) {
+            Log::error($e->getMessage());
+
             return response()->json([
                 'status_code' => 400,
                 'error' => $e->getMessage(),
@@ -463,15 +682,20 @@ class QuotationController extends Controller
                 ], 404);
             }
 
-            if($quotation->status !== 'submitted'){
+            if(!in_array($quotation->status, ['submitted', 'fm_confirmed'])){
                 return response()->json([
                     'status_code' => 403,
-                    'error' => 'Only submitted quotations can be withdrawn.'
+                    'error' => 'Only submitted or FM-confirmed quotations can be withdrawn.'
                 ], 403);
             }
 
+            // fm_confirmed → submitted (FM needs to re-review); submitted → draft
+            $newStatus = $quotation->status === 'fm_confirmed' ? 'submitted' : 'draft';
+
             $quotation->update([
-                'status' => 'draft'
+                'status'               => $newStatus,
+                'fm_confirmed_user_id' => null,
+                'fm_confirmed_at'      => null,
             ]);
 
             $projectPermissions = $project->projectPermissions;
@@ -500,5 +724,35 @@ class QuotationController extends Controller
                 'error' => $e->getMessage(),
             ], 400);
         }
+    }
+
+    private function normalizeThread(array $thread): array
+    {
+        // Already a proper sequential array (new format)
+        if (array_is_list($thread)) {
+            return $thread;
+        }
+
+        $result = [];
+
+        // Old-format string keys → convert to one feedback entry
+        if (isset($thread['content'])) {
+            $result[] = [
+                'type'       => 'feedback',
+                'content'    => $thread['content'],
+                'user_id'    => $thread['user_id'] ?? 0,
+                'user_name'  => $thread['user_name'] ?? '',
+                'created_at' => $thread['updated_at'] ?? now()->toIso8601String(),
+            ];
+        }
+
+        // Numeric-keyed entries (new format mixed in) → append in order
+        $numericKeys = array_filter(array_keys($thread), 'is_int');
+        sort($numericKeys);
+        foreach ($numericKeys as $key) {
+            $result[] = $thread[$key];
+        }
+
+        return $result;
     }
 }

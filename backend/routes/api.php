@@ -122,7 +122,10 @@ Route::middleware('auth:sanctum')->group(function () {
                     Route::put('/{versionId}/update', [QuotationController::class, 'update']);
                     Route::post('/{versionId}/clone', [QuotationController::class, 'cloneVersion']);
                     Route::put('/{versionId}/submit', [QuotationController::class, 'submit']);
+                    Route::put('/{versionId}/confirm-fm', [QuotationController::class, 'confirmFm']);
                     Route::put('/{versionId}/approve', [QuotationController::class, 'approve']);
+                    Route::put('/{versionId}/feedback', [QuotationController::class, 'saveFeedback']);
+                    Route::put('/{versionId}/feedback-response', [QuotationController::class, 'saveFeedbackResponse']);
                     Route::delete('/{versionId}/destroy', [QuotationController::class, 'destroy']);
                 });
 
