@@ -23,6 +23,7 @@ use App\Models\ProjectUUID;
 use App\Models\Employee;
 use App\Models\ProjectEmployee;
 use App\Models\ProjectRespondent;
+use App\Models\ProjectProvince;
 use App\Http\Requests\StoreProjectVinnetTokenRequest;
 use App\Http\Requests\StoreProjectRequest;
 use App\Http\Requests\UpdateProjectRequest;
@@ -35,6 +36,39 @@ use Carbon\Carbon;
 
 class ProjectController extends Controller
 {
+    private const PRICE_TYPE_MAP = [
+        'main'        => 'price_main',
+        'main_1'      => 'price_main_1',
+        'main_2'      => 'price_main_2',
+        'main_3'      => 'price_main_3',
+        'main_4'      => 'price_main_4',
+        'main_5'      => 'price_main_5',
+        'booster'     => 'price_boosters',
+        'booster_1'   => 'price_boosters_1',
+        'booster_2'   => 'price_boosters_2',
+        'booster_3'   => 'price_boosters_3',
+        'booster_4'   => 'price_boosters_4',
+        'booster_5'   => 'price_boosters_5',
+        'non'         => 'price_non',
+        'non_1'       => 'price_non_1',
+        'non_2'       => 'price_non_2',
+        'non_3'       => 'price_non_3',
+        'non_4'       => 'price_non_4',
+        'non_5'       => 'price_non_5',
+    ];
+
+    private const PRICE_TYPE_GROUP_MAP = [
+        'main' => ['price_main','price_main_1','price_main_2','price_main_3','price_main_4','price_main_5'],
+        'booster' => ['price_boosters','price_boosters_1','price_boosters_2','price_boosters_3','price_boosters_4','price_boosters_5'],
+        'non' => ['price_non','price_non_1','price_non_2','price_non_3','price_non_4','price_non_5']
+    ];
+
+    private const SAMPLE_SIZE_MAP = [
+        'main'    => 'sample_size_main',
+        'booster' => 'sample_size_boosters',
+        'non'     => 'sample_size_non'
+    ];
+
     public function show($projectId)
     {
         try
@@ -464,9 +498,10 @@ class ProjectController extends Controller
     {
         try
         {
-            $request->validated([
+            $request->validate([
                 'internal_code' => 'required|string',
-                'project_name' => 'required|string'
+                'project_name'  => 'required|string',
+                'symphony'      => 'nullable|string',
             ]);
 
             //Retrieve the project by its id
@@ -484,8 +519,13 @@ class ProjectController extends Controller
 
             $project->update([
                 'internal_code' => $request->internal_code,
-                'project_name' => $request->project_name
+                'project_name'  => $request->project_name,
             ]);
+
+            $project->projectDetails()->updateOrCreate(
+                ['project_id' => $project->id],
+                ['symphony'   => $request->symphony]
+            );
 
             return response()->json([
                 'status_code' => 200,
@@ -856,6 +896,94 @@ class ProjectController extends Controller
                 'message' => 'Unexpected error occurred while removing employee into project.',
                 'error' => $e->getMessage()
             ], 500);
+        }
+    }
+
+    public function getProjectPrices($projectId)
+    {
+        try {
+            $rows = ProjectProvince::with('province')
+                ->where('project_id', $projectId)
+                ->get();
+
+            $result = [];
+            foreach ($rows as $row) {
+                foreach (self::PRICE_TYPE_GROUP_MAP as $type => $cols) {
+                    if($row[self::SAMPLE_SIZE_MAP[$type]] > 0){
+                        $result[] = [
+                            'province_id'   => $row->province_id,
+                            'province_name' => $row->province->name ?? '',
+                            'price_type'    => $type,
+                            'sample_size'   => $row[self::SAMPLE_SIZE_MAP[$type]],
+                            'price'         => (float) $row[$cols[0]] ?? null,
+                            'price_1'       => (float) $row[$cols[1]] ?? null,
+                            'price_2'       => (float) $row[$cols[2]] ?? null,
+                            'price_3'       => (float) $row[$cols[3]] ?? null,
+                            'price_4'       => (float) $row[$cols[4]] ?? null,
+                            'price_5'       => (float) $row[$cols[5]] ?? null,
+                        ];
+                    }
+                }
+            }
+
+            return response()->json(['status_code' => 200, 'data' => $result]);
+        } catch (\Exception $e) {
+            Log::error('getProjectPrices failed: ' . $e->getMessage());
+            return response()->json(['status_code' => 400, 'error' => $e->getMessage()], 400);
+        }
+    }
+
+    public function upsertProjectPrice(Request $request, $projectId)
+    {
+        try {
+            $request->validate([
+                'province_id' => 'required|integer|exists:provinces,id',
+                'price_type'  => 'required|string|in:' . implode(',', array_keys(self::PRICE_TYPE_MAP)),
+                'price'       => 'required|numeric|min:0',
+            ]);
+
+            $col = self::PRICE_TYPE_MAP[$request->price_type];
+
+            $pp = ProjectProvince::firstOrCreate(
+                ['project_id' => $projectId, 'province_id' => $request->province_id],
+                ['sample_size_main' => 0, 'price_main' => 0]
+            );
+            $pp->update([$col => $request->price]);
+
+            return response()->json([
+                'status_code' => 200,
+                'message'     => 'Price updated successfully.',
+                'data'        => [
+                    'province_id'   => $pp->province_id,
+                    'province_name' => $pp->province->name ?? '',
+                    'price_type'    => $request->price_type,
+                    'price'         => (float) $request->price,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            Log::error('upsertProjectPrice failed: ' . $e->getMessage());
+            return response()->json(['status_code' => 400, 'error' => $e->getMessage()], 400);
+        }
+    }
+
+    public function deleteProjectPrice(Request $request, $projectId)
+    {
+        try {
+            $request->validate([
+                'province_id' => 'required|integer',
+                'price_type'  => 'required|string|in:' . implode(',', array_keys(self::PRICE_TYPE_MAP)),
+            ]);
+
+            $col = self::PRICE_TYPE_MAP[$request->price_type];
+
+            ProjectProvince::where('project_id', $projectId)
+                ->where('province_id', $request->province_id)
+                ->update([$col => null]);
+
+            return response()->json(['status_code' => 200, 'message' => 'Price deleted.']);
+        } catch (\Exception $e) {
+            Log::error('deleteProjectPrice failed: ' . $e->getMessage());
+            return response()->json(['status_code' => 400, 'error' => $e->getMessage()], 400);
         }
     }
 }

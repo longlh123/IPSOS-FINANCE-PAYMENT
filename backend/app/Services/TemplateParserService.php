@@ -2,60 +2,59 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use PhpOffice\PhpSpreadsheet\IOFactory;
-use Maatwebsite\Excel\Facades\Excel;
-use Illuminate\Support\Str;
 
 class TemplateParserService
 {
     public function parse(string $filePath, string $projectType): array
     {
-        $sheet = Excel::toArray([], $filePath);
+        $mtime    = file_exists($filePath) ? filemtime($filePath) : 0;
+        $cacheKey = 'quotation_schema_' . md5($filePath . $projectType) . '_' . $mtime;
 
-        $fieldsSheet = $this->getBySheetName($filePath, 'FIELDS');
-        $configSheet = $this->getBySheetName($filePath, 'CONFIG');
-        $selectSheet = $this->getBySheetName($filePath, 'SELECT');
-
-        $dropdownMap = $this->parseSelectSheet($selectSheet);
-        $configMap = $this->parseConfigSheet($configSheet, $dropdownMap, $projectType);
-        
-        return $this->parseFieldSheet($fieldsSheet, $dropdownMap, $configMap, $projectType);
+        return Cache::remember($cacheKey, now()->addDay(), function () use ($filePath, $projectType) {
+            return $this->doParse($filePath, $projectType);
+        });
     }
-    
-    private function getBySheetName(string $filePath, string $sheetName): array
+
+    private function doParse(string $filePath, string $projectType): array
     {
         $spreadsheet = IOFactory::load($filePath);
-        $sheetNames = $spreadsheet->getSheetNames();
 
-        $excel = Excel::toArray([], $filePath);
+        $allSheets = [];
+        foreach ($spreadsheet->getSheetNames() as $index => $name) {
+            $allSheets[$name] = $spreadsheet->getSheet($index)->toArray(null, true, true, false);
+        }
 
-        foreach($sheetNames as $index => $name){
-            if($name === $sheetName){
-                return $excel[$index];
+        foreach (['FIELDS', 'CONFIG', 'SELECT'] as $required) {
+            if (!isset($allSheets[$required])) {
+                throw new \Exception("Missing sheet: {$required}");
             }
         }
 
-        throw new \Exception("Missing sheet: {$sheetName}");
+        $dropdownMap = $this->parseSelectSheet($allSheets['SELECT']);
+        $configMap   = $this->parseConfigSheet($allSheets['CONFIG'], $dropdownMap, $projectType);
+
+        return $this->parseFieldSheet($allSheets['FIELDS'], $dropdownMap, $configMap, $projectType);
     }
 
     private function parseSelectSheet(array $rows): array
     {
         $map = [];
 
-        foreach($rows as $index => $row){
-            if($index === 0) continue;
-            
-            $key = $row[0] ?? null;
+        foreach ($rows as $index => $row) {
+            if ($index === 0) continue;
+
+            $key   = $row[0] ?? null;
             $value = $row[1] ?? null;
             $label = $row[2] ?? null;
 
-            if(!$key || !$value || !$label) continue;
+            if (!$key || !$value || !$label) continue;
 
             $map[$key][] = [
-                'value' => trim($value),
-                'label' => trim($label)
+                'value' => trim((string) $value),
+                'label' => trim((string) $label),
             ];
         }
 
@@ -66,8 +65,8 @@ class TemplateParserService
     {
         $configMap = [];
 
-        foreach($rows as $index => $row){
-            if($index === 0) continue;
+        foreach ($rows as $index => $row) {
+            if ($index === 0) continue;
 
             $groupKey           = $row[0] ?? null;
             $fieldName          = $row[1] ?? null;
@@ -76,47 +75,49 @@ class TemplateParserService
             $required           = $row[4] ?? null;
             $default            = $row[5] ?? null;
             $optionsKey         = $row[6] ?? null;
-            $projectTypeOptions = explode(",", $row[7]) ?? null;
+            $projectTypeOptions = $row[7] !== null
+                ? array_map('trim', explode(',', (string) $row[7]))
+                : [];
 
-            if(!$groupKey || !$fieldName) continue;
+            if (!$groupKey || !$fieldName) continue;
 
             $field = [
-                'name'     => trim($fieldName),
-                'label'    => trim($label),
-                'type'     => trim($type),
-                'required' => (bool)$required,
+                'name'     => trim((string) $fieldName),
+                'label'    => trim((string) $label),
+                'type'     => trim((string) $type),
+                'required' => (bool) $required,
                 'default'  => $default,
-                'hidden' => !in_array($projectType, $projectTypeOptions)
+                'hidden'   => !in_array($projectType, $projectTypeOptions),
             ];
 
-            if($type === 'select' && $optionsKey || $type === 'single-select' || $type === 'multi-select' || $type === 'radio' || $type === 'checkbox'){
-                if(str_starts_with($optionsKey, 'db:')){
+            if (in_array($type, ['select', 'single-select', 'multi-select', 'radio', 'checkbox']) && $optionsKey) {
+                if (str_starts_with($optionsKey, 'db:')) {
                     $table_name = str_replace('db:', '', $optionsKey);
 
-                    if($table_name === 'categories' || $table_name === 'subcategories'){
+                    if ($table_name === 'categories' || $table_name === 'subcategories') {
                         $parent_id = $table_name === 'categories' ? 'industry_id' : 'category_id';
 
                         $field['options'] = DB::table($table_name)
-                                            ->select("id as value", "name as label", "{$parent_id} as parent")
-                                            ->get()
-                                            ->map(fn($item) => [
-                                                'value' => $item->value,
-                                                'label' => $item->label,
-                                                "parent" => $item->parent
-                                            ]);
+                            ->select("id as value", "name as label", "{$parent_id} as parent")
+                            ->get()
+                            ->map(fn($item) => [
+                                'value'  => $item->value,
+                                'label'  => $item->label,
+                                'parent' => $item->parent,
+                            ])
+                            ->toArray();
                     } else {
                         $field['options'] = DB::table($table_name)
-                                            ->select("id as value", "name as label")
-                                            ->get()
-                                            ->map(fn($item) => [
-                                                'value' => $item->value,
-                                                'label' => $item->label
-                                            ]);
+                            ->select('id as value', 'name as label')
+                            ->get()
+                            ->map(fn($item) => [
+                                'value' => $item->value,
+                                'label' => $item->label,
+                            ])
+                            ->toArray();
                     }
-                    
                 } else {
-                    $optionsKey = str_replace('excel:', '', $optionsKey);
-
+                    $optionsKey      = str_replace('excel:', '', $optionsKey);
                     $field['options'] = $dropdownMap[$optionsKey] ?? [];
                 }
             }
@@ -130,66 +131,55 @@ class TemplateParserService
     private function parseFieldSheet(array $rows, array $dropdownMap, array $configMap, string $projectType): array
     {
         $schema = [];
-        $currentGroupIndex = null;
 
-        foreach($rows as $index => $row){
-            if($index === 0) continue;
+        foreach ($rows as $index => $row) {
+            if ($index === 0) continue;
 
-            $fieldName   = $row[0] ?? null;
-            $label       = $row[1] ?? null;
-            $type        = $row[2] ?? null;
-            $required    = $row[3] ?? null;
-            $default     = $row[4] ?? null;
-            $configKey   = $row[5] ?? null;
-            $optionsKey  = $row[6] ?? null;
-            $layoutXS    = $row[7] ?? null;
-            $layoutSM    = $row[8] ?? null;
-            $layoutMD    = $row[9] ?? null;
-            $projectTypeOptions = explode(",", $row[10]) ?? null;
+            $fieldName  = $row[0] ?? null;
+            $label      = $row[1] ?? null;
+            $type       = $row[2] ?? null;
+            $required   = $row[3] ?? null;
+            $default    = $row[4] ?? null;
+            $configKey  = $row[5] ?? null;
+            $optionsKey = $row[6] ?? null;
+            $layoutXS   = $row[7] ?? null;
+            $layoutSM   = $row[8] ?? null;
+            $layoutMD   = $row[9] ?? null;
+            $projectTypeOptions = $row[10] !== null
+                ? array_map('trim', explode(',', (string) $row[10]))
+                : [];
 
-            if(!$fieldName) continue;
+            if (!$fieldName) continue;
 
             $field = [
-                'name'     => trim($fieldName),
-                'label'    => trim($label),
-                'type'     => trim($type),
-                'required' => (bool)$required,
+                'name'     => trim((string) $fieldName),
+                'label'    => trim((string) $label),
+                'type'     => trim((string) $type),
+                'required' => (bool) $required,
                 'default'  => $default,
-                'hidden' => !in_array($projectType, $projectTypeOptions),
-                'layout'   => [
-                    'xs' => $layoutXS,
-                    'sm' => $layoutSM,
-                    'md' => $layoutMD
-                ]
+                'hidden'   => !in_array($projectType, $projectTypeOptions),
+                'layout'   => ['xs' => $layoutXS, 'sm' => $layoutSM, 'md' => $layoutMD],
             ];
 
-            if($type === 'select' || $type === 'single-select' || $type === 'multi-select' || $type === 'radio' || $type === 'checkbox'){
-                if(str_starts_with($optionsKey, 'db:')){
+            if (in_array($type, ['select', 'single-select', 'multi-select', 'radio', 'checkbox']) && $optionsKey) {
+                if (str_starts_with($optionsKey, 'db:')) {
                     $table_name = str_replace('db:', '', $optionsKey);
 
                     $field['options'] = DB::table($table_name)
-                                            ->select('id as value', 'name as label')
-                                            ->get()
-                                            ->map(fn($item) => [
-                                                'value' => $item->value,
-                                                'label' => $item->label
-                                            ]);
+                        ->select('id as value', 'name as label')
+                        ->get()
+                        ->map(fn($item) => [
+                            'value' => $item->value,
+                            'label' => $item->label,
+                        ])
+                        ->toArray();
                 } else {
-                    $optionsKey = str_replace('excel:', '', $optionsKey);
-
-                    $field['options'] = $dropdownMap[$optionsKey] ?? [];     
+                    $optionsKey       = str_replace('excel:', '', $optionsKey);
+                    $field['options'] = $dropdownMap[$optionsKey] ?? [];
                 }
             }
 
-            if($type === 'range' && $optionsKey){
-                $field['fields'] = $groupMap[$optionsKey] ?? [];
-            }
-
-            if($type === 'repeater' && $configKey){
-                $field['fields'] = $configMap[$configKey] ?? [];
-            }
-
-            if($type === 'section' && $configKey){
+            if (in_array($type, ['repeater', 'section']) && $configKey) {
                 $field['fields'] = $configMap[$configKey] ?? [];
             }
 

@@ -34,6 +34,7 @@ import CATISettings from "./pages/Project/CATISettings";
 import MiniCATILogin from "./pages/MiniCATI/MiniCATILogin";
 import CATIProtectedRoute from "./routes/CATIProtectedRoute";
 import Assignment from "./pages/Project/Assignment";
+import SilverBulletDashBoard from "./pages/SilverBulletDashBoard/SilverBulletDashBoard";
 
 // Fetch the CSRF token from the meta tag
 const csrfToken = document
@@ -60,6 +61,7 @@ const App: React.FC = () => {
             <Route path='/search-link' element={<CustomVoucherLog />} />
 
             <Route path='/progress-report' element={<DashboardProject />} />
+            <Route path='/silver-bullet-dashboard' element={<SilverBulletDashBoard />} />
 
             {/* ================= DEFAULT LAYOUT GROUP ================= */}
             <Route

@@ -21,7 +21,7 @@ const RadioRow = memo(({ row, isEditing, onChange}: Props) => {
             }}
         >
             <TableCell
-                width={300}
+                width={200}
                 sx={{ fontWeight: 600, fontSize: "0.8125rem", color: "var(--text-color)" }}
             >
                 {row.label}

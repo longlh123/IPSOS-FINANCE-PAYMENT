@@ -1,98 +1,201 @@
+import axios from "axios";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { ProjectData } from "../../config/ProjectFieldsConfig";
 import { useProjects } from "../../hook/useProjects";
-import { Button, Grid, TextField, Typography } from "@mui/material";
+import { Box, Button, Divider, Grid, Paper, TextField, Typography } from "@mui/material";
 import SecretTextBox from "../../components/SecretTextBox";
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined';
+import { useAuth } from "../../contexts/AuthContext";
+import { ApiConfig } from "../../config/ApiConfig";
+import ProvincePricesTable from "./ProvincePricesTable";
 
 interface SettingsData {
-    internal_code: string,
-    project_name: string
+    internal_code: string;
+    project_name: string;
+    symphony: string;
 }
+
+const labelSx = {
+    fontSize: "0.8125rem",
+    fontWeight: 600,
+    color: "var(--text-color)",
+    mb: 0.75,
+};
 
 const Settings = () => {
     const { id } = useParams<{ id: string }>();
     const projectId = Number(id) || 0;
 
-    const [ selectedProject, setSelectedProject ] = useState<ProjectData | null>(null);
+    const { user } = useAuth();
+    const canEdit = ['Admin', 'Scripter'].includes(user?.role ?? '');
+
+    const [selectedProject, setSelectedProject] = useState<ProjectData | null>(null);
     const { getProject } = useProjects();
 
-    const [ isEditing, setIsEditing ] = useState<boolean>(false);
-
-    
-
-    const handleSave = () => {
-        
-    }
+    const [isEditing, setIsEditing] = useState(false);
+    const [formData, setFormData] = useState<SettingsData>({ internal_code: '', project_name: '', symphony: '' });
+    const [saving, setSaving] = useState(false);
 
     useEffect(() => {
         const fetchProject = async () => {
-            try{
+            try {
                 const p = await getProject(projectId);
                 setSelectedProject(p);
-            }catch(error){
-                console.log(error)
+                setFormData({ internal_code: p.internal_code ?? '', project_name: p.project_name ?? '', symphony: p.symphony ?? '' });
+            } catch (error) {
+                console.log(error);
             }
-        }
+        };
 
         fetchProject();
     }, [projectId]);
 
+    const handleCancel = () => {
+        setFormData({
+            internal_code: selectedProject?.internal_code ?? '',
+            project_name: selectedProject?.project_name ?? '',
+            symphony: selectedProject?.symphony ?? '',
+        });
+        setIsEditing(false);
+    };
+
+    const handleSave = async () => {
+        setSaving(true);
+        try {
+            const token = localStorage.getItem('authToken');
+            const url = ApiConfig.project.updateProjectInfo.replace('{projectId}', projectId.toString());
+            await axios.put(url, formData, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            setSelectedProject(prev => prev ? { ...prev, ...formData } : prev);
+            setIsEditing(false);
+        } catch (error) {
+            console.log(error);
+        } finally {
+            setSaving(false);
+        }
+    };
+
     return (
-        <Grid container spacing={3}>
-            <Grid item xs={12} sm={6}>
-                <div style={{ marginBottom: "1rem" }}>
-                    <Typography variant="body2" gutterBottom>
-                        Internal Code
-                    </Typography>
-                    <TextField
-                        fullWidth
-                        size="small"
-                        type="string"
-                        value={selectedProject?.internal_code}
-                        variant="outlined"
-                        disabled={!isEditing}
-                    />
-                </div>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-                <div style={{ marginBottom: "1rem" }}>
-                    <Typography variant="body2" gutterBottom>
-                        Project Name
-                    </Typography>
-                    <TextField
-                        fullWidth
-                        size="small"
-                        type="string"
-                        value={selectedProject?.project_name}
-                        variant="outlined"
-                        disabled={!isEditing}
-                    />
-                </div>
-            </Grid>
-            <Grid item xs={12}>
-                <SecretTextBox label="Token" value={selectedProject?.remember_token || ""} />
-            </Grid>
-            <Grid item xs={12}>
-                <Button
-                    variant="contained"
-                    startIcon={!isEditing ? <EditOutlinedIcon /> : <SaveOutlinedIcon />} 
-                    sx={{mt: 3}}
-                    onClick={() => {
-                        if(!isEditing){
-                            setIsEditing(true);
-                        } else {
-                            handleSave();
-                        }
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+            <Paper
+                elevation={0}
+                sx={{
+                    border: "1px solid",
+                    borderColor: "var(--body-color)",
+                    borderRadius: "12px",
+                    overflow: "hidden",
+                    backgroundColor: "var(--background-color)",
+                }}
+            >
+                {/* Section header */}
+                <Box
+                    sx={{
+                        px: 2,
+                        py: 1.25,
+                        backgroundColor: "var(--body-color)",
+                        borderBottom: "2px solid",
+                        borderBottomColor: "rgba(0, 157, 156, 0.2)",
                     }}
                 >
-                    {!isEditing ? "Edit" : "Save"}
-                </Button>
-            </Grid>
-        </Grid>
-    )
+                    <Typography
+                        sx={{
+                            fontSize: "0.8125rem",
+                            fontWeight: 600,
+                            color: "var(--text-color)",
+                        }}
+                    >
+                        Project Information
+                    </Typography>
+                </Box>
+
+                {/* Form fields */}
+                <Box sx={{ p: 2.5 }}>
+                    <Grid container spacing={2.5}>
+                        <Grid item xs={12} sm={6} md={4}>
+                            <Typography sx={labelSx}>Internal Code</Typography>
+                            <TextField
+                                fullWidth
+                                size="small"
+                                value={formData.internal_code}
+                                disabled={!isEditing}
+                                onChange={(e) =>
+                                    setFormData(prev => ({ ...prev, internal_code: e.target.value }))
+                                }
+                                sx={{
+                                    "& .MuiInputBase-input.Mui-disabled": {
+                                        WebkitTextFillColor: "var(--text-color)",
+                                    },
+                                }}
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={6} md={4}>
+                            <Typography sx={labelSx}>Project Name</Typography>
+                            <TextField
+                                fullWidth
+                                size="small"
+                                value={formData.project_name}
+                                disabled={!isEditing}
+                                onChange={(e) =>
+                                    setFormData(prev => ({ ...prev, project_name: e.target.value }))
+                                }
+                                sx={{
+                                    "& .MuiInputBase-input.Mui-disabled": {
+                                        WebkitTextFillColor: "var(--text-color)",
+                                    },
+                                }}
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={6} md={4}>
+                            <Typography sx={labelSx}>Symphony</Typography>
+                            <TextField
+                                fullWidth
+                                size="small"
+                                value={formData.symphony}
+                                disabled={!isEditing}
+                                onChange={(e) =>
+                                    setFormData(prev => ({ ...prev, symphony: e.target.value }))
+                                }
+                                sx={{
+                                    "& .MuiInputBase-input.Mui-disabled": {
+                                        WebkitTextFillColor: "var(--text-color)",
+                                    },
+                                }}
+                            />
+                        </Grid>
+                        <Grid item xs={12}>
+                            <SecretTextBox label="Token" value={selectedProject?.remember_token || ""} />
+                        </Grid>
+                    </Grid>
+                </Box>
+
+                {canEdit && (
+                    <>
+                        <Divider />
+                        <Box sx={{ px: 2.5, py: 1.5, display: "flex", gap: 1 }}>
+                            <Button
+                                className="btn"
+                                startIcon={!isEditing ? <EditOutlinedIcon /> : <SaveOutlinedIcon />}
+                                disabled={saving}
+                                onClick={() => (!isEditing ? setIsEditing(true) : handleSave())}
+                            >
+                                {!isEditing ? "Edit" : saving ? "Saving..." : "Save"}
+                            </Button>
+                            {isEditing && (
+                                <Button onClick={handleCancel} disabled={saving}>
+                                    Cancel
+                                </Button>
+                            )}
+                        </Box>
+                    </>
+                )}
+            </Paper>
+
+            <ProvincePricesTable projectId={projectId} canEdit={canEdit} />
+        </Box>
+    );
 };
 
 export default Settings;

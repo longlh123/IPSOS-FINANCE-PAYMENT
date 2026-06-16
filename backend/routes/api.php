@@ -28,6 +28,7 @@ use App\Http\Controllers\ExportController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OperationsController;
 use App\Http\COntrollers\OperationsTemplateController;
+use App\Http\Controllers\SilverBulletController;
 
 // ══════════════════════════════════════════════════════════
 //  PUBLIC ROUTES
@@ -83,10 +84,18 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/projects/{projectId}/status', [ProjectController::class, 'updateStatus']);
         Route::get('/projects/{projectId}/transactions/show', [TransactionController::class, 'show']);
         
+        Route::put('/projects/{projectId}/update-info', [ProjectController::class, 'updateProjectInfo'])
+            ->middleware('ensureUserHasRole:Admin,Scripter');
+
+        Route::get('/projects/{projectId}/provinces/prices', [ProjectController::class, 'getProjectPrices']);
+        Route::put('/projects/{projectId}/provinces/prices', [ProjectController::class, 'upsertProjectPrice'])
+            ->middleware('ensureUserHasRole:Admin,Scripter');
+        Route::delete('/projects/{projectId}/provinces/prices', [ProjectController::class, 'deleteProjectPrice'])
+            ->middleware('ensureUserHasRole:Admin,Scripter');
+
         Route::middleware('ensureUserHasRole:Admin')->group(function () {
             Route::put('/projects/{projectId}/update', [ProjectController::class, 'update']);
             Route::put('/projects/{projectId}/disabled', [ProjectController::class, 'updateDisabled']);
-            Route::put('/projects/{projectId}/update-info', [ProjectController::class, 'updateProjectInfo']);
             Route::delete('/projects/{projectId}/provinces/{provinceId}/remove', [ProjectController::class, 'removeProvinceFromProject']);
             Route::post('/projects/{projectId}/employees/store', [ProjectController::class, 'bulkAddEmployees']);
             Route::delete('/projects/{projectId}/employees/{employeeId}/destroy', [ProjectController::class, 'bulkRemoveEmployee']);
@@ -214,3 +223,10 @@ Route::middleware('catiAuthMiddleware')->group(function () {
 Route::get('/generate-qr', [QrCodeController::class, 'generate']);
 Route::post('/cmc-telecom/sendsms', [VinnetController::class, 'cmc_telecom_send_sms']);
 Route::get('/test_sms', [VinnetController::class, 'test_sms']);
+
+// ══════════════════════════════════════════════════════════
+//  SILVER BULLET DASHBOARD
+// ══════════════════════════════════════════════════════════
+
+Route::get('/silver-bullet/respondents', [SilverBulletController::class, 'getRespondents']);
+Route::get('/silver-bullet/metadata', [SilverBulletController::class, 'getSilverBulletMetadata']);

@@ -17,8 +17,24 @@ class ProjectProvince extends Model
         'province_id',
         'sample_size_main',
         'price_main',
+        'price_main_1',
+        'price_main_2',
+        'price_main_3',
+        'price_main_4',
+        'price_main_5',
         'sample_size_booters',
-        'price_boosters'
+        'price_boosters',
+        'price_boosters_1',
+        'price_boosters_2',
+        'price_boosters_3',
+        'price_boosters_4',
+        'price_boosters_5',
+        'price_non',
+        'price_non_1',
+        'price_non_2',
+        'price_non_3',
+        'price_non_4',
+        'price_non_5',
     ];
 
     public function project()

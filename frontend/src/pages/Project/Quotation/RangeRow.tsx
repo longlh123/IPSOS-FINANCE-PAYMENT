@@ -55,7 +55,7 @@ const RangeRow = memo(({row, isEditing, onChange}: Props) => {
     return (
         <TableRow>
             <TableCell 
-                width={300}
+                width={200}
                 sx={{
                     fontWeight: 600
                 }}

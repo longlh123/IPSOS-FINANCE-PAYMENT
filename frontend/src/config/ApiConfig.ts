@@ -42,7 +42,15 @@ export const ApiConfig = {
     //Operations
     getOperationsSchema: `${host}/api/project-management/projects/{projectId}/operations-template`,
     getOperations: `${host}/api/project-management/projects/{projectId}/versions/{versionId}/operations`,
-    addOperations: `${host}/api/project-management/projects/{projectId}/versions/{versionId}/operations/store`
+    addOperations: `${host}/api/project-management/projects/{projectId}/versions/{versionId}/operations/store`,
+
+    //Province Prices
+    getProjectPrices: `${host}/api/project-management/projects/{projectId}/provinces/prices`,
+    upsertProjectPrice: `${host}/api/project-management/projects/{projectId}/provinces/prices`,
+    deleteProjectPrice: `${host}/api/project-management/projects/{projectId}/provinces/prices`,
+  },
+  administrative: {
+    getProvinces: `${host}/api/administrative-divisions/old/provinces`,
   },
   respondent: {
     viewRespondents: `${host}/api/project-management/projects/{projectId}/respondents/show`,
@@ -117,5 +125,9 @@ export const ApiConfig = {
     viewRecipientLists: `${host}/api/trade-union/recipient-lists`,
     importRecipients: `${host}/api/trade-union/recipient-lists/import`,
     sendEmail: `${host}/api/trade-union/recipient-lists/{id}/send-email`
-  }
+  },
+  silverBulletDashboard: {
+    getRespondents: `${host}/api/silver-bullet/respondents`,
+    getMetadata: `${host}/api/silver-bullet/metadata`
+  },
 };

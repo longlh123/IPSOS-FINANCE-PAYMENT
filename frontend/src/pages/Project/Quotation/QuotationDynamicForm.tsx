@@ -33,7 +33,8 @@ const QuotationDynamicForm: React.FC<DynamicFormProps> = ({ schema, initialData,
 
     // Derive target_audience options from target_audiences repeater data
     const enrichedSchema = useMemo(() => {
-        const audiences: any[] = rows['target_audiences'] || [];
+        const raw = rows['target_audiences'];
+        const audiences: any[] = Array.isArray(raw) ? raw : [];
         const audienceOptions = audiences
             .filter((a: any) => a?.target_audience)
             .map((a: any) => ({ value: a.target_audience, label: a.target_audience }));

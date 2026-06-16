@@ -89,7 +89,7 @@ const RepeaterRow = memo(({ row, isEditing, onChange, feedbackThread, onFeedback
     const [ feedbackText, setFeedbackText ] = useState('');
     const [ responseText, setResponseText ] = useState('');
 
-    const repeaterRows = row.value || [];
+    const repeaterRows = Array.isArray(row.value) ? row.value : [];
 
     const safeThread = Array.isArray(feedbackThread) ? feedbackThread : [];
     const threadStatus = getThreadStatus(safeThread);
@@ -113,13 +113,13 @@ const RepeaterRow = memo(({ row, isEditing, onChange, feedbackThread, onFeedback
     }
 
     const handleSave = () => {
-        const newRows = [...(row.value || []), draft];
+        const newRows = [...(Array.isArray(row.value) ? row.value : []), draft];
         onChange(row.id, newRows);
         setDraft({});
     }
 
     const handleDelete = (index: number) => {
-        const newRows = (row.value || []).filter((_,i) => i != index);
+        const newRows = (Array.isArray(row.value) ? row.value : []).filter((_,i) => i != index);
         onChange(row.id, newRows);
     }
 
@@ -254,7 +254,7 @@ const RepeaterRow = memo(({ row, isEditing, onChange, feedbackThread, onFeedback
             </Box>
         ) : (
             <div
-                dangerouslySetInnerHTML={{ __html: (row.value || []).map((option) => option.label).join(', ') || "-" }}
+                dangerouslySetInnerHTML={{ __html: (Array.isArray(row.value) ? row.value : []).map((option) => option.label).join(', ') || "-" }}
                 style={{ cursor: "pointer" }}
             />
         )
