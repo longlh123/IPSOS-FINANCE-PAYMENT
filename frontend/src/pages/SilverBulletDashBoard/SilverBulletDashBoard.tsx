@@ -97,6 +97,7 @@ function SummaryTable({ result }: { result: SilverBulletResult }) {
     const rows = computeSummaryRows(result);
     const totalGrossGains = rows.reduce((s, r) => s + r.grossGains, 0);
     const totalGrossLosses = rows.reduce((s, r) => s + r.grossLosses, 0);
+    const totalNet = totalGrossGains + totalGrossLosses;
     const maxPercent = Math.max(...rows.map(r => Math.abs(r.percentOfNet)), 1);
     const netLabel = `% of Net ${result.focusBrand} Growth`;
 
@@ -115,6 +116,9 @@ function SummaryTable({ result }: { result: SilverBulletResult }) {
                             Gross Losses
                         </TableCell>
                         <TableCell align="center" sx={{ fontWeight: 700, fontSize: '0.8rem', backgroundColor: '#f5f5f5' }}>
+                            Net Contribution
+                        </TableCell>
+                        <TableCell align="center" sx={{ fontWeight: 700, fontSize: '0.8rem', backgroundColor: '#f5f5f5' }}>
                             {netLabel}
                         </TableCell>
                         <TableCell sx={{ width: 80, backgroundColor: '#f5f5f5' }} />
@@ -130,8 +134,11 @@ function SummaryTable({ result }: { result: SilverBulletResult }) {
                             <TableCell align="center" sx={{ color: LOSS_COLOR, fontWeight: 600, fontSize: '0.875rem' }}>
                                 {row.grossLosses === 0 ? '0.00' : row.grossLosses.toFixed(2)}
                             </TableCell>
-                            <TableCell align="center" sx={{ fontSize: '0.875rem' }}>
-                                {row.percentOfNet.toFixed(1)}
+                            <TableCell align="center" sx={{ color: row.netContribution >= 0 ? GAIN_COLOR : LOSS_COLOR, fontWeight: 600, fontSize: '0.875rem' }}>
+                                {row.netContribution.toFixed(2)}
+                            </TableCell>
+                            <TableCell align="center" sx={{ fontSize: '0.875rem', color: row.percentOfNet >= 0 ? GAIN_COLOR : LOSS_COLOR, fontWeight: 600 }}>
+                                {row.percentOfNet >= 0 ? '+' : ''}{row.percentOfNet.toFixed(1)}%
                             </TableCell>
                             <TableCell>
                                 <Box sx={{
@@ -153,7 +160,12 @@ function SummaryTable({ result }: { result: SilverBulletResult }) {
                         <TableCell align="center" sx={{ color: LOSS_COLOR, fontWeight: 800, fontSize: '0.875rem' }}>
                             {totalGrossLosses === 0 ? '0.00' : totalGrossLosses.toFixed(2)}
                         </TableCell>
-                        <TableCell align="center" sx={{ fontWeight: 700, fontSize: '0.875rem' }}>100</TableCell>
+                        <TableCell align="center" sx={{ color: totalNet >= 0 ? GAIN_COLOR : LOSS_COLOR, fontWeight: 800, fontSize: '0.875rem' }}>
+                            {totalNet.toFixed(2)}
+                        </TableCell>
+                        <TableCell align="center" sx={{ fontWeight: 700, fontSize: '0.875rem', color: result.netGain >= 0 ? GAIN_COLOR : LOSS_COLOR }}>
+                            {result.netGain >= 0 ? '+' : '-'}100%
+                        </TableCell>
                         <TableCell />
                     </TableRow>
                 </TableBody>

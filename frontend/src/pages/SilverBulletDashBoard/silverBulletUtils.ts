@@ -160,7 +160,7 @@ export function calculateSilverBullet(
         const changes: Record<string, number> = {};
 
         for (const brand of allBrands) {
-            changes[brand] = (p1[brand] || 0) - (p2[brand] || 0);
+            changes[brand] = (p2[brand] || 0) - (p1[brand] || 0);
         }
 
         const focusChange = changes[focusBrand] || 0;
@@ -170,6 +170,8 @@ export function calculateSilverBullet(
         const p2Category = Object.values(p2).reduce((s, c) => s + c, 0);
 
         const categoryChange = p2Category - p1Category;
+
+        if (categoryChange == 0) continue;
 
         const brandChanges: Record<string, number> = {};
         
@@ -243,8 +245,6 @@ export function computeSummaryRows(result: SilverBulletResult): SummaryRow[] {
         }
     }
 
-    const totalNet = result.netGain;
-
     return Object.entries(grouped)
         .map(([source, { gains, losses }]) => {
             const netContribution = round2(gains + losses);
@@ -253,7 +253,7 @@ export function computeSummaryRows(result: SilverBulletResult): SummaryRow[] {
                 grossGains: round2(gains),
                 grossLosses: round2(losses),
                 netContribution,
-                percentOfNet: totalNet !== 0 ? round2((netContribution / totalNet) * 100) : 0,
+                percentOfNet: result.netGain !== 0 ? round2((netContribution / Math.abs(result.netGain)) * 100) : 0,
             };
         })
         .sort((a, b) => b.netContribution - a.netContribution);
