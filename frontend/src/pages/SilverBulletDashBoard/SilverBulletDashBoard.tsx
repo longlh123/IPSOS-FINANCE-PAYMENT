@@ -121,7 +121,7 @@ function SummaryTable({ result }: { result: SilverBulletResult }) {
                         <TableCell align="center" sx={{ fontWeight: 700, fontSize: '0.8rem', backgroundColor: '#f5f5f5' }}>
                             {netLabel}
                         </TableCell>
-                        <TableCell sx={{ width: 80, backgroundColor: '#f5f5f5' }} />
+                        <TableCell sx={{ width: 150, backgroundColor: '#f5f5f5' }} />
                     </TableRow>
                 </TableHead>
                 <TableBody>
@@ -140,14 +140,40 @@ function SummaryTable({ result }: { result: SilverBulletResult }) {
                             <TableCell align="center" sx={{ fontSize: '0.875rem', color: row.percentOfNet >= 0 ? GAIN_COLOR : LOSS_COLOR, fontWeight: 600 }}>
                                 {row.percentOfNet >= 0 ? '+' : ''}{row.percentOfNet.toFixed(1)}%
                             </TableCell>
-                            <TableCell>
-                                <Box sx={{
-                                    height: 14,
-                                    width: `${(Math.abs(row.percentOfNet) / maxPercent) * 100}%`,
-                                    backgroundColor: '#9e9e9e',
-                                    borderRadius: 0.5,
-                                    minWidth: 4,
-                                }} />
+                            <TableCell sx={{ width: 150, px: 1 }}>
+                                <Box sx={{ position: 'relative', height: 14, display: 'flex', alignItems: 'center' }}>
+                                    {/* center axis */}
+                                    <Box sx={{
+                                        position: 'absolute',
+                                        left: '50%',
+                                        top: 0,
+                                        bottom: 0,
+                                        width: '1px',
+                                        backgroundColor: '#bdbdbd',
+                                        transform: 'translateX(-50%)',
+                                    }} />
+                                    {row.percentOfNet >= 0 ? (
+                                        <Box sx={{
+                                            position: 'absolute',
+                                            left: '50%',
+                                            height: 14,
+                                            width: `${(row.percentOfNet / maxPercent) * 50}%`,
+                                            backgroundColor: GAIN_COLOR,
+                                            borderRadius: '0 2px 2px 0',
+                                            minWidth: row.percentOfNet > 0 ? 3 : 0,
+                                        }} />
+                                    ) : (
+                                        <Box sx={{
+                                            position: 'absolute',
+                                            right: '50%',
+                                            height: 14,
+                                            width: `${(Math.abs(row.percentOfNet) / maxPercent) * 50}%`,
+                                            backgroundColor: LOSS_COLOR,
+                                            borderRadius: '2px 0 0 2px',
+                                            minWidth: 3,
+                                        }} />
+                                    )}
+                                </Box>
                             </TableCell>
                         </TableRow>
                     ))}

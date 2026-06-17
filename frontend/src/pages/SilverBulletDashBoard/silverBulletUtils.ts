@@ -200,7 +200,7 @@ export function calculateSilverBullet(
                 allocation_type: 'Brand Switch',
             });
         }
-        if(categoryChange > 0){
+        if(changes[focusBrand] > 0 && categoryChange > 0){
             entries.push({
                 respondent_id: Number(rid),
                 source_brand: 'Category Expansion',
@@ -208,7 +208,7 @@ export function calculateSilverBullet(
                 allocation_type: 'Category Growth',
             });
         } 
-        if(categoryChange < 0){
+        if(changes[focusBrand] < 0 && categoryChange < 0){
             entries.push({
                 respondent_id: Number(rid),
                 source_brand: 'Category Contraction',
