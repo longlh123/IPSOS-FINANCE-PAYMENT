@@ -1,4 +1,4 @@
-import { Autocomplete, Checkbox, TableCell, TableRow, TextField } from "@mui/material";
+import { Autocomplete, Box, Checkbox, TableCell, TableRow, TextField } from "@mui/material";
 import { memo } from "react";
 
 type Option = { value: string | number, label: string, parent?: string | number };
@@ -8,84 +8,49 @@ type Props = {
         id: string,
         label: string,
         value: Option[],
-        options: Option[]
+        options: Option[],
+        placeholder: string
     };
     isEditing: boolean;
     isDisabled?: boolean;
-    onChange: (id: string, value: any) => void; 
+    onChange: (id: string, value: any) => void;
 }
 
 const MultiSelectRow = memo(({ row, isEditing, isDisabled, onChange}: Props) => {
     return (
         <TableRow>
-            <TableCell 
+            <TableCell
                 width={200}
-                sx={{
-                    fontWeight: 600
-                }}
+                sx={{ fontWeight: 600 }}
             >
                 {row.label}
             </TableCell>
             <TableCell>
-                {
-                    (isEditing) ? (
-                        <Autocomplete
-                            multiple
-                            disableCloseOnSelect //Khi chọn 1 option thì dropdown không bị đóng lại
-                            options={row.options || []} 
-                            value={row.value || []}
-                            disabled={isDisabled}
-                            sx={{
-                                "& .Mui-disabled": {
-                                    WebkitTextFillColor: "#000",
-                                    opacity: 0.9
-                                },
-                                "& . MuiInputBase-root.Mui.disabled": {
-                                    opacity: 0.9,
-                                    WebkitTextFillColor: "#000",
-                                }
-                            }}
-                            onChange={(event, newValue) => onChange(row.id, newValue)}
-                            getOptionLabel={(option) => option.label} //quyết định hiển thị label
-                            isOptionEqualToValue={(option, value) => 
-                                option.value === value.value
-                            } //tick checkbox nếu đúng value
-                            renderOption={(props, option, { selected }) => (
-                                <li {...props}>
-                                    <Checkbox
-                                        style={{ marginRight: 8 }}
-                                        checked={selected}
-                                    />
-                                    {option.label}
-                                </li>
-                            )}
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    size="small"
-                                    placeholder="Select..."
-                                />
-                            )}
-                        />
-                    ) : (
-                        (() => {
-                            const value = row.value || [];
-                            
-                            if(value.length == 0){
-                                return "-"
-                            } else {
-                                return (
-                                    <span>{row.value.map((option) => option.label).join(', ')}</span>
-                                )
-                            }
-                        })()
-                    )
-                }
-                
+                <Autocomplete
+                    multiple
+                    disableCloseOnSelect
+                    options={row.options || []}
+                    value={row.value || []}
+                    disabled={!isEditing || isDisabled}
+                    onChange={(_, newValue) => onChange(row.id, newValue)}
+                    getOptionLabel={(option) => option.label}
+                    isOptionEqualToValue={(option, value) => option.value === value.value}
+                    renderOption={(props, option, { selected }) => (
+                        <li {...props}>
+                            <Checkbox style={{ marginRight: 8 }} checked={selected} />
+                            {option.label}
+                        </li>
+                    )}
+                    renderInput={(params) => (
+                        <TextField {...params} size="small" placeholder={row.placeholder} />
+                    )}
+                    sx={{
+                        "& .Mui-disabled": { WebkitTextFillColor: "#000", opacity: 0.9 },
+                    }}
+                />
             </TableCell>
         </TableRow>
     );
-
 });
 
 export default MultiSelectRow;

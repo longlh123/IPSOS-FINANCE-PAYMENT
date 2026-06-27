@@ -28,7 +28,7 @@ const QuotationDynamicForm: React.FC<DynamicFormProps> = ({ schema, initialData,
             if (type) onProjectTypeChange(type);
         }
     }, [onProjectTypeChange]);
-
+    
     const shouldShowBoosterCondition = rows['sam']
 
     // Derive target_audience options from target_audiences repeater data

@@ -1,5 +1,5 @@
-import { TableCell, TableRow } from "@mui/material";
-import { memo, useEffect, useRef, useState } from "react";
+import { Box, TableCell, TableRow } from "@mui/material";
+import { memo } from "react";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 
@@ -7,35 +7,17 @@ type Props = {
     row: {
         id: string,
         label: string,
-        value: string 
+        value: string,
+        placeholder?: string,
     };
     isEditing: boolean;
-    isActive: boolean;
-    placeholder?: string;
-    onStartEdit: () => void;
-    onStopEdit: () => void;
+    isActive?: boolean;
+    onStartEdit?: () => void;
+    onStopEdit?: () => void;
     onChange: ( id: string, value: string ) => void
-} 
+}
 
-const RichTextRow = memo(({row, isEditing, isActive, placeholder, onStartEdit, onStopEdit, onChange}: Props) => {
-    const ref = useRef<HTMLTableCellElement>(null);
-    
-    useEffect(() => {
-        if(!isActive) return;
-
-        const handleClickOutSide = (e: MouseEvent) => {
-            if(ref.current && !ref.current.contains(e.target as Node)){
-                onStopEdit();
-            }
-        };
-
-        document.addEventListener("mousedown", handleClickOutSide);
-
-        return () => {
-            document.removeEventListener("mousedown", handleClickOutSide);
-        };
-    }, [isActive, onStopEdit]);
-    
+const RichTextRow = memo(({ row, isEditing, onChange }: Props) => {
     return (
         <TableRow
             sx={{
@@ -49,29 +31,23 @@ const RichTextRow = memo(({row, isEditing, isActive, placeholder, onStartEdit, o
             >
                 {row.label}
             </TableCell>
-            <TableCell
-                sx={{ fontSize: "0.8125rem", color: "var(--text-color)" }}
-                onClick={() => {
-                    if(isEditing) onStartEdit();
-                }}
-            >
-                {(isActive && isEditing) ? (
+            <TableCell sx={{ fontSize: "0.8125rem", color: "var(--text-color)" }}>
+                <Box sx={{
+                    '& .ql-toolbar': { display: isEditing ? 'block' : 'none' },
+                    '& .ql-container': {
+                        borderTop: isEditing ? undefined : '1px solid #ccc',
+                        borderRadius: isEditing ? undefined : '4px',
+                    },
+                    opacity: isEditing ? 1 : 0.7,
+                }}>
                     <ReactQuill
                         theme="snow"
+                        readOnly={!isEditing}
                         value={row.value || ""}
-                        onBlur={() => {
-                            setTimeout(() => {
-                                onStopEdit();
-                            }, 0);
-                        }}
+                        placeholder={row.placeholder}
                         onChange={(value) => onChange(row.id, value)}
                     />
-                ) : (
-                    <div
-                        dangerouslySetInnerHTML={{ __html: row.value || placeholder || "-" }}
-                        style={{ cursor: "pointer" }}
-                    ></div>
-                )}
+                </Box>
             </TableCell>
         </TableRow>
     )

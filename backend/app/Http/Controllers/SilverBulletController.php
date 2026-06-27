@@ -17,8 +17,8 @@ class SilverBulletController extends Controller
     public function getRespondents(Request $request)
     {
         $request->validate([
-            'pack_type' => 'nullable|string',
-            'pack_size' => 'nullable|string',
+            // 'pack_type' => 'nullable|string',
+            // 'pack_size' => 'nullable|string',
             'p1_from' => 'nullable|date',
             'p1_to' => 'nullable|date|after_or_equal:p1_from',
             'p2_from' => 'nullable|date',
@@ -32,12 +32,12 @@ class SilverBulletController extends Controller
                         ->when($request->p1_from && $request->p1_to, fn(Builder $q) =>
                             $q->whereBetween('recorded_date', [$request->p1_from, $request->p1_to])
                         )
-                        ->when($request->pack_type !== 'All', fn(Builder $q) =>
-                            $q->where('pack_type', $request->pack_type)
-                        )
-                        ->when($request->pack_size !== 'All', fn(Builder $q) =>
-                            $q->where('pack_size', $request->pack_size)
-                        )
+                        // ->when($request->pack_type !== 'All', fn(Builder $q) =>
+                        //     $q->where('pack_type', $request->pack_type)
+                        // )
+                        // ->when($request->pack_size !== 'All', fn(Builder $q) =>
+                        //     $q->where('pack_size', $request->pack_size)
+                        // )
                         ->get();
 
         $p2Respondent = DB::table('silver_bullet_data')
@@ -45,12 +45,12 @@ class SilverBulletController extends Controller
                         ->when($request->p2_from && $request->p2_to, fn(Builder $q) =>
                             $q->whereBetween('recorded_date', [$request->p2_from, $request->p2_to])
                         )
-                        ->when($request->pack_type !== 'All', fn(Builder $q) =>
-                            $q->where('pack_type', $request->pack_type)
-                        )
-                        ->when($request->pack_size !== 'All', fn(Builder $q) =>
-                            $q->where('pack_size', $request->pack_size)
-                        )
+                        // ->when($request->pack_type !== 'All', fn(Builder $q) =>
+                        //     $q->where('pack_type', $request->pack_type)
+                        // )
+                        // ->when($request->pack_size !== 'All', fn(Builder $q) =>
+                        //     $q->where('pack_size', $request->pack_size)
+                        // )
                         ->get();
 
         return $this->success(['p1' => $p1Respondent, 'p2' => $p2Respondent], 'Successfully retrieved respondents data.');

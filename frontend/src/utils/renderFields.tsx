@@ -1,4 +1,5 @@
 import EditableRow from "../pages/Project/Quotation/EditableRow";
+import GroupRepeaterRow from "../pages/Project/Quotation/GroupRepeaterRow";
 import MultiSelectRow from "../pages/Project/Quotation/MultiSelectRow";
 import RadioRow from "../pages/Project/Quotation/RadioRow";
 import RepeaterRow from "../pages/Project/Quotation/RepeaterRow";
@@ -16,6 +17,7 @@ export interface LayoutSchema {
 export interface FieldSchema {
     name: string;
     label: string;
+    placeholder: string;
     type: string;
     required?: boolean;
     default?: string | number;
@@ -51,15 +53,8 @@ interface Props {
     onFeedbackResponse?: (section: string, status: 'resolved' | 'rejected', content: string) => void | Promise<any>;
 }
 
-// Field-specific overrides that don't belong in the generic backend schema
-const FIELD_OVERRIDES: Record<string, Partial<FieldSchema>> = {
-    internal_code: { disabled: true, rule: 'maskXXXX_XXXX' },
-    project_name:  { rule: 'uppercaseNoSpecial' },
-    project_types: { confirmMessage: 'Changing project type may affect other fields. Are you sure you want to change?' },
-};
-
 export function renderField({
-    field: rawField,
+    field,
     rows,
     isEditting,
     editingId,
@@ -68,9 +63,7 @@ export function renderField({
     feedbacks,
     onFeedbackSave,
     onFeedbackResponse,
-}: Props) {
-    const field: FieldSchema = { ...rawField, ...FIELD_OVERRIDES[rawField.name] };
-
+}: Props) { 
     switch (field.type) {
         case 'text':
         case 'number':
@@ -119,7 +112,7 @@ export function renderField({
             return (
                 <SingleSelectRow
                     key={field.name}
-                    row={{ id: field.name, label: field.label, value: rows[field.name], options: field.options ?? [] }}
+                    row={{ id: field.name, label: field.label, value: rows[field.name], options: field.options ?? [], placeholder: field.placeholder }}
                     isEditing={isEditting}
                     onChange={updateRow}
                     confirmMessage={field.confirmMessage}
@@ -130,7 +123,7 @@ export function renderField({
             return (
                 <MultiSelectRow
                     key={field.name}
-                    row={{ id: field.name, label: field.label, value: rows[field.name], options: field.options ?? [] }}
+                    row={{ id: field.name, label: field.label, value: rows[field.name], options: field.options ?? [], placeholder: field.placeholder }}
                     isEditing={isEditting}
                     onChange={updateRow}
                 />
@@ -159,6 +152,16 @@ export function renderField({
                     feedbackThread={feedbacks?.[field.name]}
                     onFeedbackSave={onFeedbackSave ? (content) => onFeedbackSave(field.name, content) : undefined}
                     onFeedbackResponse={onFeedbackResponse ? (status, content) => onFeedbackResponse(field.name, status, content) : undefined}
+                />
+            );
+
+        case 'group-repeater':
+            return (
+                <GroupRepeaterRow
+                    key={field.name}
+                    row={{ id: field.name, label: field.label, value: rows[field.name], fields: field.fields ?? [] }}
+                    isEditing={isEditting}
+                    onChange={updateRow}
                 />
             );
 

@@ -19,7 +19,8 @@ type Props = {
         id: string,
         label: string,
         value: SectionRowData,
-        fields: FieldSchema[]
+        fields: FieldSchema[],
+        placeholder?: string
     };
     isEditing: boolean,
     onChange: (id: string, value: SectionRowData) => void;
@@ -27,6 +28,14 @@ type Props = {
     onFeedbackSave?: (content: string) => void | Promise<any>;
     onFeedbackResponse?: (status: 'resolved' | 'rejected', content: string) => void | Promise<any>;
 }
+
+// Field-specific overrides that don't belong in the generic backend schema
+const FIELD_OVERRIDES: Record<string, Partial<FieldSchema>> = {
+    internal_code: { disabled: true, rule: 'maskXXXX_XXXX' },
+    project_name:  { rule: 'uppercaseNoSpecial' },
+    project_types: { confirmMessage: 'Changing project type may affect other fields. Are you sure you want to change?' },
+};
+
 
 function getThreadStatus(thread?: FeedbackThread): 'none' | 'pending' | 'resolved' | 'rejected' {
     if (!thread || !Array.isArray(thread) || thread.length === 0) return 'none';
@@ -119,118 +128,137 @@ const SectionRow = memo(({row, isEditing, onChange, feedbackThread, onFeedbackSa
 
     const [ editingId, setEditingId ] = useState<string | null>(null);
 
-    const renderField = (field: FieldSchema) => {
-        if(field.type === 'number'){
-            const rule = field.name === 'project_name' ? "uppercaseNoSpecial" : (field.name === 'internal_code' ? "maskXXXX_XXXX" : undefined);
-            return (
-                <EditableRow
-                    key={field.name}
-                    row={{ id: field.name, label: field.label, type: field.type, value: draft[field.name], ...(rule ? { rule } : {}) }}
-                    isEditing={isEditing}
-                    isActive={editingId === field.name}
-                    onStartEdit={() => setEditingId(field.name)}
-                    onStopEdit={() => setEditingId(field.name)}
-                    onChange={handleFieldChange}
-                />
-            )
-        }
-        if(field.type === 'textarea'){
-            const placeholder = field.name.startsWith('qc') ? "Theo stardard" : "-";
-            return (
-                <RichTextRow
-                    key={field.name}
-                    row={{id: field.name, label: field.label, value: draft[field.name]}}
-                    isEditing={isEditing}
-                    isActive={editingId === field.name}
-                    placeholder={placeholder}
-                    onStartEdit={() => setEditingId(field.name)}
-                    onStopEdit={() => setEditingId(field.name)}
-                    onChange={handleFieldChange}
-                />
-            )
-        }
-        if(field.type === 'radio'){
-            return (
-                <RadioRow
-                    key={field.name}
-                    row={{id: field.name, label: field.label, value: draft[field.name], options: field.options ?? []}}
-                    isEditing={isEditing}
-                    onChange={handleFieldChange}
-                />
-            )
-        }
-        if(field.type === 'range'){
-            return (
-                <RangeRow
-                    key={field.name}
-                    row={{id: field.name, label: field.label, value: draft[field.name]}}
-                    isEditing={isEditing}
-                    onChange={handleFieldChange}
-                />
-            )
-        }
-        if(field.type === 'multi-select'){
-            let disabled = false;
-            let options = field.options ?? [];
+    const renderField = (fieldSchema: FieldSchema) => {
+        let disabled = false;
+        let options = fieldSchema.options ?? [];
+        const field: FieldSchema = { ...fieldSchema, ...FIELD_OVERRIDES[fieldSchema.name] };
 
-            if(field.name === 'category'){
-                disabled = !isEditing || !draft['industry'];
-                const rawIndustry = Array.isArray(draft['industry']) ? draft['industry'][0] : draft['industry'];
-                const industryOption = typeof rawIndustry === 'object' && rawIndustry !== null
-                    ? rawIndustry
-                    : row.fields.find(f => f.name === 'industry')?.options?.find(o => o.label === rawIndustry);
-                if (industryOption) options = options.filter(o => String(o.parent) === String(industryOption.value));
-            }
-            if(field.name === 'subcategory'){
-                disabled = !isEditing || !draft['industry'] || !draft['category'];
-                const rawCategory = Array.isArray(draft['category']) ? draft['category'][0] : draft['category'];
-                const categoryOption = typeof rawCategory === 'object' && rawCategory !== null
-                    ? rawCategory
-                    : row.fields.find(f => f.name === 'category')?.options?.find(o => o.label === rawCategory);
-                if (categoryOption) options = options.filter(o => String(o.parent) === String(categoryOption.value));
-            }
+        switch (field.type) {
+            case 'text':
+            case 'number':
+                return (
+                    <EditableRow
+                        key={field.name}
+                        row={{ 
+                            id: field.name, 
+                            label: field.label, 
+                            type: field.type as 'text' | 'number', 
+                            placeholder: field.placeholder,
+                            value: draft[field.name], 
+                            ...(field.rule ? { rule: field.rule as any } : {}) 
+                        }}
+                        isEditing={isEditing}
+                        isActive={editingId === field.name}
+                        onStartEdit={() => setEditingId(field.name)}
+                        onStopEdit={() => setEditingId(field.name)}
+                        onChange={handleFieldChange}
+                    />
+                )
+            case 'textarea':
+                return (
+                    <RichTextRow
+                        key={field.name}
+                        row={{
+                            id: field.name, 
+                            label: field.label, 
+                            value: draft[field.name], 
+                            placeholder: field.placeholder
+                        }}
+                        isEditing={isEditing}
+                        isActive={editingId === field.name}
+                        onStartEdit={() => setEditingId(field.name)}
+                        onStopEdit={() => setEditingId(field.name)}
+                        onChange={handleFieldChange}
+                    />
+                )
+            case 'radio':
+                return (
+                    <RadioRow
+                        key={field.name}
+                        row={{id: field.name, label: field.label, value: draft[field.name], options: field.options ?? []}}
+                        isEditing={isEditing}
+                        onChange={handleFieldChange}
+                    />
+                )
+            case 'range':
+                return (
+                    <RangeRow
+                        key={field.name}
+                        row={{id: field.name, label: field.label, value: draft[field.name]}}
+                        isEditing={isEditing}
+                        onChange={handleFieldChange}
+                    />
+                )
+            case 'multi-select':
+                if(field.name === 'category'){
+                    disabled = !isEditing || !draft['industry'];
+                    const rawIndustry = Array.isArray(draft['industry']) ? draft['industry'][0] : draft['industry'];
+                    const industryOption = typeof rawIndustry === 'object' && rawIndustry !== null
+                        ? rawIndustry
+                        : row.fields.find(f => f.name === 'industry')?.options?.find(o => o.label === rawIndustry);
+                    if (industryOption) options = options.filter(o => String(o.parent) === String(industryOption.value));
+                }
+                if(field.name === 'subcategory'){
+                    disabled = !isEditing || !draft['industry'] || !draft['category'];
+                    const rawCategory = Array.isArray(draft['category']) ? draft['category'][0] : draft['category'];
+                    const categoryOption = typeof rawCategory === 'object' && rawCategory !== null
+                        ? rawCategory
+                        : row.fields.find(f => f.name === 'category')?.options?.find(o => o.label === rawCategory);
+                    if (categoryOption) options = options.filter(o => String(o.parent) === String(categoryOption.value));
+                }
 
-            return (
-                <MultiSelectRow
-                    key={field.name}
-                    row={{id: field.name, label: field.label, value: draft[field.name], options}}
-                    isEditing={isEditing}
-                    isDisabled={disabled}
-                    onChange={handleFieldChange}
-                />
-            )
-        }
-        if(field.type === 'single-select'){
-            let disabled = false;
-            let options = field.options ?? [];
+                return (
+                    <MultiSelectRow
+                        key={field.name}
+                        row={{
+                            id: field.name, 
+                            label: field.label, 
+                            value: draft[field.name], 
+                            options,
+                            placeholder: field.placeholder 
+                        }}
+                        isEditing={isEditing}
+                        isDisabled={disabled}
+                        onChange={handleFieldChange}
+                    />
+                )
+            case 'single-select':
+                if(field.name === 'project_types'){
+                    options = options.filter(o => ['CLT','F2F','HUT','CATI'].includes(o.label));
+                }
+                if(field.name === 'category'){
+                    disabled = !isEditing || !draft['industry'];
+                    const rawIndustry = Array.isArray(draft['industry']) ? draft['industry'][0] : draft['industry'];
+                    const industryOption = typeof rawIndustry === 'object' && rawIndustry !== null
+                        ? rawIndustry
+                        : row.fields.find(f => f.name === 'industry')?.options?.find(o => o.label === rawIndustry);
+                    if (industryOption) options = options.filter(o => String(o.parent) === String(industryOption.value));
+                }
+                if(field.name === 'subcategory'){
+                    disabled = !isEditing || !draft['industry'] || !draft['category'];
+                    const rawCategory = Array.isArray(draft['category']) ? draft['category'][0] : draft['category'];
+                    const categoryOption = typeof rawCategory === 'object' && rawCategory !== null
+                        ? rawCategory
+                        : row.fields.find(f => f.name === 'category')?.options?.find(o => o.label === rawCategory);
+                    if (categoryOption) options = options.filter(o => String(o.parent) === String(categoryOption.value));
+                }
 
-            if(field.name === 'category'){
-                disabled = !isEditing || !draft['industry'];
-                const rawIndustry = Array.isArray(draft['industry']) ? draft['industry'][0] : draft['industry'];
-                const industryOption = typeof rawIndustry === 'object' && rawIndustry !== null
-                    ? rawIndustry
-                    : row.fields.find(f => f.name === 'industry')?.options?.find(o => o.label === rawIndustry);
-                if (industryOption) options = options.filter(o => String(o.parent) === String(industryOption.value));
-            }
-            if(field.name === 'subcategory'){
-                disabled = !isEditing || !draft['industry'] || !draft['category'];
-                const rawCategory = Array.isArray(draft['category']) ? draft['category'][0] : draft['category'];
-                const categoryOption = typeof rawCategory === 'object' && rawCategory !== null
-                    ? rawCategory
-                    : row.fields.find(f => f.name === 'category')?.options?.find(o => o.label === rawCategory);
-                if (categoryOption) options = options.filter(o => String(o.parent) === String(categoryOption.value));
-            }
-
-            return (
-                <SingleSelectRow
-                    key={field.name}
-                    row={{id: field.name, label: field.label, value: draft[field.name], options}}
-                    isEditing={isEditing}
-                    isDisabled={disabled}
-                    onChange={handleFieldChange}
-                    confirmMessage={field.confirmMessage || undefined}
-                />
-            )
+                return (
+                    <SingleSelectRow
+                        key={field.name}
+                        row={{
+                            id: field.name, 
+                            label: field.label, 
+                            value: draft[field.name], 
+                            options,
+                            placeholder: field.placeholder
+                        }}
+                        isEditing={isEditing}
+                        isDisabled={disabled}
+                        onChange={handleFieldChange}
+                        confirmMessage={field.confirmMessage || undefined}
+                    />
+                )
         }
     }
 
@@ -238,6 +266,10 @@ const SectionRow = memo(({row, isEditing, onChange, feedbackThread, onFeedbackSa
         return (
             <TableContainer component={Paper} variant="outlined">
                 <Table size="small">
+                    <colgroup>
+                        <col style={{ width: '250px' }} />
+                        <col />
+                    </colgroup>
                     <TableBody>
                         {fields
                             .filter((subField) => !subField.hidden)

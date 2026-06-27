@@ -37,7 +37,7 @@ export interface GainLossEntry {
 }
 
 export interface SilverBulletResult {
-    focusBrand: string;
+    focusBrandFull: string;
     entries: GainLossEntry[];
     netGain: number;
 }
@@ -56,23 +56,45 @@ export function getDateRange(data: RawDataPoint[]): { minDate: string; maxDate: 
     return { minDate: dates[0], maxDate: dates[dates.length - 1] };
 } 
 
+export type ComparisonLevel = 'brand' | 'brand+type' | 'brand+type+size';
+
+export const COMPARISON_LEVEL_LABELS: Record<ComparisonLevel, string> = {
+    'brand+type+size': 'Brand · Type · Size',
+    'brand+type':      'Brand · Type',
+    'brand':           'Brand',
+};
+
 export function convertToRawDataPoint(
     data: RawDataPoint[],
+    focusBrand: string,
     focusPackType: string,
-    focusPackSize: string
+    focusPackSize: string,
+    comparisonLevel: ComparisonLevel
 ): RawDataPointByPack[] {
     const grouped: Record<string, RawDataPointByPack> = {};
 
     for (const d of data) {
-        const keyParts = [
-            d.respondent_id,
-            d.brand_name,
-            d.recorded_date,
-            d.time_of_day,
-            ...(focusPackType !== 'All' ? [d.pack_type] : []),
-            ...(focusPackSize !== 'All' ? [d.pack_size] : []),
-        ];
-        const key = keyParts.join('|');
+        let brand_name: string;
+
+        if (d.brand_name === focusBrand) {
+            brand_name = d.brand_name;
+            if (comparisonLevel !== 'brand' && focusPackType !== 'All') {
+                brand_name += ' - ' + d.pack_type;
+            }
+            if (comparisonLevel === 'brand+type+size' && focusPackSize !== 'All') {
+                brand_name += ' - ' + d.pack_size;
+            }
+        } else {
+            brand_name = d.brand_name;
+            if (comparisonLevel !== 'brand') {
+                brand_name += ' - ' + d.pack_type;
+            }
+            if (comparisonLevel === 'brand+type+size') {
+                brand_name += ' - ' + d.pack_size;
+            }
+        }
+
+        const key = [d.respondent_id, brand_name, d.recorded_date, d.time_of_day].join('|');
 
         if (grouped[key]) {
             grouped[key].quantity = round2(grouped[key].quantity + Number(d.quantity));
@@ -80,7 +102,7 @@ export function convertToRawDataPoint(
             grouped[key] = {
                 id: d.id,
                 respondent_id: d.respondent_id,
-                brand_name: d.brand_name,
+                brand_name,
                 quantity: Number(d.quantity),
                 recorded_date: d.recorded_date,
                 time_of_day: d.time_of_day,
@@ -132,13 +154,23 @@ export function calculateSilverBullet(
     p2Data: RawDataPoint[],
     focusBrand: string,
     focusPackType: string,
-    focusPackSize: string
+    focusPackSize: string,
+    comparisonLevel: ComparisonLevel = 'brand+type+size'
 ): SilverBulletResult {
-    const p1BrandData = convertToRawDataPoint(p1Data, focusPackType, focusPackSize);
-    const p2BrandData = convertToRawDataPoint(p2Data, focusPackType, focusPackSize);
+    const p1BrandData = convertToRawDataPoint(p1Data, focusBrand, focusPackType, focusPackSize, comparisonLevel);
+    const p2BrandData = convertToRawDataPoint(p2Data, focusBrand, focusPackType, focusPackSize, comparisonLevel);
 
     const p1Map = calculateChangeInConsumption(p1BrandData);
     const p2Map = calculateChangeInConsumption(p2BrandData);
+
+    let focusBrandFull = focusBrand;
+
+    if (comparisonLevel !== 'brand' && focusPackType !== 'All') {
+        focusBrandFull += ' - ' + focusPackType;
+    }
+    if (comparisonLevel === 'brand+type+size' && focusPackSize !== 'All') {
+        focusBrandFull += ' - ' + focusPackSize;
+    }
 
     const respondentIds = [
         ...new Set([
@@ -163,7 +195,7 @@ export function calculateSilverBullet(
             changes[brand] = (p2[brand] || 0) - (p1[brand] || 0);
         }
 
-        const focusChange = changes[focusBrand] || 0;
+        const focusChange = changes[focusBrandFull] || 0;
         if (focusChange === 0) continue;
 
         const p1Category = Object.values(p1).reduce((s, c) => s + c, 0);
@@ -176,7 +208,7 @@ export function calculateSilverBullet(
         const brandChanges: Record<string, number> = {};
         
         for (const [brand, change] of Object.entries(changes)) {
-            if(brand != focusBrand){
+            if(brand != focusBrandFull){
 
                 if(focusChange > 0){
                     if(change < 0) brandChanges[brand] = change;
@@ -188,7 +220,7 @@ export function calculateSilverBullet(
 
         let totalUnits = Object.values(brandChanges).reduce((s, v) => s + Math.abs(v), 0);
 
-        if((changes[focusBrand] > 0 && categoryChange > 0) || (changes[focusBrand] < 0 && categoryChange < 0)){
+        if((changes[focusBrandFull] > 0 && categoryChange > 0) || (changes[focusBrandFull] < 0 && categoryChange < 0)){
             totalUnits += Math.abs(categoryChange)
         }
 
@@ -196,30 +228,30 @@ export function calculateSilverBullet(
             entries.push({
                 respondent_id: Number(rid),
                 source_brand: brand,
-                volume: round2(focusChange * (change / totalUnits)),
+                volume: round2(focusChange * (Math.abs(change) / totalUnits)),
                 allocation_type: 'Brand Switch',
             });
         }
-        if(changes[focusBrand] > 0 && categoryChange > 0){
+        if(changes[focusBrandFull] > 0 && categoryChange > 0){
             entries.push({
                 respondent_id: Number(rid),
                 source_brand: 'Category Expansion',
-                volume: round2(focusChange * (categoryChange / totalUnits)),
+                volume: round2(focusChange * (Math.abs(categoryChange) / totalUnits)),
                 allocation_type: 'Category Growth',
             });
-        } 
-        if(changes[focusBrand] < 0 && categoryChange < 0){
+        }
+        if(changes[focusBrandFull] < 0 && categoryChange < 0){
             entries.push({
                 respondent_id: Number(rid),
                 source_brand: 'Category Contraction',
-                volume: round2(focusChange * (categoryChange / totalUnits)),
+                volume: round2(focusChange * (Math.abs(categoryChange) / totalUnits)),
                 allocation_type: 'Category Growth',
             });
         } 
     }
 
     const netGain = round2(entries.reduce((s, e) => s + e.volume, 0));
-    return { focusBrand, entries, netGain };
+    return { focusBrandFull, entries, netGain };
 }
 
 export interface SummaryRow {

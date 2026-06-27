@@ -9,6 +9,7 @@ type Props = {
         id: string;
         label: string;
         value: any;
+        placeholder: string;
         options: Option[];
     };
     isEditing: boolean;
@@ -72,22 +73,21 @@ const SingleSelectRow = memo(({ row, isEditing, isDisabled, onChange, confirmMes
                     {row.label}
                 </TableCell>
                 <TableCell sx={{ fontSize: "0.8125rem", color: "var(--text-color)" }}>
-                    {isEditing ? (
-                        <Autocomplete
-                            options={row.options}
-                            value={selectedOption}
-                            onChange={handleChange}
-                            getOptionLabel={(option) => option.label}
-                            isOptionEqualToValue={(option, value) => option.value === value.value}
-                            renderInput={(params) => (
-                                <TextField {...params} size="small" placeholder="Select..." />
-                            )}
-                            sx={{ maxWidth: 320 }}
-                            disabled={isDisabled}
-                        />
-                    ) : (
-                        <span>{selected || "-"}</span>
-                    )}
+                    <Autocomplete
+                        fullWidth
+                        options={row.options}
+                        value={selectedOption}
+                        onChange={handleChange}
+                        getOptionLabel={(option) => option.label}
+                        isOptionEqualToValue={(option, value) => option.value === value.value}
+                        disabled={!isEditing || isDisabled}
+                        renderInput={(params) => (
+                            <TextField {...params} size="small" placeholder={row.placeholder} />
+                        )}
+                        sx={{
+                            "& .Mui-disabled": { WebkitTextFillColor: "#000", opacity: 0.9 },
+                        }}
+                    />
                 </TableCell>
             </TableRow>
 

@@ -3,9 +3,12 @@ import {
     Box,
     Button,
     FormControl,
+    FormControlLabel,
     InputLabel,
     MenuItem,
     Paper,
+    Radio,
+    RadioGroup,
     Select,
     Table,
     TableBody,
@@ -26,6 +29,8 @@ import {
     SilverBulletResult,
     RawDataPoint,
     SilverBulletMetadata,
+    ComparisonLevel,
+    COMPARISON_LEVEL_LABELS,
 } from './silverBulletUtils';
 import { ApiConfig } from '../../config/ApiConfig';
 import axios from 'axios';
@@ -99,7 +104,7 @@ function SummaryTable({ result }: { result: SilverBulletResult }) {
     const totalGrossLosses = rows.reduce((s, r) => s + r.grossLosses, 0);
     const totalNet = totalGrossGains + totalGrossLosses;
     const maxPercent = Math.max(...rows.map(r => Math.abs(r.percentOfNet)), 1);
-    const netLabel = `% of Net ${result.focusBrand} Growth`;
+    const netLabel = `% of Net ${result.focusBrandFull} Growth`;
 
     return (
         <TableContainer component={Paper} elevation={2} sx={{ mt: 3, borderRadius: 2, overflow: 'hidden' }}>
@@ -201,8 +206,8 @@ function SummaryTable({ result }: { result: SilverBulletResult }) {
 }
 
 function ResultTable({ result }: { result: SilverBulletResult }) {
-    const colLabel = `Volume to ${result.focusBrand}`;
-    const netLabel = `Net Gain of ${result.focusBrand}`;
+    const colLabel = `Volume to ${result.focusBrandFull}`;
+    const netLabel = `Net Gain of ${result.focusBrandFull}`;
     const netColor = result.netGain >= 0 ? GAIN_COLOR : LOSS_COLOR;
 
     return (
@@ -271,6 +276,7 @@ const SilverBulletDashBoard = () => {
     const [ focusBrand, setFocusBrand ] = useState<string>('');
     const [ focusPackType, setFocusPackType ] = useState<string>('All');
     const [ focusPackSize, setFocusPackSize ] = useState<string>('All');
+    const [ comparisonLevel, setComparisonLevel ] = useState<ComparisonLevel>('brand+type+size');
     const [result, setResult] = useState<SilverBulletResult | null>(null);
     const [isStale, setIsStale] = useState(false);
 
@@ -300,7 +306,7 @@ const SilverBulletDashBoard = () => {
 
     useEffect(() => {
         if (result) setIsStale(true);
-    }, [focusBrand, focusPackType, focusPackSize, p1From, p1To, p2From, p2To]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [focusBrand, focusPackType, focusPackSize, comparisonLevel, p1From, p1To, p2From, p2To]); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
         const fetchMetadata = async () => {
@@ -332,8 +338,8 @@ const SilverBulletDashBoard = () => {
             const response = await axios.get(ApiConfig.silverBulletDashboard.getRespondents, {
                 headers: { Authorization: `Bearer ${token}` },
                 params: {
-                    pack_type: focusPackType,
-                    pack_size: focusPackSize,
+                    // pack_type: focusPackType,
+                    // pack_size: focusPackSize,
                     p1_from: p1From.format('YYYY-MM-DD'),
                     p1_to:   p1To.format('YYYY-MM-DD'),
                     p2_from: p2From.format('YYYY-MM-DD'),
@@ -344,7 +350,7 @@ const SilverBulletDashBoard = () => {
             const p1: RawDataPoint[] = response.data.data.p1 ?? [];
             const p2: RawDataPoint[] = response.data.data.p2 ?? [];
             
-            const res = calculateSilverBullet(p1, p2, focusBrand, focusPackType, focusPackSize);
+            const res = calculateSilverBullet(p1, p2, focusBrand, focusPackType, focusPackSize, comparisonLevel);
             setResult(res);
             setIsStale(false);
         } catch (error) {
@@ -361,6 +367,26 @@ const SilverBulletDashBoard = () => {
             {/* Filter panel */}
             <Paper elevation={1} sx={{ p: 3, borderRadius: 2 }}>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Typography variant="body2" fontWeight={600} color="text.secondary" minWidth={100}>
+                            Comparison Level
+                        </Typography>
+                        <RadioGroup
+                            row
+                            value={comparisonLevel}
+                            onChange={e => setComparisonLevel(e.target.value as ComparisonLevel)}
+                        >
+                            {(Object.keys(COMPARISON_LEVEL_LABELS) as ComparisonLevel[]).map(level => (
+                                <FormControlLabel
+                                    key={level}
+                                    value={level}
+                                    control={<Radio size="small" />}
+                                    label={<Typography variant="body2">{COMPARISON_LEVEL_LABELS[level]}</Typography>}
+                                />
+                            ))}
+                        </RadioGroup>
+                    </Box>
+
                     <PeriodPicker
                         label="Period 1"
                         from={p1From}

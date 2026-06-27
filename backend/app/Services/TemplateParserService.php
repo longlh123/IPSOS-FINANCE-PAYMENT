@@ -71,23 +71,25 @@ class TemplateParserService
             $groupKey           = $row[0] ?? null;
             $fieldName          = $row[1] ?? null;
             $label              = $row[2] ?? null;
-            $type               = $row[3] ?? null;
-            $required           = $row[4] ?? null;
-            $default            = $row[5] ?? null;
-            $optionsKey         = $row[6] ?? null;
-            $projectTypeOptions = $row[7] !== null
-                ? array_map('trim', explode(',', (string) $row[7]))
+            $placeholder        = $row[3] ?? null;
+            $type               = $row[4] ?? null;
+            $required           = $row[5] ?? null;
+            $default            = $row[6] ?? null;
+            $optionsKey         = $row[7] ?? null;
+            $projectTypeOptions = $row[8] !== null
+                ? array_map('trim', explode(',', (string) $row[8]))
                 : [];
 
             if (!$groupKey || !$fieldName) continue;
 
             $field = [
-                'name'     => trim((string) $fieldName),
-                'label'    => trim((string) $label),
-                'type'     => trim((string) $type),
-                'required' => (bool) $required,
-                'default'  => $default,
-                'hidden'   => !in_array($projectType, $projectTypeOptions),
+                'name'        => trim((string) $fieldName),
+                'label'       => trim((string) $label),
+                'placeholder' => trim((string) $placeholder),
+                'type'        => trim((string) $type),
+                'required'    => (bool) $required,
+                'default'     => $default,
+                'hidden'      => !in_array($projectType, $projectTypeOptions),
             ];
 
             if (in_array($type, ['select', 'single-select', 'multi-select', 'radio', 'checkbox']) && $optionsKey) {
