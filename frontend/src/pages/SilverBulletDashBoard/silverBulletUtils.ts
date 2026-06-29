@@ -56,6 +56,17 @@ export function getDateRange(data: RawDataPoint[]): { minDate: string; maxDate: 
     return { minDate: dates[0], maxDate: dates[dates.length - 1] };
 } 
 
+// Parses pack size strings like "330ml", "1.5L", "1,5L" → ml value.
+// Returns 1 for unrecognised formats (e.g. "20s") so quantity is unchanged.
+export function parsePackSizeVolume(packSize: string): number {
+    const s = packSize.trim().replace(',', '.');
+    const mlMatch = s.match(/^([\d.]+)\s*ml$/i);
+    if (mlMatch) return parseFloat(mlMatch[1]);
+    const lMatch = s.match(/^([\d.]+)\s*l$/i);
+    if (lMatch) return parseFloat(lMatch[1]) * 1000;
+    return 1;
+}
+
 export type ComparisonLevel = 'brand' | 'brand+type' | 'brand+type+size';
 
 export const COMPARISON_LEVEL_LABELS: Record<ComparisonLevel, string> = {
@@ -95,15 +106,16 @@ export function convertToRawDataPoint(
         }
 
         const key = [d.respondent_id, brand_name, d.recorded_date, d.time_of_day].join('|');
+        const volume = round2(Number(d.quantity) * parsePackSizeVolume(d.pack_size));
 
         if (grouped[key]) {
-            grouped[key].quantity = round2(grouped[key].quantity + Number(d.quantity));
+            grouped[key].quantity = round2(grouped[key].quantity + volume);
         } else {
             grouped[key] = {
                 id: d.id,
                 respondent_id: d.respondent_id,
                 brand_name,
-                quantity: Number(d.quantity),
+                quantity: volume,
                 recorded_date: d.recorded_date,
                 time_of_day: d.time_of_day,
             };

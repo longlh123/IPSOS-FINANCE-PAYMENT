@@ -261,7 +261,7 @@ function ResultTable({ result }: { result: SilverBulletResult }) {
                             {netLabel}
                         </TableCell>
                         <TableCell align="center" sx={{ color: netColor, fontWeight: 800, fontSize: '1rem' }}>
-                            ~{result.netGain.toFixed(0)} units
+                            ~{result.netGain.toFixed(0)} ml
                         </TableCell>
                         <TableCell />
                     </TableRow>
