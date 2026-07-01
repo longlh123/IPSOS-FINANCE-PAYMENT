@@ -135,6 +135,9 @@ function calculateChangeInConsumption(
     const respondentIds = [...new Set(data.map(d => d.respondent_id))];
 
     for (const rid of respondentIds) {
+        if(rid === 2272578){
+            const a = "Test";
+        }
         const byBrand: Record<string, number> = {};
         const respRows = data.filter(d => d.respondent_id === rid);
         const brands = [...new Set(respRows.map(d => d.brand_name))];
@@ -149,7 +152,7 @@ function calculateChangeInConsumption(
             } else {
                 let netChange = 0;
                 for (let i = 1; i < rows.length; i++) {
-                    netChange += Number(rows[i].quantity) - Number(rows[i - 1].quantity);
+                    netChange += Number(rows[i].quantity) + Number(rows[i - 1].quantity);
                 }
                 byBrand[brand] = round2(netChange);
             }
@@ -194,10 +197,11 @@ export function calculateSilverBullet(
     const entries: GainLossEntry[] = [];
 
     for (const rid of respondentIds) {
+
         const p1 = p1Map[Number(rid)] ?? {};
         const p2 = p2Map[Number(rid)] ?? {};
 
-        if (Object.keys(p1).length === 0 || Object.keys(p2).length === 0) continue;
+        //if (Object.keys(p1).length === 0 || Object.keys(p2).length === 0) continue;
 
         const allBrands = [...new Set([...Object.keys(p1), ...Object.keys(p2)])];
 
