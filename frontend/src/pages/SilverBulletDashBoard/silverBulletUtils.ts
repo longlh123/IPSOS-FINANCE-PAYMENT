@@ -135,7 +135,7 @@ function calculateChangeInConsumption(
     const respondentIds = [...new Set(data.map(d => d.respondent_id))];
 
     for (const rid of respondentIds) {
-        if(rid === 2272578){
+        if(rid === 2272599){
             const a = "Test";
         }
         const byBrand: Record<string, number> = {};
@@ -147,15 +147,21 @@ function calculateChangeInConsumption(
                 .filter(d => d.brand_name === brand)
                 .sort((a, b) => a.recorded_date.localeCompare(b.recorded_date));
 
-            if (rows.length === 1) {
-                byBrand[brand] = Number(rows[0].quantity);
-            } else {
-                let netChange = 0;
-                for (let i = 1; i < rows.length; i++) {
-                    netChange += Number(rows[i].quantity) + Number(rows[i - 1].quantity);
-                }
-                byBrand[brand] = round2(netChange);
+            let netChange = 0;
+            for (let i = 0; i < rows.length; i++) {
+                netChange += Number(rows[i].quantity);
             }
+            byBrand[brand] = round2(netChange);
+
+            // if (rows.length === 1) {
+            //     byBrand[brand] = Number(rows[0].quantity);
+            // } else {
+            //     let netChange = 0;
+            //     for (let i = 0; i < rows.length; i++) {
+            //         netChange += Number(rows[i].quantity) + Number(rows[i - 1].quantity);
+            //     }
+            //     byBrand[brand] = round2(netChange);
+            // }
         }
 
         result[rid] = byBrand;
@@ -197,7 +203,10 @@ export function calculateSilverBullet(
     const entries: GainLossEntry[] = [];
 
     for (const rid of respondentIds) {
-
+        if(rid === '2272599')
+        {
+            const a = "Test";
+        }
         const p1 = p1Map[Number(rid)] ?? {};
         const p2 = p2Map[Number(rid)] ?? {};
 
@@ -219,7 +228,7 @@ export function calculateSilverBullet(
 
         const categoryChange = p2Category - p1Category;
 
-        if (categoryChange == 0) continue;
+        // if (categoryChange == 0) continue;
 
         const brandChanges: Record<string, number> = {};
         
