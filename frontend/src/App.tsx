@@ -36,6 +36,7 @@ import CATIProtectedRoute from "./routes/CATIProtectedRoute";
 import Assignment from "./pages/Project/Assignment";
 import SilverBulletDashBoard from "./pages/SilverBulletDashBoard/SilverBulletDashBoard";
 import ProgressReport from "./pages/Project/ProgressReport";
+import Codeframe from "./pages/Codeframe/Codeframe";
 
 // Fetch the CSRF token from the meta tag
 const csrfToken = document
@@ -64,6 +65,8 @@ const App: React.FC = () => {
             <Route path='/progress-report' element={<DashboardProject />} />
             <Route path='/silver-bullet-dashboard' element={<SilverBulletDashBoard />} />
             <Route path='/progress' element={<ProgressReport />} />
+
+            <Route path='/codeframe' element={<Codeframe />} />
 
             {/* ================= DEFAULT LAYOUT GROUP ================= */}
             <Route

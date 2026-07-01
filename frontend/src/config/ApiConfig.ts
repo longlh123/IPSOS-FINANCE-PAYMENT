@@ -130,4 +130,7 @@ export const ApiConfig = {
     getRespondents: `${host}/api/silver-bullet/respondents`,
     getMetadata: `${host}/api/silver-bullet/metadata`
   },
+  codeframe: {
+    import: `${host}/api/codeframe/import`,
+  },
 };

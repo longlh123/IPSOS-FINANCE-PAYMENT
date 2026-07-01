@@ -1,0 +1,155 @@
+import { useState, ChangeEvent, useRef } from "react";
+import {
+    Box,
+    Button,
+    Chip,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    Typography,
+} from "@mui/material";
+import FileUploadOutlinedIcon from "@mui/icons-material/FileUploadOutlined";
+import ReusableTable from "../../components/Table/ReusableTable";
+import { ColumnFormat } from "../../config/ColumnConfig";
+import { useCodeframe } from "../../hook/useCodeframe";
+
+const columns: ColumnFormat[] = [
+    {
+        label: "STT",
+        name: "id",
+        type: "number",
+        align: "center",
+        width: 60,
+    },
+    {
+        label: "Respondent ID",
+        name: "respondent_id",
+        type: "string",
+        width: 140,
+    },
+    {
+        label: "Câu trả lời",
+        name: "response_text",
+        type: "string",
+    },
+    {
+        label: "Code",
+        name: "code",
+        type: "string",
+        align: "center",
+        width: 140,
+        renderCell: (row) =>
+            row.code ? (
+                <Chip label={row.code} size="small" color="primary" variant="outlined" />
+            ) : (
+                <Chip label="Chưa coding" size="small" variant="outlined" sx={{ color: "text.disabled" }} />
+            ),
+    },
+    {
+        label: "Người coding",
+        name: "coded_by",
+        type: "string",
+        align: "center",
+        width: 140,
+        renderCell: (row) => row.coded_by ?? "—",
+    },
+    {
+        label: "Thời điểm",
+        name: "coded_at",
+        type: "string",
+        align: "center",
+        width: 160,
+        renderCell: (row) => row.coded_at ?? "—",
+    },
+];
+
+export default function Codeframe() {
+    const { rows, actionState, importData } = useCodeframe();
+
+    const [openDialog, setOpenDialog] = useState(false);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            setSelectedFile(e.target.files[0]);
+        }
+    };
+
+    const handleImport = async () => {
+        if (!selectedFile) return;
+        await importData(selectedFile);
+        setOpenDialog(false);
+        setSelectedFile(null);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+    };
+
+    const handleCloseDialog = () => {
+        setOpenDialog(false);
+        setSelectedFile(null);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+    };
+
+    return (
+        <Box sx={{ p: 3 }}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+                <Typography variant="h5" fontWeight={600}>
+                    Codeframe
+                </Typography>
+                <Button
+                    variant="contained"
+                    startIcon={<FileUploadOutlinedIcon />}
+                    onClick={() => setOpenDialog(true)}
+                    sx={{ textTransform: "none" }}
+                >
+                    Import Data
+                </Button>
+            </Box>
+
+            <ReusableTable
+                columns={columns}
+                data={rows}
+                actionStatus={actionState}
+                total={rows.length}
+            />
+
+            <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+                <DialogTitle>Import Data</DialogTitle>
+                <DialogContent>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Chọn file Excel (.xlsx) chứa dữ liệu câu trả lời mở để bắt đầu coding.
+                    </Typography>
+                    <Button
+                        variant="outlined"
+                        component="label"
+                        fullWidth
+                        sx={{ py: 3, borderStyle: "dashed", textTransform: "none" }}
+                    >
+                        {selectedFile ? selectedFile.name : "Chọn file .xlsx"}
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept=".xlsx"
+                            hidden
+                            onChange={handleFileChange}
+                        />
+                    </Button>
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 2 }}>
+                    <Button onClick={handleCloseDialog} sx={{ textTransform: "none" }}>
+                        Huỷ
+                    </Button>
+                    <Button
+                        variant="contained"
+                        onClick={handleImport}
+                        disabled={!selectedFile || actionState.loading}
+                        sx={{ textTransform: "none" }}
+                    >
+                        {actionState.loading ? "Đang import..." : "Import"}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+        </Box>
+    );
+}
