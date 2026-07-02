@@ -27,7 +27,8 @@ class TransactionRequest extends FormRequest
             'service_type' => 'required|string|in:topup,card,voucher',
             'service_code' => 'required|string|max:10',
             'provider' => 'required|string|in:vinnet,gotit',
-            'delivery_method' => 'required|string|in:qr,sms,email'
+            'delivery_method' => 'required|string|in:qr,sms,email',
+            'mode' => 'nullable|string|in:online,offline'
         ];
     }
 

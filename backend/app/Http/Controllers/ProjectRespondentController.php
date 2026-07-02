@@ -233,6 +233,7 @@ class ProjectRespondentController extends Controller
                         'respondent_phone_number' => $row['respondent_phone_number'],
                         'phone_number' => $row['phone_number'],
                         'email' => $row['email'],
+                        'channel' => $row['channel'],
                         'price_level' => $row['price_level'],
                         'status' => ProjectRespondent::STATUS_RESPONDENT_PENDING,
                         'environment' => $environment,

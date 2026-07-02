@@ -101,14 +101,6 @@ class ProjectRespondentTokenService
                 return $record;
             }
         }
-        
-        // if(!$record){
-        //     throw new \Exception(TransactionStatus::STATUS_INVALID, 501);
-        // }
-
-        // if($record->status === 'blocked'){
-        //     throw new \Exception(TransactionStatus::STATUS_EXPIRED, 502);
-        // }
 
         if($record->expires_at->isPast()){
             $record->update([

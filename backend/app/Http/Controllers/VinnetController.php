@@ -108,7 +108,8 @@ class VinnetController extends Controller
             $serviceCode = $validatedRequest['service_code'] ?? null;
             $phoneNumber = $validatedRequest['phone_number'] ?? null;
             $provider = $validatedRequest['provider'] ?? null;
-            $deliveryMethod = $validatedRequest['delivery_method'] ?? null; 
+            $deliveryMethod = $validatedRequest['delivery_method'] ?? null;
+            $mode = $validatedRequest['mode'] ?? 'online';
 
             Log::info('Transaction Info: ', [
                 'token' => $token,
@@ -116,10 +117,13 @@ class VinnetController extends Controller
                 'service_code' => $serviceCode,
                 'phone_number' => $phoneNumber,
                 'provider' => $provider,
-                'delivery_method' => $deliveryMethod
+                'delivery_method' => $deliveryMethod,
+                'mode' => $mode
             ]);
 
-            $tokenRecord = $tokenService->verifyToken($token);
+            $tokenRecord = $mode === 'offline'
+                ? $tokenService->verifyTokenOffline($token)
+                : $tokenService->verifyToken($token);
 
             $projectRespondent = $tokenRecord->projectRespondent;
             

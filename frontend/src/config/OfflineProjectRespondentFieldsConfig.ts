@@ -9,7 +9,8 @@ export interface OfflineProjectRespondentImportData {
     RespondentPhoneNumber: string, 
     PhoneNumber: string,
     Email: string,
-    PriceLevel: string
+    PriceLevel: string,
+    Channel: string
 }
 
 export interface OfflineProjectRespondentData {
@@ -26,6 +27,7 @@ export interface OfflineProjectRespondentData {
     environment: "live" | "test",
     token: string,
     price_level: string
+    channel: "vinnet" | "gotit" | "other"
 };
 
 export const OfflineProjectRespondentCellConfig: ColumnFormat[] = [
@@ -74,6 +76,12 @@ export const OfflineProjectRespondentCellConfig: ColumnFormat[] = [
     {
         label: "Price Level",
         name: "price_level",
+        type: "string",
+        flex: 1.5
+    },
+    {
+        label: "Channel",
+        name: "channel",
         type: "string",
         flex: 1.5
     }

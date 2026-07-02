@@ -46,19 +46,19 @@ const buildNavItems = (projectId: number): NavItem[] => [
     label: "Interviewers",
     to: `/project-management/projects/${projectId}/parttime-employees`,
     icon: GroupsOutlined,
-    showIf: (p) => p?.has_approved_quotation ?? false,
+    // showIf: (p) => p?.has_approved_quotation ?? false,
   },
   {
     label: "Gifts",
     to: `/project-management/projects/${projectId}/gifts`,
     icon: CardGiftcardOutlined,
-    showIf: (p) => p?.has_approved_quotation ?? false,
+    // showIf: (p) => p?.has_approved_quotation ?? false,
   },
   {
     label: "CATI Settings",
     to: `/project-management/projects/${projectId}/cati-settings`,
     icon: HeadsetMicOutlined,
-    showIf: (p) => p?.project_types?.includes("CATI") ?? false,
+    // showIf: (p) => p?.project_types?.includes("CATI") ?? false,
   },
 ];
 

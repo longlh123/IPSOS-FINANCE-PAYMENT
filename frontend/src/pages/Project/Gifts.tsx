@@ -13,7 +13,7 @@ import useDialog from "../../hook/useDialog";
 import { useOfflineProjectRespondents } from "../../hook/useOfflineProjectRespondents";
 import DeleteIcon from "@mui/icons-material/Delete";
 import LoadingButton from '@mui/lab/LoadingButton';
-import SendIcon from '@mui/icons-material/Send';
+import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
 
 const Gifts: React.FC = () => {
     const { id } = useParams<{id: string}>();
@@ -134,14 +134,35 @@ const Gifts: React.FC = () => {
                         <LoadingButton
                             onClick={() => handleSendGiftClick(row)}
                             size="small"
-                            endIcon={<SendIcon />}
+                            startIcon={<CardGiftcardIcon />}
                             loading={(loadingRowId === row.respondent_id)}
-                            loadingPosition="end"
+                            loadingPosition="start"
                             variant="contained"
                             disabled={disabled}
-                            className='btn bg-vinnet-primary'
+                            sx={{
+                                backgroundColor: 'var(--vinnet-color-primary)',
+                                color: '#fff',
+                                fontSize: '0.8125rem',
+                                fontWeight: 600,
+                                textTransform: 'none',
+                                letterSpacing: '0.02em',
+                                borderRadius: '0.625rem',
+                                px: 2,
+                                py: 0.625,
+                                boxShadow: 'none',
+                                transition: 'var(--transition-02)',
+                                '&:hover': {
+                                    backgroundColor: 'var(--vinnet-color-primary)',
+                                    filter: 'brightness(1.1)',
+                                    boxShadow: '0 0.25rem 0.75rem rgba(0, 122, 255, 0.35)',
+                                },
+                                '&.Mui-disabled': {
+                                    backgroundColor: 'rgba(0, 122, 255, 0.3)',
+                                    color: '#fff',
+                                },
+                            }}
                             >
-                                <span>TẶNG QUÀ</span>
+                                Tặng quà
                         </LoadingButton>
                     </div>
                     
@@ -187,7 +208,7 @@ const Gifts: React.FC = () => {
             }
 
             const REQUIRED_COLUMNS = [
-                "InstanceID",	"Shell_ChainID", "SamplePoint",	"Province",	"InterviewerID", "RespondentPhoneNumber", "PhoneNumber", "Email", "PriceLevel"
+                "InstanceID",	"Shell_ChainID", "SamplePoint",	"Province",	"InterviewerID", "RespondentPhoneNumber", "PhoneNumber", "Email", "PriceLevel", "Channel"
             ]
 
             const hearders = Object.keys(jsonData[0]);
@@ -224,7 +245,8 @@ const Gifts: React.FC = () => {
             respondent_phone_number: r.RespondentPhoneNumber.toString() ?? null,
             phone_number: r.PhoneNumber.toString() ?? null,
             email: r.Email.toString() ?? null,
-            price_level: r.PriceLevel.toString() ?? null
+            price_level: r.PriceLevel.toString() ?? null,
+            channel: r.Channel.toString() ?? null
         }));
 
         await importOfflineProjectRespondents(payload);

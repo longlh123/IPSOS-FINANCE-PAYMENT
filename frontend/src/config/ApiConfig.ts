@@ -18,7 +18,7 @@ export const ApiConfig = {
     removeEmployee: `${host}/api/project-management/projects/{projectId}/employees/{employeeId}/destroy`,
     viewOfflineProjectRespondents: `${host}/api/project-management/projects/{projectId}/offline/respondents/show`,
     addOfflineProjectRespondents: `${host}/api/project-management/projects/{projectId}/offline/respondents/store`,
-    removeProjectRespondent: `${host}/api/project_management/projects/{projectId}/offline/respondents/{projectRespondentId}/destroy`,
+    removeProjectRespondent: `${host}/api/project-management/projects/{projectId}/offline/respondents/{projectRespondentId}/destroy`,
     offlineTransactionSending: `${host}/api/project-management/projects/{projectId}/offline/respondents/{projectRespondentId}/transaction`,
     verifyTransactionToken: `${host}/api/project-management/project/verify_token`,
     
@@ -63,19 +63,20 @@ export const ApiConfig = {
     viewMerchantAccount: `${host}/api/transaction-management/vinnet/merchantinfo`,
     changeMerchantKey: `${host}/api/transaction-management/vinnet/change-key`,
 
-    performMultipleTransactions: `${host}/api/project-management/vinnet/transactions`,
+    performTransaction: `${host}/api/project-management/vinnet/transaction`,
+    rejectTransaction: `${host}/api/project-management/vinnet/reject-transaction`,
     verifiedVinnetToken: `${host}/api/project-management/project/verify-vinnet-token`,
     storeVinnetToken: `${host}/api/project-management/project/store-vinnet-token`,
-    rejectTransaction: `${host}/api/project-management/vinnet/reject-transaction`
   },
   gotit: {
     viewGotItAccount: `${host}/api/transaction-management/gotit/account/{accountType}/view`,
     depositedAccount: `${host}/api/transaction-management/gotit/account/store`,
 
-    performTransaction: `${host}/api/project-management/got-it/transaction`,
-    rejectTransaction: `${host}/api/project-management/got-it/reject-transaction`,
-    checkTransaction: `${host}/api/project-management/got-it/check-transaction-refid`
+    performTransaction: `${host}/api/project-management/gotit/transaction`,
+    rejectTransaction: `${host}/api/project-management/gotit/reject-transaction`,
+    checkTransaction: `${host}/api/project-management/gotit/check-transaction-refid`
   },
+
   functions: {
     exportTransactions: `${host}/api/transaction-management/export`,
     exportTransactionsByProjecs: `${host}/api/transaction-management/projects/export`

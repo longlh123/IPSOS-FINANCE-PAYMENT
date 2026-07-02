@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from "react";
 import { OfflineProjectRespondentData } from "../config/OfflineProjectRespondentFieldsConfig";
 import { ApiConfig } from "../config/ApiConfig";
 import axios from "axios";
-import { DataArray } from "@mui/icons-material";
 import { getServiceCode } from "../utils/VinnetFunctions";
 
 interface ImportErrorDetail {
@@ -154,15 +153,17 @@ export function useOfflineProjectRespondents(projectId: number) {
 
             const token = localStorage.getItem("authToken");
 
-            const url = `${ApiConfig.project.offlineTransactionSending.replace("{projectId}", project_id.toString()).replace("{projectRespondentId}", data.id.toString())}`;
+            // const url = `${ApiConfig.project.offlineTransactionSending.replace("{projectId}", project_id.toString()).replace("{projectRespondentId}", data.id.toString())}`;
+            const url = data.channel === "vinnet" ? `${ApiConfig.vinnet.performTransaction}` : `${ApiConfig.gotit.performTransaction}`;
 
             const response = await axios.post(url, {
                     token: data.token,
                     service_type: "voucher",
                     service_code: getServiceCode(data.phone_number),
                     phone_number: data.phone_number,
-                    provider: "gotit",
-                    delivery_method: "sms"
+                    provider: data.channel,
+                    delivery_method: "sms",
+                    mode: "offline"
                 }, {
                     headers: {
                         'Content-Type': 'application/json',
