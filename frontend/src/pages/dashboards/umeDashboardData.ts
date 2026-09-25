@@ -48,13 +48,14 @@ export const rankedFactors: RankedFactor[] = [
 
 export const spendAverage = { y2025: "10.6M", y2026: "12.9M" };
 
+// Labels omit the repeated "VND" unit - shown once via the chart's subheader instead.
 export const spendDistribution: YearComparisonBucket[] = [
-    { label: "Under VND 4.5m", y2025: 12, y2026: 8 },
-    { label: "VND 4.5m - 8.99m", y2025: 24, y2026: 16 },
-    { label: "VND 9.0m - 11.99m", y2025: 19, y2026: 13 },
-    { label: "VND 12.0m - 14.99m", y2025: 13, y2026: 9 },
-    { label: "VND 15.0m - 24.99m", y2025: 17, y2026: 21 },
-    { label: "VND 25.0m or higher", y2025: 15, y2026: 33 }
+    { label: "Under 4.5m", y2025: 12, y2026: 8 },
+    { label: "4.5m - 8.99m", y2025: 24, y2026: 16 },
+    { label: "9.0m - 11.99m", y2025: 19, y2026: 13 },
+    { label: "12.0m - 14.99m", y2025: 13, y2026: 9 },
+    { label: "15.0m - 24.99m", y2025: 17, y2026: 21 },
+    { label: "25.0m or higher", y2025: 15, y2026: 33 }
 ];
 
 export const productSampleSize = { y2025: 10368, y2026: 9375 };

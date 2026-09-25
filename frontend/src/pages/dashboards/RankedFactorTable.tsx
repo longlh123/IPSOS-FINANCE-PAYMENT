@@ -47,7 +47,7 @@ const RankedFactorTable: React.FC<RankedFactorTableProps> = ({ title, data }) =>
 
                                 <Typography
                                     variant="body2"
-                                    sx={{ color: UME_COLORS.ink, width: 190, flexShrink: 0 }}
+                                    sx={{ color: UME_COLORS.ink, width: { xs: 110, sm: 190 }, flexShrink: 0 }}
                                 >
                                     {factor.label}
                                 </Typography>
@@ -59,7 +59,7 @@ const RankedFactorTable: React.FC<RankedFactorTableProps> = ({ title, data }) =>
                                     #{factor.rank}
                                 </Typography>
 
-                                <Box sx={{ position: 'relative', flexGrow: 1, height: 22, backgroundColor: 'rgba(0,0,0,0.04)', borderRadius: '4px', overflow: 'hidden' }}>
+                                <Box sx={{ flexGrow: 1, height: 22, backgroundColor: 'rgba(0,0,0,0.04)', borderRadius: '4px', overflow: 'hidden' }}>
                                     <Box
                                         sx={{
                                             width: `${widthPct}%`,
@@ -68,21 +68,15 @@ const RankedFactorTable: React.FC<RankedFactorTableProps> = ({ title, data }) =>
                                             borderRadius: '4px'
                                         }}
                                     />
-                                    <Typography
-                                        variant="caption"
-                                        fontWeight={700}
-                                        sx={{
-                                            position: 'absolute',
-                                            left: `calc(${widthPct}% + 8px)`,
-                                            top: '50%',
-                                            transform: 'translateY(-50%)',
-                                            color: UME_COLORS.ink,
-                                            whiteSpace: 'nowrap'
-                                        }}
-                                    >
-                                        {factor.value}
-                                    </Typography>
                                 </Box>
+
+                                <Typography
+                                    variant="caption"
+                                    fontWeight={700}
+                                    sx={{ color: UME_COLORS.ink, width: 24, flexShrink: 0, textAlign: 'right' }}
+                                >
+                                    {factor.value}
+                                </Typography>
                             </Stack>
                         );
                     })}

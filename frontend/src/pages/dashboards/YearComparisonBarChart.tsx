@@ -12,7 +12,7 @@ interface YearComparisonBarChartProps {
 }
 
 const CHART_HEIGHT = 260;
-const MARGIN = { top: 28, right: 12, bottom: 40, left: 12 };
+const MARGIN = { top: 28, right: 12, bottom: 56, left: 12 };
 const FONT_SIZE = 11;
 
 const YearComparisonBarChart: React.FC<YearComparisonBarChartProps> = ({ title, subheader, data }) => {
@@ -97,33 +97,14 @@ const YearComparisonBarChart: React.FC<YearComparisonBarChartProps> = ({ title, 
             .data(data)
             .enter()
             .append('text')
-            .attr('x', d => (x0(d.label) || 0) + x0.bandwidth() / 2)
-            .attr('y', innerHeight + 18)
-            .attr('text-anchor', 'middle')
+            .attr('transform', d => {
+                const x = (x0(d.label) || 0) + x0.bandwidth() / 2;
+                return `translate(${x},${innerHeight + 12}) rotate(-30)`;
+            })
+            .attr('text-anchor', 'end')
             .attr('fill', UME_COLORS.mutedInk)
             .style('font-size', `${FONT_SIZE}px`)
-            .call(function (selection) {
-                selection.each(function (d: any) {
-                    const words = d.label.split(' ');
-                    const el = d3.select(this);
-                    const lineHeight = 12;
-                    const startY = -((words.length > 2 ? 1 : 0) * lineHeight);
-
-                    el.text(null);
-
-                    if (d.label.length > 14) {
-                        const mid = Math.ceil(d.label.length / 2);
-                        const splitAt = d.label.lastIndexOf(' ', mid);
-                        const line1 = d.label.slice(0, splitAt);
-                        const line2 = d.label.slice(splitAt + 1);
-
-                        el.append('tspan').attr('x', el.attr('x')).attr('dy', startY).text(line1);
-                        el.append('tspan').attr('x', el.attr('x')).attr('dy', lineHeight).text(line2);
-                    } else {
-                        el.append('tspan').attr('x', el.attr('x')).text(d.label);
-                    }
-                });
-            });
+            .text(d => d.label);
     }, [data, width]);
 
     return (

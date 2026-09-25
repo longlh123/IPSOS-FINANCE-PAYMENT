@@ -57,7 +57,7 @@ const UMEDashboard = () => {
                 <Grid item xs={12} md={6}>
                     <YearComparisonBarChart
                         title="Spend distribution"
-                        subheader={`Average: 2025: ${spendAverage.y2025} | 2026: ${spendAverage.y2026}`}
+                        subheader={`Average: 2025: ${spendAverage.y2025} | 2026: ${spendAverage.y2026} (VND millions)`}
                         data={spendDistribution}
                     />
                 </Grid>
